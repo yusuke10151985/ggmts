@@ -67,7 +67,6 @@ export const TranslatorApp: React.FC = () => {
 
   const executeTranslation = useCallback(async (text: string, source: string, targets: string[]) => {
     if (!text.trim()) {
-      setError('Please enter text to translate.')
       return
     }
 
@@ -150,7 +149,7 @@ export const TranslatorApp: React.FC = () => {
 
   useEffect(() => {
     executeTranslationRef.current = executeTranslation
-  }, [apiProvider, mode, setHistory, handleResetSelections])
+  }, [executeTranslation])
 
   const handleTargetLangClick = useCallback((langCode: string) => {
     const newTargetLangs = targetLangs.includes(langCode)
