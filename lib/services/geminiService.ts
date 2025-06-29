@@ -1,11 +1,21 @@
 import { GoogleGenAI } from "@google/genai";
 import { TranslationResult, TranslationMode } from '../types';
 
+// Check if API key is available
 if (!process.env.GEMINI_API_KEY) {
+    console.error("GEMINI_API_KEY environment variable is not set");
     throw new Error("GEMINI_API_KEY environment variable is not set");
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Initialize Gemini with error handling
+let ai: GoogleGenAI;
+try {
+    ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    console.log('Gemini client initialized successfully');
+} catch (error) {
+    console.error('Failed to initialize Gemini client:', error);
+    throw new Error('Failed to initialize Gemini client');
+}
 
 const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode: TranslationMode): string => {
   const sourceLanguageInstruction = sourceLang === 'auto'
@@ -75,18 +85,22 @@ export const getTranslations = async (text: string, sourceLang: string, targetLa
   
   try {
     console.log('Making Gemini API request...')
-    const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-preview-04-17",
+    
+    // Use a more stable model and configuration
+    const model = ai.models.generateContent({
+        model: "gemini-1.5-flash",
         contents: prompt,
         config: {
-            responseMimeType: "application/json",
             temperature: 0.2,
+            maxOutputTokens: 2048,
         },
     });
 
+    console.log('Gemini API request sent, waiting for response...')
+    const response = await model;
     console.log('Gemini API response received')
 
-    if (!response.text) {
+    if (!response || !response.text) {
         throw new Error("No response text received from Gemini API");
     }
 
