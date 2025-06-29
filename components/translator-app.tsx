@@ -81,18 +81,22 @@ export const TranslatorApp: React.FC = () => {
     handleResetSelections()
 
     try {
+      const requestBody = {
+        text,
+        sourceLang: source,
+        targetLangs: targets,
+        mode,
+        apiProvider,
+      }
+      
+      console.log('Sending translation request:', requestBody)
+      
       const response = await fetch('/api/translate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          text,
-          sourceLang: source,
-          targetLangs: targets,
-          mode,
-          apiProvider,
-        }),
+        body: JSON.stringify(requestBody),
         signal: abortControllerRef.current.signal,
       })
 

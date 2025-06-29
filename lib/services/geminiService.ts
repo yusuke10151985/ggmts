@@ -64,9 +64,17 @@ export const getTranslations = async (text: string, sourceLang: string, targetLa
     return { sourceLanguage: 'auto', translations: [] };
   }
 
+  console.log('Gemini service called with:', {
+    text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
+    sourceLang,
+    targetLangs,
+    mode
+  })
+
   const prompt = getPrompt(text, sourceLang, targetLangs, mode);
   
   try {
+    console.log('Making Gemini API request...')
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-04-17",
         contents: prompt,
@@ -76,20 +84,25 @@ export const getTranslations = async (text: string, sourceLang: string, targetLa
         },
     });
 
+    console.log('Gemini API response received')
+
     if (!response.text) {
         throw new Error("No response text received from Gemini API");
     }
 
     let jsonText = response.text.trim();
+    console.log('Raw Gemini response:', jsonText.substring(0, 200) + (jsonText.length > 200 ? '...' : ''))
     
     // Clean potential markdown fences, as per Gemini best practices.
     const fenceRegex = /^```(?:json)?\s*\n?(.*?)\n?\s*```$/;
     const match = jsonText.match(fenceRegex);
     if (match && match[1]) {
         jsonText = match[1].trim();
+        console.log('Cleaned JSON text:', jsonText.substring(0, 200) + (jsonText.length > 200 ? '...' : ''))
     }
     
     const parsedData = JSON.parse(jsonText);
+    console.log('Parsed Gemini data:', parsedData)
 
     if (parsedData && Array.isArray(parsedData.translations)) {
         return parsedData as TranslationResult;
