@@ -66,9 +66,16 @@ export const getTranslations = async (
     return { sourceLanguage: 'auto', translations: [] };
   }
 
+  // Check if API key is available
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY environment variable is not set");
+  }
+
   const prompt = getPrompt(text, sourceLang, targetLangs, mode);
   
   try {
+    console.log('Making OpenAI API request with model: gpt-4o-mini');
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -92,22 +99,30 @@ export const getTranslations = async (
       }),
     });
 
+    console.log('OpenAI API response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`OpenAI API request failed: ${response.status}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error response:', errorText);
+      throw new Error(`OpenAI API request failed: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('OpenAI API response data:', JSON.stringify(data, null, 2));
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       throw new Error('Invalid response format from OpenAI API');
     }
 
     const responseText = data.choices[0].message.content.trim();
+    console.log('OpenAI API response text:', responseText);
     
     // Clean potential markdown fences
     const fenceRegex = /^```(?:json)?\s*\n?(.*?)\n?\s*```$/;
     const match = responseText.match(fenceRegex);
     const jsonText = match && match[1] ? match[1].trim() : responseText;
+    
+    console.log('Parsed JSON text:', jsonText);
     
     const parsedData = JSON.parse(jsonText);
 
