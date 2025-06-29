@@ -1,20 +1,9 @@
-import { GoogleGenAI } from "@google/genai";
 import { TranslationResult, TranslationMode } from '../types';
 
 // Check if API key is available
 if (!process.env.GEMINI_API_KEY) {
     console.error("GEMINI_API_KEY environment variable is not set");
     throw new Error("GEMINI_API_KEY environment variable is not set");
-}
-
-// Initialize Gemini with error handling
-let ai: GoogleGenAI;
-try {
-    ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    console.log('Gemini client initialized successfully');
-} catch (error) {
-    console.error('Failed to initialize Gemini client:', error);
-    throw new Error('Failed to initialize Gemini client');
 }
 
 const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode: TranslationMode): string => {
@@ -86,25 +75,46 @@ export const getTranslations = async (text: string, sourceLang: string, targetLa
   try {
     console.log('Making Gemini API request...')
     
-    // Use the correct API format for version 1.4.0
-    const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: prompt,
-        config: {
-            temperature: 0.2,
-        },
+    // Use direct API call instead of the library
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GEMINI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 2048,
+        }
+      })
     });
-    
+
     console.log('Gemini API response received')
 
-    if (!response || !response.text) {
-        throw new Error("No response text received from Gemini API");
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Gemini API error response:', errorText);
+      throw new Error(`Gemini API request failed: ${response.status} ${response.statusText}`);
     }
 
-    let jsonText = response.text.trim();
-    console.log('Raw Gemini response:', jsonText.substring(0, 200) + (jsonText.length > 200 ? '...' : ''))
+    const responseData = await response.json();
+    console.log('Gemini API response data:', responseData);
+
+    if (!responseData.candidates || !responseData.candidates[0] || !responseData.candidates[0].content) {
+      throw new Error("Invalid response structure from Gemini API");
+    }
+
+    const responseText = responseData.candidates[0].content.parts[0].text;
+    console.log('Raw Gemini response:', responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''))
     
-    // Clean potential markdown fences, as per Gemini best practices.
+    // Clean potential markdown fences
+    let jsonText = responseText.trim();
     const fenceRegex = /^```(?:json)?\s*\n?(.*?)\n?\s*```$/;
     const match = jsonText.match(fenceRegex);
     if (match && match[1]) {
