@@ -1,0 +1,5 @@
+{
+  "name": "GGMTS",
+  "description": "A powerful and elegant tool to translate text into multiple languages simultaneously using the Gemini API. Features include language auto-detection, translation history, and a sleek dark mode.",
+  "requestFramePermissions": []
+}
