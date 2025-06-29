@@ -86,18 +86,15 @@ export const getTranslations = async (text: string, sourceLang: string, targetLa
   try {
     console.log('Making Gemini API request...')
     
-    // Use a more stable model and configuration
-    const model = ai.models.generateContent({
+    // Use the correct API format for version 1.4.0
+    const response = await ai.models.generateContent({
         model: "gemini-1.5-flash",
         contents: prompt,
         config: {
             temperature: 0.2,
-            maxOutputTokens: 2048,
         },
     });
-
-    console.log('Gemini API request sent, waiting for response...')
-    const response = await model;
+    
     console.log('Gemini API response received')
 
     if (!response || !response.text) {
