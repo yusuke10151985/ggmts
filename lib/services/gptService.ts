@@ -22,7 +22,22 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
   const targetLanguagesString = targetLangs.join(', ');
 
   const modeInstruction = mode === 'summarize'
-    ? 'Your task is to first translate the text into the specified languages, and then for each translation, create a concise summary of the content in that same language. The summary MUST be a numbered list that can be nested (e.g., "1.", "1.1.", "2."). Omit any conversational filler like greetings or pleasantries from the summary. Focus only on the core points.'
+    ? `Your task is to first translate the text into the specified languages, and then for each translation, create a structured summary as a hierarchical outline. 
+Each summary must be a JSON array of items, where each item has:
+- "id": a unique string (e.g., "1", "1.1", "2")
+- "title": a short heading for the item
+- "summary": a concise summary of the content for that item
+- "children": (optional) an array of sub-items with the same structure for nested points
+
+Example:
+[
+  { "id": "1", "title": "Main Point", "summary": "...", "children": [
+    { "id": "1.1", "title": "Sub Point", "summary": "..." }
+  ]},
+  { "id": "2", "title": "Another Point", "summary": "..." }
+]
+
+Omit any conversational filler like greetings or pleasantries from the summary. Focus only on the core points.`
     : 'Your task is to translate the given text into several specified languages.';
 
   let specialInstructions = '';
@@ -55,7 +70,8 @@ The JSON object must follow this exact structure:
   "translations": [
     {
       "lang": "target_language_code_1",
-      "text": "translated_text_1 (or translated and summarized text as a nested, numbered list)"
+      "text": "translated_text_1",
+      "summary": [ ...outline array as above, only for summarize mode... ]
     }
   ]
 }
