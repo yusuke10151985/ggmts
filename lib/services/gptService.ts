@@ -22,22 +22,40 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
   const targetLanguagesString = targetLangs.join(', ');
 
   const modeInstruction = mode === 'summarize'
-    ? `あなたはプロの要約者です。次のテキストを項目ごとに要約し、各項目に「id」「title」「summary」を付与し、必要に応じて「children」配列で階層構造を持たせてください。
+    ? `以下の指示に従って、与えられた文章から階層的なアウトラインをJSON形式で作成してください。
 
-必ず下記のJSON形式で出力してください。他の形式や文章は一切不要です。
+1. 文章中の大分類を抽出してください。
+2. 各大分類に「1」「2」…のようなIDを付与してください。
+3. 中分類が存在する場合は「1.1」「1.2」…のようにIDを付与してください。
+4. 小分類が存在する場合は「1.1.1」「1.1.2」…のようにIDを付与してください。
+5. 一つの文章に複数の項目が含まれている場合は、それぞれ分けてください。
+6. 「よろしく」「ありがとう」など、項目に該当しない内容は省略してください。
+7. 出力は以下のJSON形式でお願いします。
 
-例:
 [
-  { "id": "1", "title": "概要", "summary": "..." },
-  { "id": "2", "title": "詳細", "summary": "...", "children": [
-    { "id": "2.1", "title": "サブ項目", "summary": "..." }
-  ]}
+  {
+    "id": "1",
+    "title": "大分類タイトル",
+    "children": [
+      {
+        "id": "1.1",
+        "title": "中分類タイトル",
+        "children": [
+          {
+            "id": "1.1.1",
+            "title": "小分類タイトル"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "title": "別の大分類タイトル"
+  }
 ]
 
-- 「id」は階層を表す連番（例: 1, 1.1, 2, ...）としてください。
-- 「title」は各項目の見出し、「summary」はその要約です。
-- 必要に応じて「children」配列でサブ項目をネストしてください。
-- 余計な挨拶や説明文は不要です。JSONのみを返してください。`
+必ず上記のJSON形式のみで出力してください。他の形式や文章は一切不要です。`
     : 'Your task is to translate the given text into several specified languages.';
 
   let specialInstructions = '';
