@@ -22,22 +22,22 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
   const targetLanguagesString = targetLangs.join(', ');
 
   const modeInstruction = mode === 'summarize'
-    ? `Your task is to first translate the text into the specified languages, and then for each translation, create a structured summary as a hierarchical outline. 
-Each summary must be a JSON array of items, where each item has:
-- "id": a unique string (e.g., "1", "1.1", "2")
-- "title": a short heading for the item
-- "summary": a concise summary of the content for that item
-- "children": (optional) an array of sub-items with the same structure for nested points
+    ? `あなたはプロの要約者です。次のテキストを項目ごとに要約し、各項目に「id」「title」「summary」を付与し、必要に応じて「children」配列で階層構造を持たせてください。
 
-Example:
+必ず下記のJSON形式で出力してください。他の形式や文章は一切不要です。
+
+例:
 [
-  { "id": "1", "title": "Main Point", "summary": "...", "children": [
-    { "id": "1.1", "title": "Sub Point", "summary": "..." }
-  ]},
-  { "id": "2", "title": "Another Point", "summary": "..." }
+  { "id": "1", "title": "概要", "summary": "..." },
+  { "id": "2", "title": "詳細", "summary": "...", "children": [
+    { "id": "2.1", "title": "サブ項目", "summary": "..." }
+  ]}
 ]
 
-Omit any conversational filler like greetings or pleasantries from the summary. Focus only on the core points.`
+- 「id」は階層を表す連番（例: 1, 1.1, 2, ...）としてください。
+- 「title」は各項目の見出し、「summary」はその要約です。
+- 必要に応じて「children」配列でサブ項目をネストしてください。
+- 余計な挨拶や説明文は不要です。JSONのみを返してください。`
     : 'Your task is to translate the given text into several specified languages.';
 
   let specialInstructions = '';
