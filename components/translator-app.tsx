@@ -91,13 +91,14 @@ export const TranslatorApp: React.FC = () => {
       
       console.log('Sending translation request:', requestBody)
       
+      const signal = abortControllerRef.current?.signal;
       const response = await fetch('/api/translate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody),
-        signal: abortControllerRef.current.signal,
+        ...(signal ? { signal } : {}),
       })
 
       if (abortControllerRef.current.signal.aborted) {
