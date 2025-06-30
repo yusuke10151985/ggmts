@@ -33,7 +33,7 @@ export const TranslatorApp: React.FC = () => {
   const [selectedForCopy, setSelectedForCopy] = useState<Record<string, boolean>>({})
   const [copyButtonText, setCopyButtonText] = useState('Copy Selected')
   const [showMoreLangs, setShowMoreLangs] = useState(false)
-  const [apiProvider, setApiProvider] = useLocalStorage<ApiProvider>('apiProvider', 'gemini')
+  const apiProvider: ApiProvider = 'gpt'
   const [mode, setMode] = useLocalStorage<TranslationMode>('translationMode', 'translate')
   const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false)
   const modeDropdownRef = useRef<HTMLDivElement>(null)
@@ -287,24 +287,6 @@ export const TranslatorApp: React.FC = () => {
             </div>
           </div>
           <div className="flex-1 flex justify-end items-center gap-2">
-            <div className="flex items-center p-1 bg-muted rounded-lg">
-              <Button 
-                variant={apiProvider === 'gemini' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setApiProvider('gemini')}
-                className="capitalize"
-              >
-                Gemini
-              </Button>
-              <Button
-                variant={apiProvider === 'gpt' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setApiProvider('gpt')}
-                className="capitalize"
-              >
-                GPT
-              </Button>
-            </div>
             <Button
               variant="ghost"
               size="icon"
