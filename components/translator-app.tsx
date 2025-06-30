@@ -91,17 +91,17 @@ export const TranslatorApp: React.FC = () => {
       
       console.log('Sending translation request:', requestBody)
       
-      const signal = abortControllerRef.current?.signal;
-      const response = await fetch('/api/translate', {
+      const fetchOptions: RequestInit = {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
-        ...(signal ? { signal } : {}),
-      })
+      };
+      if (abortControllerRef.current && abortControllerRef.current.signal) {
+        fetchOptions.signal = abortControllerRef.current.signal;
+      }
+      const response = await fetch('/api/translate', fetchOptions);
 
-      if (abortControllerRef.current.signal.aborted) {
+      if (abortControllerRef.current && abortControllerRef.current.signal && abortControllerRef.current.signal.aborted) {
         return
       }
 
@@ -147,7 +147,7 @@ export const TranslatorApp: React.FC = () => {
       const message = e instanceof Error ? e.message : 'An unknown error occurred.'
       setError(message)
     } finally {
-      if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
+      if (abortControllerRef.current && abortControllerRef.current.signal && !abortControllerRef.current.signal.aborted) {
         setIsLoading(false)
         abortControllerRef.current = null
       }
