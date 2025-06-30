@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "setup": "node setup-env.js",
+    "debug": "node debug-env.js"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.0.2",

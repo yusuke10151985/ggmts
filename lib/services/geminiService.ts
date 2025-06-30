@@ -1,10 +1,18 @@
 import { TranslationResult, TranslationMode } from '../types';
 
-// Check if API key is available
-if (!process.env.GEMINI_API_KEY) {
-    console.error("GEMINI_API_KEY environment variable is not set");
-    throw new Error("GEMINI_API_KEY environment variable is not set");
-}
+// Enhanced environment variable handling - ONLY use GEMINI_API_KEY
+const getApiKey = (): string => {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    console.log("✅ Using GEMINI_API_KEY for Gemini API calls");
+    return geminiKey;
+  }
+
+  console.error("❌ GEMINI_API_KEY environment variable is not set");
+  throw new Error("GEMINI_API_KEY environment variable is not set. Please set it in your .env.local file");
+};
+
+const GEMINI_API_KEY = getApiKey();
 
 const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode: TranslationMode): string => {
   const sourceLanguageInstruction = sourceLang === 'auto'
@@ -12,75 +20,63 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
     : `The source language is ${sourceLang}.`;
 
   const targetLanguagesString = targetLangs.join(', ');
+  
+  if (mode === 'translate') {
+    return `${sourceLanguageInstruction}
 
-  const modeInstruction = mode === 'summarize'
-    ? 'Your task is to first translate the text into the specified languages, and then for each translation, create a concise summary of the content in that same language. The summary MUST be a numbered list that can be nested (e.g., "1.", "1.1.", "2."). Omit any conversational filler like greetings or pleasantries from the summary. Focus only on the core points.'
-    : 'Your task is to translate the given text into several specified languages.';
+Please translate the following text to ${targetLanguagesString}:
 
-  let specialInstructions = '';
-  if (targetLangs.includes('th')) {
-    specialInstructions = `
-SPECIAL INSTRUCTIONS FOR THAI:
-For the Thai translation, where gender affects pronouns (like 'ผม'/'ฉัน') and politeness particles ('ครับ'/'ค่ะ'), you MUST merge them with a slash.
-Example: 'ผม/ฉัน ไปโรงเรียน ครับ/ค่ะ'.
-Do NOT create two separate full sentences for male and female speakers. Only merge the specific words that differ.
-This rule applies to both full translations and summaries.
-`;
-  }
+Text: "${text}"
 
-  return `
-You are an expert multilingual translator and summarizer.
-${modeInstruction}
-${sourceLanguageInstruction}
-${specialInstructions}
-The target languages for processing are: ${targetLanguagesString}.
-
-The text to process is:
----
-${text}
----
-
-Provide the response as a single, valid JSON object. Do not use markdown formatting like \`\`\`json.
-The JSON object must follow this exact structure:
+Please respond with a JSON object in this exact format:
 {
-  "sourceLanguage": "The auto-detected BCP-47 language code (e.g., 'en', 'es')",
+  "sourceLanguage": "detected_or_specified_lang_code",
   "translations": [
     {
-      "lang": "target_language_code_1",
-      "text": "translated_text_1 (or translated and summarized text as a nested, numbered list)"
+      "lang": "target_lang_code",
+      "text": "translated_text"
     }
   ]
 }
 
-The "translations" array must contain one object for each target language requested: ${targetLanguagesString}.
-The "lang" value in each translation object must exactly match one of the requested BCP-47 target language codes.
-Ensure the entire output is a single raw JSON object without any additional text or formatting before or after it.
-`;
+Ensure the response is valid JSON and includes all requested target languages.`;
+  } else {
+    return `${sourceLanguageInstruction}
+
+Please summarize the following text in ${targetLanguagesString}:
+
+Text: "${text}"
+
+Please respond with a JSON object in this exact format:
+{
+  "sourceLanguage": "detected_or_specified_lang_code",
+  "translations": [
+    {
+      "lang": "target_lang_code",
+      "text": "summarized_text"
+    }
+  ]
+}
+
+Ensure the response is valid JSON and includes all requested target languages.`;
+  }
 };
 
-export const getTranslations = async (text: string, sourceLang: string, targetLangs: string[], mode: TranslationMode): Promise<TranslationResult> => {
-  if (!text.trim()) {
-    return { sourceLanguage: 'auto', translations: [] };
-  }
-
-  console.log('Gemini service called with:', {
-    text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
-    sourceLang,
-    targetLangs,
-    mode
-  })
-
-  const prompt = getPrompt(text, sourceLang, targetLangs, mode);
-  
+export const getTranslations = async (
+  text: string,
+  sourceLang: string,
+  targetLangs: string[],
+  mode: TranslationMode
+): Promise<TranslationResult> => {
   try {
-    console.log('Making Gemini API request...')
+    console.log('Making Gemini API request...');
     
-    // Use direct API call instead of the library
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
+    const prompt = getPrompt(text, sourceLang, targetLangs, mode);
+    
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GEMINI_API_KEY}`,
       },
       body: JSON.stringify({
         contents: [{
@@ -89,57 +85,49 @@ export const getTranslations = async (text: string, sourceLang: string, targetLa
           }]
         }],
         generationConfig: {
-          temperature: 0.2,
+          temperature: 0.3,
+          topK: 40,
+          topP: 0.95,
           maxOutputTokens: 2048,
         }
       })
     });
 
-    console.log('Gemini API response received')
-
+    console.log('Gemini API response received');
+    
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Gemini API error response:', errorText);
+      const errorData = await response.json();
+      console.log('Gemini API error response:', JSON.stringify(errorData, null, 2));
       throw new Error(`Gemini API request failed: ${response.status} ${response.statusText}`);
     }
 
-    const responseData = await response.json();
-    console.log('Gemini API response data:', responseData);
+    const data = await response.json();
+    console.log('Gemini API success response:', JSON.stringify(data, null, 2));
 
-    if (!responseData.candidates || !responseData.candidates[0] || !responseData.candidates[0].content) {
-      throw new Error("Invalid response structure from Gemini API");
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+      throw new Error('Invalid response format from Gemini API');
     }
 
-    const responseText = responseData.candidates[0].content.parts[0].text;
-    console.log('Raw Gemini response:', responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''))
-    
-    // Clean potential markdown fences
-    let jsonText = responseText.trim();
-    const fenceRegex = /^```(?:json)?\s*\n?(.*?)\n?\s*```$/;
-    const match = jsonText.match(fenceRegex);
-    if (match && match[1]) {
-        jsonText = match[1].trim();
-        console.log('Cleaned JSON text:', jsonText.substring(0, 200) + (jsonText.length > 200 ? '...' : ''))
-    }
-    
-    const parsedData = JSON.parse(jsonText);
-    console.log('Parsed Gemini data:', parsedData)
+    const responseText = data.candidates[0].content.parts[0].text;
+    console.log('Gemini API response text:', responseText);
 
-    if (parsedData && Array.isArray(parsedData.translations)) {
-        return parsedData as TranslationResult;
-    } else {
-        throw new Error("Invalid JSON structure received from API.");
+    // Strip code block markers if present
+    let cleanText = responseText.trim();
+    if (cleanText.startsWith('```')) {
+      // Remove opening ```json or ``` and closing ```
+      cleanText = cleanText.replace(/^```[a-zA-Z]*\n?/, '').replace(/```$/, '').trim();
     }
+    console.log('Cleaned text for JSON parsing:', cleanText);
+    const parsedResponse = JSON.parse(cleanText);
+    console.log('Parsed JSON response:', JSON.stringify(parsedResponse, null, 2));
+
+    return {
+      sourceLanguage: parsedResponse.sourceLanguage,
+      translations: parsedResponse.translations
+    };
+
   } catch (error) {
-    console.error("Error fetching or parsing translations:", error);
-    let errorMessage = "Failed to get translations from Gemini API. ";
-    if (error instanceof SyntaxError) {
-        errorMessage += "The response was not valid JSON. Please try again.";
-    } else if (error instanceof Error) {
-        errorMessage += error.message;
-    } else {
-        errorMessage += "An unknown error occurred."
-    }
-    throw new Error(errorMessage);
+    console.error('Error fetching or parsing translations:', error);
+    throw new Error(`Failed to get translations from Gemini API. ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }; 

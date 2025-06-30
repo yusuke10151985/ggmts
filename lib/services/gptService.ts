@@ -1,8 +1,18 @@
 import { TranslationResult, TranslationMode } from '../types';
 
-if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY environment variable is not set");
-}
+// Enhanced environment variable handling
+const getOpenAIKey = (): string => {
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey) {
+    console.log("✅ Using OPENAI_API_KEY for OpenAI API calls");
+    return openaiKey;
+  }
+
+  console.error("❌ OPENAI_API_KEY environment variable is not set");
+  throw new Error("OPENAI_API_KEY environment variable is not set");
+};
+
+const OPENAI_API_KEY = getOpenAIKey();
 
 const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode: TranslationMode): string => {
   const sourceLanguageInstruction = sourceLang === 'auto'
@@ -66,21 +76,24 @@ export const getTranslations = async (
     return { sourceLanguage: 'auto', translations: [] };
   }
 
-  // Check if API key is available
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY environment variable is not set");
-  }
+  console.log('🔍 OpenAI service called with:', {
+    text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
+    sourceLang,
+    targetLangs,
+    mode
+  });
 
   const prompt = getPrompt(text, sourceLang, targetLangs, mode);
   
   try {
-    console.log('Making OpenAI API request with model: gpt-4o-mini');
+    console.log('🚀 Making OpenAI API request with model: gpt-4o-mini');
+    console.log('🔑 API Key (first 10 chars):', OPENAI_API_KEY.substring(0, 10) + '...');
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
@@ -99,32 +112,42 @@ export const getTranslations = async (
       }),
     });
 
-    console.log('OpenAI API response status:', response.status);
+    console.log('📊 OpenAI API response status:', response.status, response.statusText);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error response:', errorText);
+      console.error('❌ OpenAI API error response:', errorText);
+      
+      if (response.status === 401) {
+        throw new Error(`OpenAI API authentication failed. Please check your API key. Status: ${response.status}`);
+      }
+      
       throw new Error(`OpenAI API request failed: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('OpenAI API response data:', JSON.stringify(data, null, 2));
+    console.log('📋 OpenAI API response data structure:', {
+      hasChoices: !!data.choices,
+      choicesLength: data.choices?.length || 0,
+      hasMessage: !!data.choices?.[0]?.message
+    });
     
     if (!data.choices || !data.choices[0] || !data.choices[0].message) {
       throw new Error('Invalid response format from OpenAI API');
     }
 
     const responseText = data.choices[0].message.content.trim();
-    console.log('OpenAI API response text:', responseText);
+    console.log('📝 OpenAI API response text (first 200 chars):', responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''));
     
     // Clean potential markdown fences
     const fenceRegex = /^```(?:json)?\s*\n?(.*?)\n?\s*```$/;
     const match = responseText.match(fenceRegex);
     const jsonText = match && match[1] ? match[1].trim() : responseText;
     
-    console.log('Parsed JSON text:', jsonText);
+    console.log('🧹 Cleaned JSON text (first 200 chars):', jsonText.substring(0, 200) + (jsonText.length > 200 ? '...' : ''));
     
     const parsedData = JSON.parse(jsonText);
+    console.log('✅ Parsed OpenAI data:', parsedData);
 
     if (parsedData && Array.isArray(parsedData.translations)) {
       return parsedData as TranslationResult;
@@ -132,7 +155,7 @@ export const getTranslations = async (
       throw new Error("Invalid JSON structure received from API.");
     }
   } catch (error) {
-    console.error("Error fetching or parsing translations from OpenAI:", error);
+    console.error("❌ Error fetching or parsing translations from OpenAI:", error);
     let errorMessage = "Failed to get translations from OpenAI API. ";
     if (error instanceof SyntaxError) {
       errorMessage += "The response was not valid JSON. Please try again.";

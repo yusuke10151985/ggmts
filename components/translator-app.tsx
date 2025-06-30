@@ -125,6 +125,7 @@ export const TranslatorApp: React.FC = () => {
       }
 
       setResult(translationResult)
+      console.log('✅ Result state updated:', translationResult)
       
       const newHistoryItem: HistoryItem = {
         id: new Date().toISOString(),
@@ -137,6 +138,7 @@ export const TranslatorApp: React.FC = () => {
       }
 
       setHistory(prev => [newHistoryItem, ...prev.slice(0, 9)])
+      console.log('✅ History updated with new item')
     } catch (e: unknown) {
       if (e instanceof Error && e.name === 'AbortError') {
         return
@@ -153,7 +155,7 @@ export const TranslatorApp: React.FC = () => {
 
   useEffect(() => {
     executeTranslationRef.current = executeTranslation
-  }, [executeTranslation])
+  }, [])
 
   const handleTargetLangClick = useCallback((langCode: string) => {
     const newTargetLangs = targetLangs.includes(langCode)
@@ -182,6 +184,11 @@ export const TranslatorApp: React.FC = () => {
       return () => clearTimeout(timeoutId)
     }
   }, [inputText, sourceLang, targetLangs])
+
+  // Debug logging for result state
+  useEffect(() => {
+    console.log('🔄 Result state changed:', result)
+  }, [result])
 
   const handleLoadHistory = (item: HistoryItem) => {
     setInputText(item.inputText)
