@@ -22,28 +22,29 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
   const targetLanguagesString = targetLangs.join(', ');
 
   const modeInstruction = mode === 'summarize'
-    ? `以下の指示に従って、与えられた文章から階層的なアウトラインをJSON形式で作成してください。
+    ? `Please analyze the following text and extract a hierarchical outline in JSON format, following these rules:
 
-1. 文章中の大分類を抽出してください。
-2. 各大分類に「1」「2」…のようなIDを付与してください。
-3. 中分類が存在する場合は「1.1」「1.2」…のようにIDを付与してください。
-4. 小分類が存在する場合は「1.1.1」「1.1.2」…のようにIDを付与してください。
-5. 一つの文章に複数の項目が含まれている場合は、それぞれ分けてください。
-6. 「よろしく」「ありがとう」など、項目に該当しない内容は省略してください。
-7. 出力は以下のJSON形式でお願いします。
+1. Identify all major sections (Level 1).
+2. Assign each major section an ID like "1", "2", etc.
+3. If there are subsections, assign IDs like "1.1", "1.2", etc.
+4. If there are sub-subsections, assign IDs like "1.1.1", "1.1.2", etc.
+5. If a sentence contains multiple items, split them into separate entries.
+6. Omit any content that is not an actual item (such as greetings or thank you messages).
+
+Output only the following JSON format:
 
 [
   {
     "id": "1",
-    "title": "大分類タイトル",
+    "title": "Major section title",
     "children": [
       {
         "id": "1.1",
-        "title": "中分類タイトル",
+        "title": "Subsection title",
         "children": [
           {
             "id": "1.1.1",
-            "title": "小分類タイトル"
+            "title": "Sub-subsection title"
           }
         ]
       }
@@ -51,11 +52,11 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
   },
   {
     "id": "2",
-    "title": "別の大分類タイトル"
+    "title": "Another major section"
   }
 ]
 
-必ず上記のJSON形式のみで出力してください。他の形式や文章は一切不要です。`
+Do not include any explanations or text outside the JSON.`
     : 'Your task is to translate the given text into several specified languages.';
 
   let specialInstructions = '';
