@@ -25,12 +25,26 @@ function HeaderContent() {
   const pathname = usePathname();
   const AuthButton = () => {
     if (session?.user) {
+      const userAny = session.user as any;
+      let badgeLabel = '';
+      let badgeColor = '';
+      switch (userAny.role) {
+        case 'admin':
+          badgeLabel = '管理者'; badgeColor = 'bg-red-600 text-white'; break;
+        case 'pro':
+          badgeLabel = '有料会員'; badgeColor = 'bg-blue-600 text-white'; break;
+        case 'special':
+          badgeLabel = '無償有料会員'; badgeColor = 'bg-green-600 text-white'; break;
+        default:
+          badgeLabel = '無料会員'; badgeColor = 'bg-gray-400 text-white'; break;
+      }
       return (
         <div className="flex items-center gap-2">
-          {session.user.image && (
-            <img src={session.user.image} alt="avatar" className="w-8 h-8 rounded-full border" />
+          {userAny.image && (
+            <img src={userAny.image} alt="avatar" className="w-8 h-8 rounded-full border" />
           )}
-          <span className="text-sm font-medium text-foreground max-w-[120px] truncate">{session.user.name}</span>
+          <span className="text-sm font-medium text-foreground max-w-[120px] truncate">{userAny.name}</span>
+          <span className={`text-xs px-2 py-1 rounded ${badgeColor}`}>{badgeLabel}</span>
           <Button size="sm" variant="outline" onClick={() => signOut()}>Sign out</Button>
         </div>
       );

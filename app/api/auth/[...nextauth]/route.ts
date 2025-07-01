@@ -19,7 +19,12 @@ const handler = NextAuth({
     async session({ session, token }) {
       // 必要に応じてユーザー情報をセッションに追加
       if (session.user) {
-        (session.user as any).id = token.sub;
+        const userAny = session.user as any;
+        userAny.id = token.sub;
+        // DBからroleを取得してsession.userに追加
+        const user = await prisma.user.findUnique({ where: { email: userAny.email ?? undefined } });
+        // @ts-expect-error: Add custom property 'role' to session.user
+        userAny.role = user?.role || 'free';
       }
       return session;
     },

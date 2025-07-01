@@ -22,6 +22,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   plan      String   @default("free") // "free" or "pro"
+  role      String   @default("free") // "free", "pro", "admin", "special" など
   accounts  Account[]
   sessions  Session[]
 }
