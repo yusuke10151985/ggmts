@@ -171,21 +171,7 @@ export const TranslatorApp: React.FC = () => {
       setError(null)
       return
     }
-
-    if (inputText.trim() && executeTranslationRef.current) {
-      executeTranslationRef.current(inputText, sourceLang, newTargetLangs)
-    }
   }, [targetLangs, inputText, sourceLang])
-
-  useEffect(() => {
-    if (inputText.trim() && targetLangs.length > 0 && executeTranslationRef.current) {
-      const timeoutId = setTimeout(() => {
-        executeTranslationRef.current!(inputText, sourceLang, targetLangs)
-      }, 500)
-
-      return () => clearTimeout(timeoutId)
-    }
-  }, [inputText, sourceLang, targetLangs])
 
   // Debug logging for result state
   useEffect(() => {
@@ -396,6 +382,17 @@ export const TranslatorApp: React.FC = () => {
                       </AnimatePresence>
                     </div>
                   </div>
+                </div>
+                {/* 実行ボタン */}
+                <div className="mt-6 flex justify-end">
+                  <Button
+                    onClick={() => executeTranslation(inputText, sourceLang, targetLangs)}
+                    disabled={isLoading || !inputText.trim() || targetLangs.length === 0}
+                    size="lg"
+                    className="px-8 py-2 text-lg font-bold"
+                  >
+                    実行
+                  </Button>
                 </div>
               </CardContent>
             </Card>
