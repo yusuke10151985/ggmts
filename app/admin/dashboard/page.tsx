@@ -15,6 +15,9 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [userMsg, setUserMsg] = useState("");
   const [filters, setFilters] = useState({ from: '', to: '', userId: '', apiType: '' });
+  const [notes, setNotes] = useState<any[]>([]);
+  const [noteForm, setNoteForm] = useState({ title: '', content_ja: '', content_en: '', content_th: '' });
+  const [noteMsg, setNoteMsg] = useState('');
 
   useEffect(() => {
     if (status === "loading") return;
@@ -142,6 +145,35 @@ export default function AdminDashboardPage() {
     a.download = `user-stats_${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // リリースノート取得
+  const fetchNotes = useCallback(() => {
+    fetch('/api/release-notes')
+      .then(res => res.json())
+      .then(data => setNotes(data));
+  }, []);
+
+  useEffect(() => {
+    if (status === 'authenticated') fetchNotes();
+  }, [status, fetchNotes]);
+
+  // 新規追加
+  const handleAddNote = async () => {
+    setNoteMsg('');
+    const res = await fetch('/api/release-notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(noteForm),
+    });
+    if (res.ok) {
+      setNoteMsg('追加しました');
+      setNoteForm({ title: '', content_ja: '', content_en: '', content_th: '' });
+      fetchNotes();
+    } else {
+      const err = await res.json();
+      setNoteMsg('追加に失敗: ' + (err.error || '')); 
+    }
   };
 
   if (status === "loading" || !session || (session.user as any)?.role !== "admin") {
@@ -382,6 +414,32 @@ export default function AdminDashboardPage() {
             {userMsg && <div className="mt-2 text-green-600">{userMsg}</div>}
           </div>
         )}
+      </section>
+
+      {/* --- リリースノート編集 --- */}
+      <section className="mt-12 max-w-2xl">
+        <h2 className="font-bold mb-2">リリースノート編集（多言語）</h2>
+        <div className="mb-2">
+          <input type="text" placeholder="タイトル（任意）" className="border px-2 py-1 rounded w-full mb-2" value={noteForm.title} onChange={e => setNoteForm(f => ({ ...f, title: e.target.value }))} />
+          <textarea placeholder="本文（日本語）" className="border px-2 py-1 rounded w-full mb-2" value={noteForm.content_ja} onChange={e => setNoteForm(f => ({ ...f, content_ja: e.target.value }))} rows={2} />
+          <textarea placeholder="Body (English)" className="border px-2 py-1 rounded w-full mb-2" value={noteForm.content_en} onChange={e => setNoteForm(f => ({ ...f, content_en: e.target.value }))} rows={2} />
+          <textarea placeholder="เนื้อหา (ภาษาไทย)" className="border px-2 py-1 rounded w-full mb-2" value={noteForm.content_th} onChange={e => setNoteForm(f => ({ ...f, content_th: e.target.value }))} rows={2} />
+          <button className="px-4 py-1 bg-blue-600 text-white rounded" onClick={handleAddNote}>追加</button>
+          {noteMsg && <div className="text-sm mt-1 text-red-600">{noteMsg}</div>}
+        </div>
+        <div>
+          <h3 className="font-semibold mt-4 mb-2">既存リリースノート一覧</h3>
+          <ul className="space-y-2">
+            {notes.map(note => (
+              <li key={note.id} className="border rounded p-3">
+                <div className="text-xs text-gray-500 mb-1">{note.createdAt?.slice(0,10)} {note.title && <span className="ml-2 font-bold">{note.title}</span>}</div>
+                <div className="mb-1"><span className="font-bold">[JA]</span> {note.content_ja}</div>
+                <div className="mb-1"><span className="font-bold">[EN]</span> {note.content_en}</div>
+                <div><span className="font-bold">[TH]</span> {note.content_th}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
     </div>
   );

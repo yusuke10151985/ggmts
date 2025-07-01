@@ -26,6 +26,7 @@ model User {
   accounts  Account[]
   sessions  Session[]
   apiUsageLogs ApiUsageLog[]
+  releaseNotes ReleaseNote[]
 }
 
 model Account {
@@ -86,4 +87,16 @@ model ApiUsageLog {
   createdAt DateTime @default(now())
   inputText String?  // オプション: 入力内容
   result    String?  // オプション: 結果内容
+}
+
+model ReleaseNote {
+  id        String   @id @default(cuid())
+  title     String?
+  content_ja String
+  content_en String
+  content_th String
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id])
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }
