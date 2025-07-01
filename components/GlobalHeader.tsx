@@ -30,13 +30,13 @@ function HeaderContent() {
       let badgeColor = '';
       switch (userAny.role) {
         case 'admin':
-          badgeLabel = '管理者'; badgeColor = 'bg-red-600 text-white'; break;
+          badgeLabel = 'Admin'; badgeColor = 'bg-red-600 text-white'; break;
         case 'pro':
-          badgeLabel = '有料会員'; badgeColor = 'bg-blue-600 text-white'; break;
+          badgeLabel = 'Pro'; badgeColor = 'bg-blue-600 text-white'; break;
         case 'special':
-          badgeLabel = '無償有料会員'; badgeColor = 'bg-green-600 text-white'; break;
+          badgeLabel = 'Special'; badgeColor = 'bg-green-600 text-white'; break;
         default:
-          badgeLabel = '無料会員'; badgeColor = 'bg-gray-400 text-white'; break;
+          badgeLabel = 'Free'; badgeColor = 'bg-gray-400 text-white'; break;
       }
       return (
         <div className="flex items-center gap-2">

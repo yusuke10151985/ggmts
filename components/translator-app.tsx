@@ -273,6 +273,15 @@ export const TranslatorApp: React.FC = () => {
     );
   };
 
+  // 実行ボタンのハンドラ
+  const handleExecute = () => {
+    if (!session) {
+      signIn('google');
+      return;
+    }
+    executeTranslation(inputText, sourceLang, targetLangs);
+  };
+
   return (
     <div className="relative w-full min-h-screen bg-secondary">
       <div className="flex-grow w-full">
@@ -321,7 +330,7 @@ export const TranslatorApp: React.FC = () => {
                             ))}
                           </select>
                           <Button
-                            onClick={() => executeTranslation(inputText, sourceLang, targetLangs)}
+                            onClick={handleExecute}
                             disabled={isLoading || !inputText.trim() || targetLangs.length === 0}
                             size="sm"
                             className="w-1/2 min-w-0 px-4 py-1.5 text-sm font-bold"
