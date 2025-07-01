@@ -353,27 +353,29 @@ export const TranslatorApp: React.FC = () => {
                   <div>
                     <label htmlFor="source-lang" className="block text-sm font-medium text-muted-foreground">From</label>
                     <div className="flex items-center gap-2 mt-1">
-                      <select
-                        id="source-lang"
-                        value={sourceLang}
-                        onChange={(e) => setSourceLang(e.target.value)}
-                        className="block w-32 pl-3 pr-8 py-1.5 text-sm border-border bg-background focus:outline-none focus:ring-primary focus:border-primary rounded-md h-[36px]"
-                      >
-                        <option value="auto">Auto-Detect</option>
-                        {FROM_LANGUAGES.map((lang) => (
-                          <option key={lang.code} value={lang.code}>
-                            {lang.name}
-                          </option>
-                        ))}
-                      </select>
-                      <Button
-                        onClick={() => executeTranslation(inputText, sourceLang, targetLangs)}
-                        disabled={isLoading || !inputText.trim() || targetLangs.length === 0}
-                        size="sm"
-                        className="ml-2 px-4 py-1.5 text-sm font-bold"
-                      >
-                        Execute
-                      </Button>
+                      <div className="flex w-full gap-2">
+                        <select
+                          id="source-lang"
+                          value={sourceLang}
+                          onChange={(e) => setSourceLang(e.target.value)}
+                          className="w-1/2 min-w-0 pl-3 pr-8 py-1.5 text-sm border-border bg-background focus:outline-none focus:ring-primary focus:border-primary rounded-md h-[36px]"
+                        >
+                          <option value="auto">Auto-Detect</option>
+                          {FROM_LANGUAGES.map((lang) => (
+                            <option key={lang.code} value={lang.code}>
+                              {lang.name}
+                            </option>
+                          ))}
+                        </select>
+                        <Button
+                          onClick={() => executeTranslation(inputText, sourceLang, targetLangs)}
+                          disabled={isLoading || !inputText.trim() || targetLangs.length === 0}
+                          size="sm"
+                          className="w-1/2 min-w-0 px-4 py-1.5 text-sm font-bold"
+                        >
+                          Execute
+                        </Button>
+                      </div>
                     </div>
                   </div>
                   <div>

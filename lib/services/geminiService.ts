@@ -47,13 +47,15 @@ Please summarize the following text in ${targetLanguagesString}:
 
 Text: "${text}"
 
+For each translation, create a concise summary of the content in that same language. The summary MUST be a numbered list that can be nested (e.g., "1.", "1.1.", "2."). Omit any conversational filler like greetings or pleasantries from the summary. Focus only on the core points.
+
 Please respond with a JSON object in this exact format:
 {
   "sourceLanguage": "detected_or_specified_lang_code",
   "translations": [
     {
       "lang": "target_lang_code",
-      "text": "summarized_text"
+      "text": "summarized_text (as a nested, numbered list)"
     }
   ]
 }
