@@ -89,7 +89,7 @@ function ContactForm() {
           </div>
           <div>
             <label className="block mb-1">{labels[lang].message}</label>
-            <textarea className="w-full border rounded p-2" rows={5} value={message} onChange={e => setMessage(e.target.value)} required />
+            <textarea className="w-full border rounded p-2 resize" rows={5} value={message} onChange={e => setMessage(e.target.value)} required />
           </div>
           {error && <div className="text-red-600">{error}</div>}
           <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded" disabled={loading}>{labels[lang].send}</button>

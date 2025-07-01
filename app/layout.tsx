@@ -38,7 +38,8 @@ export default function RootLayout({
           <GlobalHeader />
           <main>{children}</main>
           <footer className="flex flex-col items-center gap-2 p-4 border-t text-sm w-full fixed bottom-0 left-0 bg-card z-50">
-            <nav className="flex gap-4">
+            <nav className="flex gap-6">
+              <a href="/about">About</a>
               <a href="/privacy-policy">Privacy Policy</a>
               <a href="/terms">Terms</a>
               <a href="/contact">Contact</a>
