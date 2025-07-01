@@ -4,6 +4,7 @@ import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
 import dynamic from 'next/dynamic';
 import { SessionProvider } from 'next-auth/react';
+import ClientLayout from './client-layout';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -36,7 +37,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SessionProvider>
+          <ClientLayout>
             <GlobalHeader />
             <main>{children}</main>
             <footer className="flex flex-col items-center gap-2 p-4 border-t text-sm w-full fixed bottom-0 left-0 bg-card z-50">
@@ -49,7 +50,7 @@ export default function RootLayout({
               </nav>
               <small>© 2025 Multi Translator GGMTS. All rights reserved.</small>
             </footer>
-          </SessionProvider>
+          </ClientLayout>
         </ThemeProvider>
       </body>
     </html>
