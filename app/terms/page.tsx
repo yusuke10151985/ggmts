@@ -37,6 +37,19 @@ export default function TermsPage() {
             <h2 className="text-xl font-semibold">Contact Us</h2>
             <p>If you have any questions about these Terms, please contact us at terms@example.com</p>
           </section>
+
+          <h2>利用規約</h2>
+          <p>当サイト（Multi Translator GGMTS）は、以下の条件に同意いただいた上でご利用ください。</p>
+          <h3>禁止事項</h3>
+          <ul>
+            <li>法令または公序良俗に違反する行為</li>
+            <li>当サイトの運営を妨害する行為</li>
+            <li>不正アクセス等の行為</li>
+          </ul>
+          <h3>免責事項</h3>
+          <p>当サイトの情報・サービスの利用によって生じた損害等について、当サイトは一切の責任を負いません。</p>
+          <h3>規約の変更</h3>
+          <p>本規約は予告なく変更されることがあります。最新の内容は本ページをご確認ください。</p>
         </div>
       </div>
     </div>

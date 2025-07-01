@@ -1,5 +1,12 @@
+"use client"
+
 import { TranslatorApp } from '@/components/translator-app'
+import { SessionProvider } from 'next-auth/react'
 
 export default function HomePage() {
-  return <TranslatorApp />
+  return (
+    <SessionProvider>
+      <TranslatorApp />
+    </SessionProvider>
+  )
 } 
