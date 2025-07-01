@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import prisma from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
-const db = new prisma.PrismaClient();
+const prisma = new PrismaClient();
 
 export async function GET() {
-  const notes = await db.releaseNote.findMany({
+  const notes = await prisma.releaseNote.findMany({
     orderBy: { createdAt: 'desc' },
     select: {
       id: true,
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   if (!content_ja || !content_en || !content_th) {
     return NextResponse.json({ error: 'All language fields required' }, { status: 400 });
   }
-  const note = await db.releaseNote.create({
+  const note = await prisma.releaseNote.create({
     data: {
       title,
       content_ja,
