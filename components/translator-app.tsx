@@ -21,6 +21,26 @@ import {
 
 type ApiProvider = 'gemini' | 'gpt'
 
+// Utility to recursively enforce summary structure
+function enforceSummaryStructure(summary: any[], parentId: string = ''): any[] {
+  if (!Array.isArray(summary)) return [];
+  return summary.map((item, idx) => {
+    // Generate hierarchical ID if missing or malformed
+    let id = item.id;
+    if (!id || typeof id !== 'string') {
+      id = parentId ? `${parentId}.${idx + 1}` : `${idx + 1}`;
+    }
+    // Ensure children is always an array
+    let children = Array.isArray(item.children) ? item.children : [];
+    children = enforceSummaryStructure(children, id);
+    return {
+      id,
+      title: item.title || '',
+      children,
+    };
+  });
+}
+
 export const TranslatorApp: React.FC = () => {
   const [inputText, setInputText] = useState('')
   const [sourceLang, setSourceLang] = useState('auto')
@@ -117,6 +137,16 @@ export const TranslatorApp: React.FC = () => {
       let translationResult
       try {
         translationResult = JSON.parse(responseText)
+        // --- summary post-processing ---
+        if (mode === 'summarize' && translationResult && Array.isArray(translationResult.translations)) {
+          translationResult.translations = translationResult.translations.map((t: any) => {
+            if (Array.isArray(t.summary)) {
+              return { ...t, summary: enforceSummaryStructure(t.summary) };
+            }
+            return t;
+          });
+        }
+        // --- end summary post-processing ---
       } catch (parseError) {
         throw new Error('Invalid JSON response from server')
       }

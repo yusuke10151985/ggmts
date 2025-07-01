@@ -22,7 +22,7 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
   const targetLanguagesString = targetLangs.join(', ');
 
   const modeInstruction = mode === 'summarize'
-    ? `Please analyze the following text and extract a hierarchical outline in JSON format, following these rules:
+    ? `You are required to output a hierarchical outline in JSON format ONLY, following these strict rules:
 
 1. Identify all major sections (Level 1).
 2. Assign each major section an ID like "1", "2", etc.
@@ -30,9 +30,10 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
 4. If there are sub-subsections, assign IDs like "1.1.1", "1.1.2", etc.
 5. If a sentence contains multiple items, split them into separate entries.
 6. Omit any content that is not an actual item (such as greetings or thank you messages).
+7. Every object must have an "id", "title", and a "children" array (even if empty). IDs must always be in hierarchical format.
+8. Output ONLY the following JSON array. Do NOT include any explanations, markdown, or text outside the JSON. If you cannot create a hierarchy, return an empty array [] only.
 
-Output only the following JSON format:
-
+Example:
 [
   {
     "id": "1",
@@ -44,7 +45,8 @@ Output only the following JSON format:
         "children": [
           {
             "id": "1.1.1",
-            "title": "Sub-subsection title"
+            "title": "Sub-subsection title",
+            "children": []
           }
         ]
       }
@@ -52,11 +54,12 @@ Output only the following JSON format:
   },
   {
     "id": "2",
-    "title": "Another major section"
+    "title": "Another major section",
+    "children": []
   }
 ]
 
-Do not include any explanations or text outside the JSON.`
+You MUST output only a JSON array of this structure. Do not output any text, explanation, or markdown. If you cannot follow the structure, return [].`
     : 'Your task is to translate the given text into several specified languages.';
 
   let specialInstructions = '';
