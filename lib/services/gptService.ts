@@ -22,16 +22,13 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
   const targetLanguagesString = targetLangs.join(', ');
 
   const modeInstruction = mode === 'summarize'
-    ? `You are required to output a hierarchical outline in JSON format ONLY, following these strict rules:
+    ? `Please extract all important sections, items, and sub-items from the following text as a hierarchical outline in JSON format, following these rules:
 
-1. Identify all major sections (Level 1).
-2. Assign each major section an ID like "1", "2", etc.
-3. If there are subsections, assign IDs like "1.1", "1.2", etc.
-4. If there are sub-subsections, assign IDs like "1.1.1", "1.1.2", etc.
-5. If a sentence contains multiple items, split them into separate entries.
-6. Omit any content that is not an actual item (such as greetings or thank you messages).
-7. Every object must have an "id", "title", and a "children" array (even if empty). IDs must always be in hierarchical format.
-8. Output ONLY the following JSON array. Do NOT include any explanations, markdown, or text outside the JSON. If you cannot create a hierarchy, return an empty array [] only.
+1. Do NOT summarize or omit details. List and structure as much content as possible.
+2. Identify all major sections (Level 1), subsections (Level 2), and sub-subsections (Level 3), etc.
+3. Assign each item a hierarchical ID: "1", "1.1", "1.1.1", etc.
+4. Every object must have "id", "title", and a "children" array (even if empty).
+5. Output ONLY the following JSON array. Do NOT include any explanations, markdown, or text outside the JSON. If you cannot create a hierarchy, return an empty array [] only.
 
 Example:
 [
@@ -58,8 +55,7 @@ Example:
     "children": []
   }
 ]
-
-You MUST output only a JSON array of this structure. Do not output any text, explanation, or markdown. If you cannot follow the structure, return [].`
+`
     : 'Your task is to translate the given text into several specified languages.';
 
   let specialInstructions = '';
