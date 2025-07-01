@@ -30,6 +30,6 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ success: true });
   } catch (e) {
-    return NextResponse.json({ error: '送信に失敗しました。' }, { status: 500 });
+    return NextResponse.json({ error: '送信に失敗しました。', detail: e instanceof Error ? e.message + '\n' + e.stack : String(e) }, { status: 500 });
   }
 } 
