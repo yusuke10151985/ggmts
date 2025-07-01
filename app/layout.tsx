@@ -47,6 +47,7 @@ export default function RootLayout({
                 <a href="/terms">Terms</a>
                 <a href="/contact">Contact</a>
                 <a href="/release-notes">Release Notes</a>
+                <a href="/admin/dashboard">Admin</a>
               </nav>
               <small>© 2025 Multi Translator GGMTS. All rights reserved.</small>
             </footer>
