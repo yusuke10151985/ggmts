@@ -74,9 +74,14 @@ export async function POST(request: NextRequest) {
     
     let result
     try {
-      const translationPromise = apiProvider === 'gemini'
-        ? getGeminiTranslations(text, sourceLang, targetLangs, translationMode)
-        : getGptTranslations(text, sourceLang, targetLangs, translationMode)
+      let translationPromise;
+      if (translationMode === 'summarize') {
+        // 要約はGemini
+        translationPromise = getGeminiTranslations(text, sourceLang, targetLangs, translationMode);
+      } else {
+        // 翻訳はGPT
+        translationPromise = getGptTranslations(text, sourceLang, targetLangs, translationMode);
+      }
       // 25秒でタイムアウト
       result = await timeoutPromise(translationPromise, 25000)
     } catch (translationError) {
