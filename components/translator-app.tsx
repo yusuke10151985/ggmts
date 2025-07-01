@@ -391,7 +391,7 @@ export const TranslatorApp: React.FC = () => {
                     size="lg"
                     className="px-8 py-2 text-lg font-bold"
                   >
-                    実行
+                    Execute
                   </Button>
                 </div>
               </CardContent>
