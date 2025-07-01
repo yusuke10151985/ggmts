@@ -47,7 +47,9 @@ Please summarize the following text in ${targetLanguagesString}:
 
 Text: "${text}"
 
-For each translation, create a concise summary of the content in that same language. The summary MUST be a numbered list that can be nested (e.g., "1.", "1.1.", "2."). Omit any conversational filler like greetings or pleasantries from the summary. Focus only on the core points.
+For each translation, create a concise summary of the content in that same language. The summary MUST be a numbered list that can be nested (e.g., "1.", "1.1.", "2.").
+
+Do NOT omit any requirements, main content, or related URLs. All requirements, main content, and URLs must be included in the summary. Only omit greetings, pleasantries, or non-essential conversational filler (such as 'thank you', 'best regards', etc). Focus only on the core points and all substantive information.
 
 Please respond with a JSON object in this exact format:
 {
