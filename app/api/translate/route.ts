@@ -3,6 +3,17 @@ import { getTranslations as getGeminiTranslations } from '@/lib/services/geminiS
 import { getTranslations as getGptTranslations } from '@/lib/services/gptService'
 import { TranslationMode } from '@/lib/types'
 
+// Timeout promise helper
+function timeoutPromise<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Request timed out')), ms)
+    promise.then(
+      (val) => { clearTimeout(timer); resolve(val) },
+      (err) => { clearTimeout(timer); reject(err) }
+    )
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Check if request has a body
@@ -63,15 +74,19 @@ export async function POST(request: NextRequest) {
     
     let result
     try {
-      if (apiProvider === 'gemini') {
-        console.log('Using Gemini API')
-        result = await getGeminiTranslations(text, sourceLang, targetLangs, translationMode)
-      } else {
-        console.log('Using GPT API')
-        result = await getGptTranslations(text, sourceLang, targetLangs, translationMode)
-      }
+      const translationPromise = apiProvider === 'gemini'
+        ? getGeminiTranslations(text, sourceLang, targetLangs, translationMode)
+        : getGptTranslations(text, sourceLang, targetLangs, translationMode)
+      // 25秒でタイムアウト
+      result = await timeoutPromise(translationPromise, 25000)
     } catch (translationError) {
       console.error('Translation service error:', translationError)
+      if (translationError instanceof Error && translationError.message === 'Request timed out') {
+        return NextResponse.json(
+          { error: 'Translation service timed out. Please try again or use shorter input.' },
+          { status: 504 }
+        )
+      }
       return NextResponse.json(
         { error: translationError instanceof Error ? translationError.message : 'Translation service failed' },
         { status: 500 }

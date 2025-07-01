@@ -444,7 +444,7 @@ export const TranslatorApp: React.FC = () => {
                 <div className="flex flex-col items-center">
                   <div className="animate-spin mb-4 h-12 w-12 text-primary border-4 border-primary border-t-transparent rounded-full"></div>
                   <p className="text-lg font-semibold text-primary-foreground drop-shadow-md">
-                    {mode === 'summarize' ? 'Summarizing' : 'Translating'} with {apiProvider}...
+                    {mode === 'summarize' ? 'Summarizing...' : 'Translating...'}
                   </p>
                 </div>
               </div>
@@ -488,6 +488,16 @@ export const TranslatorApp: React.FC = () => {
                         <label htmlFor={`copy-${translation.lang}`} className="ml-3 flex-1">
                           <h3 className="font-semibold text-foreground">{getLanguageName(translation.lang)}</h3>
                         </label>
+                        {/* 個別コピーボタン */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="ml-2"
+                          onClick={() => navigator.clipboard.writeText(translation.text)}
+                        >
+                          <Copy className="w-4 h-4" />
+                          Copy
+                        </Button>
                       </div>
                       <div className="p-4 min-h-[120px]">
                         <p className="text-foreground whitespace-pre-wrap">{translation.text}</p>
