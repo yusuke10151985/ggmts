@@ -126,6 +126,7 @@ export const TranslatorApp: React.FC = () => {
       }
 
       setResult(translationResult)
+      setIsLoading(false)
       console.log('✅ Result state updated:', translationResult)
       
       const newHistoryItem: HistoryItem = {
@@ -146,9 +147,9 @@ export const TranslatorApp: React.FC = () => {
       }
       const message = e instanceof Error ? e.message : 'An unknown error occurred.'
       setError(message)
+      setIsLoading(false)
     } finally {
       if (abortControllerRef.current && abortControllerRef.current.signal && !abortControllerRef.current.signal.aborted) {
-        setIsLoading(false)
         abortControllerRef.current = null
       }
     }
