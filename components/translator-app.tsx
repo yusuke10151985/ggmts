@@ -412,14 +412,14 @@ export const TranslatorApp: React.FC = () => {
             )}
 
             {isLoading && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex justify-center items-center p-6 bg-card rounded-lg border border-border shadow-sm"
-              >
-                <div className="animate-spin mr-3 h-6 w-6 text-primary border-2 border-primary border-t-transparent rounded-full"></div>
-                <p className="text-muted-foreground">{mode === 'summarize' ? 'Summarizing' : 'Translating'} with {apiProvider}...</p>
-              </motion.div>
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                <div className="flex flex-col items-center">
+                  <div className="animate-spin mb-4 h-12 w-12 text-primary border-4 border-primary border-t-transparent rounded-full"></div>
+                  <p className="text-lg font-semibold text-primary-foreground drop-shadow-md">
+                    {mode === 'summarize' ? 'Summarizing' : 'Translating'} with {apiProvider}...
+                  </p>
+                </div>
+              </div>
             )}
 
             {result && !isLoading && (
