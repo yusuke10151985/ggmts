@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations as getGeminiTranslations } from '@/lib/services/geminiService'
 import { getTranslations as getGptTranslations } from '@/lib/services/gptService'
 import { TranslationMode } from '@/lib/types'
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 // Timeout promise helper
 function timeoutPromise<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -107,6 +112,28 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    // --- API実行履歴を記録 ---
+    try {
+      const session = await getServerSession(authOptions);
+      const userId = session?.user?.id || null;
+      // 仮: トークン数・コスト計算（後で精緻化）
+      const tokens = text.length + (result.translations?.map((t:any)=>t.text.length).reduce((a:number,b:number)=>a+b,0) || 0);
+      const cost = tokens * 0.00001; // 仮コスト
+      await prisma.apiUsageLog.create({
+        data: {
+          userId,
+          apiType: translationMode,
+          tokens,
+          cost,
+          inputText: text.substring(0, 500),
+          result: JSON.stringify(result).substring(0, 1000),
+        }
+      });
+    } catch (logErr) {
+      console.error('履歴記録エラー', logErr);
+    }
+    // ---
 
     return NextResponse.json(result)
   } catch (error) {

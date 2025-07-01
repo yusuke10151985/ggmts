@@ -28,4 +28,32 @@ export async function PATCH(req: NextRequest) {
     data: { value },
   });
   return NextResponse.json(updated);
+}
+
+export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user?.role !== 'admin') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
+  const { key, value, description } = await req.json();
+  if (!key || typeof value === 'undefined') {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+  }
+  const created = await prisma.settings.create({
+    data: { key, value, description },
+  });
+  return NextResponse.json(created);
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user?.role !== 'admin') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
+  const { key } = await req.json();
+  if (!key) {
+    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+  }
+  await prisma.settings.delete({ where: { key } });
+  return NextResponse.json({ success: true });
 } 

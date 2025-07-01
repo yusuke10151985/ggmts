@@ -25,6 +25,7 @@ model User {
   role      String   @default("free") // "free", "pro", "admin", "special" など
   accounts  Account[]
   sessions  Session[]
+  apiUsageLogs ApiUsageLog[]
 }
 
 model Account {
@@ -73,4 +74,16 @@ model Settings {
   value       String
   description String?
   updatedAt   DateTime @updatedAt
+}
+
+model ApiUsageLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  apiType   String   // 例: "translate", "summarize"
+  tokens    Int      // 消費トークン数
+  cost      Float    // APIコスト（USD等）
+  createdAt DateTime @default(now())
+  inputText String?  // オプション: 入力内容
+  result    String?  // オプション: 結果内容
 }
