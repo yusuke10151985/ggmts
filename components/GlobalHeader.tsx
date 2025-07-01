@@ -45,16 +45,9 @@ function HeaderContent() {
     <header className="sticky top-0 z-50 bg-card border-b w-full">
       <div className="flex justify-between items-center px-4 py-2 border-t">
         <div className="flex-1 flex items-center gap-8 min-w-0">
-          <a href="/" className="text-xl md:text-2xl font-bold text-black dark:text-white whitespace-nowrap mr-6">Multi Translator GGMTS</a>
-          <nav className="flex gap-6 text-sm font-medium flex-nowrap items-center">
-            <a href="/about" className="hover:underline">About</a>
-            <a href="/privacy-policy" className="hover:underline">Privacy Policy</a>
-            <a href="/terms" className="hover:underline">Terms</a>
-            <a href="/contact" className="hover:underline">Contact</a>
-            <a href="/release-notes" className="hover:underline">Release Notes</a>
-          </nav>
+          <a href="/" className="text-xl md:text-2xl font-bold text-black dark:text-white whitespace-nowrap mr-2">Multi Translator GGMTS</a>
           {pathname === '/' && (
-            <div ref={modeDropdownRef} className="relative ml-8">
+            <div ref={modeDropdownRef} className="relative ml-2 flex items-center">
               <Button
                 variant="ghost"
                 onClick={() => setIsModeDropdownOpen(prev => !prev)}
@@ -99,6 +92,13 @@ function HeaderContent() {
               </AnimatePresence>
             </div>
           )}
+          <nav className="flex gap-6 text-sm font-medium flex-nowrap items-center ml-6">
+            <a href="/about" className="hover:underline">About</a>
+            <a href="/privacy-policy" className="hover:underline">Privacy Policy</a>
+            <a href="/terms" className="hover:underline">Terms</a>
+            <a href="/contact" className="hover:underline">Contact</a>
+            <a href="/release-notes" className="hover:underline">Release Notes</a>
+          </nav>
         </div>
         <div className="flex-1 flex justify-end items-center gap-2">
           <Button

@@ -32,4 +32,9 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     return NextResponse.json({ error: '送信に失敗しました。', detail: e instanceof Error ? e.message + '\n' + e.stack : String(e) }, { status: 500 });
   }
-} 
+}
+
+// 必要な環境変数:
+// EMAIL_FROM=送信元Gmailアドレス
+// EMAIL_PASS=Gmailアプリパスワード
+// EMAIL_SERVER（未使用、参考用） 
