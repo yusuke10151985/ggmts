@@ -22,40 +22,7 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
   const targetLanguagesString = targetLangs.join(', ');
 
   const modeInstruction = mode === 'summarize'
-    ? `Please extract all important sections, items, and sub-items from the following text as a hierarchical outline in JSON format, following these rules:
-
-1. Do NOT summarize or omit details. List and structure as much content as possible.
-2. Identify all major sections (Level 1), subsections (Level 2), and sub-subsections (Level 3), etc.
-3. Assign each item a hierarchical ID: "1", "1.1", "1.1.1", etc.
-4. Every object must have "id", "title", and a "children" array (even if empty).
-5. Output ONLY the following JSON array. Do NOT include any explanations, markdown, or text outside the JSON. If you cannot create a hierarchy, return an empty array [] only.
-
-Example:
-[
-  {
-    "id": "1",
-    "title": "Major section title",
-    "children": [
-      {
-        "id": "1.1",
-        "title": "Subsection title",
-        "children": [
-          {
-            "id": "1.1.1",
-            "title": "Sub-subsection title",
-            "children": []
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "id": "2",
-    "title": "Another major section",
-    "children": []
-  }
-]
-`
+    ? `Your task is to first translate the text into the specified languages, and then for each translation, create a concise summary of the content in that same language. The summary MUST be a numbered list that can be nested (e.g., "1.", "1.1.", "2."). Omit any conversational filler like greetings or pleasantries from the summary. Focus only on the core points.`
     : 'Your task is to translate the given text into several specified languages.';
 
   let specialInstructions = '';
