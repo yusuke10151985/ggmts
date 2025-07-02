@@ -89,11 +89,6 @@ const policyContent = {
   }
 };
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy - Multi Translator GGMTS',
-  description: 'Privacy Policy for the Multi Translator GGMTS service.',
-}
-
 export default function PrivacyPolicyPage() {
   const [lang, setLang] = useState<'ja'|'en'|'th'>('ja');
   return (
