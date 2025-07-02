@@ -9,6 +9,8 @@ export async function GET() {
     select: {
       id: true,
       title: true,
+      title_en: true,
+      title_th: true,
       content_ja: true,
       content_en: true,
       content_th: true,
@@ -24,13 +26,15 @@ export async function POST(req: NextRequest) {
   if (!session || (session.user as any)?.role !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const { title, content_ja, content_en, content_th } = await req.json();
+  const { title, title_en, title_th, content_ja, content_en, content_th } = await req.json();
   if (!content_ja || !content_en || !content_th) {
     return NextResponse.json({ error: 'All language fields required' }, { status: 400 });
   }
   const note = await prisma.releaseNote.create({
     data: {
       title,
+      title_en,
+      title_th,
       content_ja,
       content_en,
       content_th,
@@ -45,7 +49,7 @@ export async function PATCH(req: NextRequest) {
   if (!session || (session.user as any)?.role !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const { id, title, content_ja, content_en, content_th } = await req.json();
+  const { id, title, title_en, title_th, content_ja, content_en, content_th } = await req.json();
   if (!id || !content_ja || !content_en || !content_th) {
     return NextResponse.json({ error: 'All fields required' }, { status: 400 });
   }
@@ -53,6 +57,8 @@ export async function PATCH(req: NextRequest) {
     where: { id },
     data: {
       title,
+      title_en,
+      title_th,
       content_ja,
       content_en,
       content_th,

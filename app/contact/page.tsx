@@ -68,7 +68,7 @@ function ContactForm() {
   );
 
   return (
-    <div className="max-w-xl mx-auto p-6">
+    <div className="max-w-xl mx-auto p-6 bg-background text-foreground dark:bg-gray-900 dark:text-white">
       <div className="mb-4 flex gap-2">
         {langs.map(l => (
           <button key={l.code} className={`px-3 py-1 rounded ${lang === l.code ? 'bg-blue-600 text-white' : 'bg-gray-200'}`} onClick={() => setLang(l.code)}>{l.label}</button>

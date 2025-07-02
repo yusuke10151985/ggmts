@@ -30,8 +30,12 @@ export default function ReleaseNotesPage() {
       {loading ? <div>Loading...</div> : (
         <ul className="space-y-4">
           {notes.map(note => (
-            <li key={note.id} className="border rounded p-4">
-              <div className="text-xs text-gray-500 mb-1">{note.createdAt?.slice(0,10)} {note.title && <span className="ml-2 font-bold">{note.title}</span>}</div>
+            <li key={note.id} className="border rounded p-4 bg-background text-foreground dark:bg-gray-900 dark:text-white">
+              <div className="text-xs text-gray-500 mb-1">{note.createdAt?.slice(0,10)}
+                {note.title_en && <span className="ml-2 font-bold">[EN] {note.title_en}</span>}
+                {note.title && <span className="ml-2 font-bold">[JA] {note.title}</span>}
+                {note.title_th && <span className="ml-2 font-bold">[TH] {note.title_th}</span>}
+              </div>
               <div>{note[`content_${lang}`]}</div>
             </li>
           ))}

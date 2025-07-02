@@ -369,7 +369,7 @@ export const TranslatorApp: React.FC = () => {
                   />
                   <div className="flex items-center mt-2">
                     {selectionOrder.includes('source') && selectedForCopy['source'] && (
-                      <span className="text-2xl font-bold text-blue-600 mr-2">{selectionOrder.indexOf('source') + 1}</span>
+                      <span className="text-3xl font-extrabold text-primary mr-2">{selectionOrder.indexOf('source') + 1}</span>
                     )}
                     <input
                       type="checkbox"
@@ -381,7 +381,7 @@ export const TranslatorApp: React.FC = () => {
                     />
                     <label htmlFor="copy-source" className="ml-2 block text-sm text-muted-foreground flex items-center gap-2">
                       Select source text for copy
-                      <span className="text-xs text-muted-foreground">(Original / English)</span>
+                      <span className="text-base text-primary font-bold ml-2">Original language</span>
                     </label>
                   </div>
                   
@@ -511,7 +511,7 @@ export const TranslatorApp: React.FC = () => {
                           >
                             <div className="flex items-center p-3 border-b border-border">
                               {selectionOrder.includes(translation.lang) && selectedForCopy[translation.lang] && (
-                                <span className="text-2xl font-bold text-blue-600 mr-3">{selectionOrder.indexOf(translation.lang) + 1}</span>
+                                <span className="text-3xl font-extrabold text-primary mr-3">{selectionOrder.indexOf(translation.lang) + 1}</span>
                               )}
                               <input
                                 type="checkbox"
