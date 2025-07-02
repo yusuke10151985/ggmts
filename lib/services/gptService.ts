@@ -22,7 +22,7 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
   const targetLanguagesString = targetLangs.join(', ');
 
   const modeInstruction = mode === 'summarize'
-    ? `Your task is to first translate the text into the specified languages, and then for each translation, create a concise summary of the content in that same language. The summary MUST be a numbered list that can be nested (e.g., "1.", "1.1.", "2."). Omit any conversational filler like greetings or pleasantries from the summary. Focus only on the core points.`
+    ? `Please analyze the following long text.\n\n1. Divide the text into items based on topics and contents.\n2. Create a multi-level numbered structure, using format like:\n   1.\n     1.1\n       1.1.1\n   2.\n     2.1\n       2.1.1\n... according to major, medium, and minor categories.\n\n3. Completely remove any sentences that are greetings, closings, or irrelevant to the main content.\n\nReturn the result in clearly structured Markdown format.\n\nStrict instructions:\n- Do NOT include any greetings like "Hello", "Thank you", or closing statements.\n- Always format using numbers: 1, 1.1, 1.1.1, etc.\n- If some parts do not fit, omit them. Only meaningful content should remain.\n- Keep each item short and focused.\n\nRespond ONLY with the cleaned and structured result in Markdown.\n\nWrap the result in a JSON object like:\n{\n  "summary_markdown": "..."\n}`
     : 'Your task is to translate the given text into several specified languages.';
 
   let specialInstructions = '';
