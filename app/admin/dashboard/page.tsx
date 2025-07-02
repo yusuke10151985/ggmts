@@ -614,7 +614,12 @@ export default function AdminDashboardPage() {
             </button>
           ))}
         </div>
-        <ReactQuill theme="snow" value={about[`content_${aboutLang}`]||''} onChange={v=>setAbout((prev:any)=>({...prev,[`content_${aboutLang}`]:v}))} style={{height:200,marginBottom:8}} />
+        <ReactQuill 
+          theme="snow" 
+          value={about[`content_${aboutLang}`]||''} 
+          onChange={v=>setAbout((prev:any)=>({...prev,[`content_${aboutLang}`]:v}))}
+          style={{height:300, marginBottom:8, overflowY:'auto'}}
+        />
         <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={handleSaveAbout}>保存</button>
         <span className="ml-4 text-sm text-green-600">{aboutMsg}</span>
       </section>
