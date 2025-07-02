@@ -4,6 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import dynamic from 'next/dynamic';
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
+import 'react-quill/dist/quill.snow.css';
 
 export default function AdminDashboardPage() {
   const { data: session, status } = useSession();
@@ -21,6 +24,10 @@ export default function AdminDashboardPage() {
   // --- グラフサイズ調整用 state ---
   const [chartWidth, setChartWidth] = useState(1000);
   const [chartHeight, setChartHeight] = useState(500);
+  // About編集用state
+  const [about, setAbout] = useState<any>({ content_ja: '', content_en: '', content_th: '' });
+  const [aboutLang, setAboutLang] = useState<'ja'|'en'|'th'>('ja');
+  const [aboutMsg, setAboutMsg] = useState('');
 
   useEffect(() => {
     if (status === "loading") return;
@@ -177,6 +184,25 @@ export default function AdminDashboardPage() {
       const err = await res.json();
       setNoteMsg('追加に失敗: ' + (err.error || '')); 
     }
+  };
+
+  // About取得
+  useEffect(() => {
+    fetch('/api/admin/about').then(res => res.json()).then(data => {
+      if (data) setAbout(data);
+    });
+  }, []);
+
+  // About保存
+  const handleSaveAbout = async () => {
+    setAboutMsg('');
+    const res = await fetch('/api/admin/about', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(about),
+    });
+    if (res.ok) setAboutMsg('保存しました');
+    else setAboutMsg('保存に失敗しました');
   };
 
   if (status === "loading" || !session || (session.user as any)?.role !== "admin") {
@@ -577,6 +603,21 @@ export default function AdminDashboardPage() {
       
       {/* フッターとの重複を避けるためのパディング */}
       <div className="pb-32"></div>
+
+      {/* --- Aboutページ編集 --- */}
+      <section className="mt-8 mb-8">
+        <h2 className="font-bold mb-2">Aboutページ編集</h2>
+        <div className="mb-2 flex gap-2">
+          {(['ja','en','th'] as const).map(l => (
+            <button key={l} className={`px-3 py-1 rounded ${aboutLang===l?'bg-blue-600 text-white':'bg-background text-foreground border'}`} onClick={()=>setAboutLang(l)}>
+              {l==='ja'?'日本語':l==='en'?'English':'ไทย'}
+            </button>
+          ))}
+        </div>
+        <ReactQuill theme="snow" value={about[`content_${aboutLang}`]||''} onChange={v=>setAbout((prev:any)=>({...prev,[`content_${aboutLang}`]:v}))} style={{height:200,marginBottom:8}} />
+        <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={handleSaveAbout}>保存</button>
+        <span className="ml-4 text-sm text-green-600">{aboutMsg}</span>
+      </section>
     </div>
   );
 } 
