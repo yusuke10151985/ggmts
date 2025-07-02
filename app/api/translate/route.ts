@@ -4,9 +4,7 @@ import { getTranslations as getGptTranslations } from '@/lib/services/gptService
 import { TranslationMode } from '@/lib/types'
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 // Timeout promise helper
 function timeoutPromise<T>(promise: Promise<T>, ms: number): Promise<T> {
