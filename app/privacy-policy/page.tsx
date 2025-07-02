@@ -1,4 +1,92 @@
+import React, { useState } from 'react';
 import { Metadata } from 'next'
+
+const policyContent = {
+  ja: {
+    title: 'プライバシーポリシー',
+    updated: '最終更新日: ' + new Date().toLocaleDateString(),
+    body: (
+      <>
+        <section>
+          <h2 className="text-xl font-semibold">個人情報の取得と利用目的</h2>
+          <p>当サイト（Multi Translator GGMTS）は、ユーザーのプライバシーを尊重し、個人情報の保護に努めます。翻訳・要約時の入力内容はサーバーに保存されず、履歴はローカルストレージにのみ保存されます。お問い合わせ時の情報は返信・連絡のみに利用します。</p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold">第三者サービス・広告</h2>
+          <p>Google Gemini、OpenAI GPTなどのAIサービスを利用しています。Google AdSenseによる広告配信やGoogle Analytics等の解析ツールを利用する場合があります。これら第三者サービスのプライバシーポリシーもご確認ください。</p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold">Cookieの利用</h2>
+          <p>当サイトはCookieを利用し、広告やアクセス解析に活用します。Cookieの利用を望まない場合はブラウザ設定で無効化できます。</p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold">免責事項</h2>
+          <p>本サービスの情報・広告等の利用によって生じた損害等について、当サイトは一切の責任を負いません。</p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold">お問い合わせ</h2>
+          <p>ご質問は<a href="/contact" className="underline">お問い合わせフォーム</a>よりご連絡ください。</p>
+        </section>
+      </>
+    )
+  },
+  en: {
+    title: 'Privacy Policy',
+    updated: 'Last updated: ' + new Date().toLocaleDateString(),
+    body: (
+      <>
+        <section>
+          <h2 className="text-xl font-semibold">Information Collection and Use</h2>
+          <p>Multi Translator GGMTS respects your privacy. Input text for translation/summarization is not stored on our servers; history is saved only in your browser. Contact information is used solely for replies.</p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold">Third-Party Services & Ads</h2>
+          <p>We use AI services such as Google Gemini and OpenAI GPT. Google AdSense and analytics tools may be used. Please review the privacy policies of these third-party services as well.</p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold">Cookies</h2>
+          <p>This site uses cookies for ads and analytics. You can disable cookies in your browser settings if you prefer.</p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold">Disclaimer</h2>
+          <p>We are not responsible for any damages arising from the use of this service, its information, or ads.</p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold">Contact</h2>
+          <p>For questions, please use the <a href="/contact" className="underline">contact form</a>.</p>
+        </section>
+      </>
+    )
+  },
+  th: {
+    title: 'นโยบายความเป็นส่วนตัว',
+    updated: 'อัปเดตล่าสุด: ' + new Date().toLocaleDateString(),
+    body: (
+      <>
+        <section>
+          <h2 className="text-xl font-semibold">การเก็บรวบรวมและการใช้ข้อมูลส่วนบุคคล</h2>
+          <p>Multi Translator GGMTS เคารพความเป็นส่วนตัวของผู้ใช้ ข้อความที่แปล/สรุปจะไม่ถูกจัดเก็บบนเซิร์ฟเวอร์ ประวัติจะถูกบันทึกเฉพาะในเบราว์เซอร์ ข้อมูลติดต่อใช้สำหรับการตอบกลับเท่านั้น</p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold">บริการและโฆษณาของบุคคลที่สาม</h2>
+          <p>เราใช้บริการ AI เช่น Google Gemini และ OpenAI GPT อาจมีการใช้ Google AdSense และเครื่องมือวิเคราะห์ โปรดตรวจสอบนโยบายความเป็นส่วนตัวของบริการเหล่านี้ด้วย</p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold">คุกกี้</h2>
+          <p>เว็บไซต์นี้ใช้คุกกี้สำหรับโฆษณาและการวิเคราะห์ คุณสามารถปิดคุกกี้ได้ในเบราว์เซอร์</p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold">ข้อจำกัดความรับผิดชอบ</h2>
+          <p>เราไม่รับผิดชอบต่อความเสียหายใด ๆ ที่เกิดจากการใช้บริการหรือข้อมูล/โฆษณาในเว็บไซต์นี้</p>
+        </section>
+        <section>
+          <h2 className="text-xl font-semibold">ติดต่อเรา</h2>
+          <p>หากมีคำถาม กรุณาติดต่อผ่าน <a href="/contact" className="underline">แบบฟอร์มติดต่อ</a></p>
+        </section>
+      </>
+    )
+  }
+};
 
 export const metadata: Metadata = {
   title: 'Privacy Policy - Multi Translator GGMTS',
@@ -6,54 +94,24 @@ export const metadata: Metadata = {
 }
 
 export default function PrivacyPolicyPage() {
+  const [lang, setLang] = useState<'ja'|'en'|'th'>('ja');
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="mb-4 flex gap-2">
+        {(['ja','en','th'] as const).map(l => (
+          <button
+            key={l}
+            className={`px-3 py-1 rounded transition-colors duration-200 ${lang === l ? 'bg-blue-600 text-white' : 'bg-background text-foreground dark:bg-gray-800 dark:text-white border'}`}
+            onClick={() => setLang(l)}
+          >
+            {l === 'ja' ? '日本語' : l === 'en' ? 'English' : 'ไทย'}
+          </button>
+        ))}
+      </div>
       <div className="bg-card p-6 rounded-lg border border-border shadow-sm text-foreground space-y-4">
-        <h1 className="text-3xl font-bold">Privacy Policy</h1>
-        <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
-        
-        <div className="space-y-4">
-          <section>
-            <h2 className="text-xl font-semibold">Information We Collect</h2>
-            <p>We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, and disclose your personal information. We collect information you provide directly to us, such as when you enter text for translation.</p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold">How We Use Your Information</h2>
-            <p>We may use the information we collect to provide, maintain, and improve our services. We do not share your personal information with third parties except as described in this Privacy Policy.</p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold">Data Storage</h2>
-            <p>Translation history is stored locally in your browser using localStorage. We do not store your translation data on our servers.</p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold">Third-Party Services</h2>
-            <p>We use third-party AI services (Google Gemini, OpenAI GPT) to process translations. These services may have their own privacy policies.</p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold">Google AdSense and Cookies</h2>
-            <p>This site uses Google AdSense, a third-party advertising service. AdSense may use cookies to display personalized ads based on your interests. For more information about how Google uses cookies in advertising, please see <a href="https://policies.google.com/technologies/ads?hl=en" target="_blank" rel="noopener noreferrer">here</a>.</p>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-semibold">Contact Information</h2>
-            <p>If you have any questions about this Privacy Policy, please contact us at <a href="mailto:ggmts.info@gmail.com">ggmts.info@gmail.com</a></p>
-          </section>
-
-          <h2>プライバシーポリシー</h2>
-          <p>当サイト（Multi Translator GGMTS）は、ユーザーのプライバシーを尊重し、個人情報の保護に努めます。</p>
-          <h3>広告配信について</h3>
-          <p>当サイトでは、第三者配信の広告サービス（Google AdSense）を利用しています。広告配信事業者は、ユーザーの興味に応じた広告を表示するためにCookieを使用することがあります。Googleによる広告でのCookieの取り扱いについては<a href="https://policies.google.com/technologies/ads?hl=ja" target="_blank" rel="noopener noreferrer">こちら</a>をご覧ください。</p>
-          <h3>アクセス解析ツールについて</h3>
-          <p>当サイトでは、Google Analytics等のアクセス解析ツールを利用する場合があります。これらのツールはトラフィックデータ収集のためにCookieを使用しますが、個人を特定するものではありません。</p>
-          <h3>個人情報の利用目的</h3>
-          <p>お問い合わせ時に取得した個人情報は、返信・連絡のためにのみ利用します。</p>
-          <h3>免責事項</h3>
-          <p>当サイトの情報・広告等の利用によって生じた損害等については一切の責任を負いかねます。</p>
-        </div>
+        <h1 className="text-3xl font-bold">{policyContent[lang].title}</h1>
+        <p className="text-muted-foreground">{policyContent[lang].updated}</p>
+        {policyContent[lang].body}
       </div>
     </div>
   )
