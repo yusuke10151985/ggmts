@@ -575,33 +575,6 @@ export const TranslatorApp: React.FC = () => {
           <p className="text-center text-xs text-muted-foreground">© 2025 Multi Translator. All rights reserved.</p>
         </div>
       </footer>
-
-      {/* 通常の出力欄: summaryまたはtextを表示 */}
-      {result && Array.isArray(result.translations) && (
-        <div className="mt-6 p-4 bg-white rounded border text-base text-gray-900">
-          {result.translations.map((t: any) => (
-            <div key={t.lang} className="mb-4">
-              {mode === 'summarize' ? (
-                Array.isArray(t.summary) && t.summary.length > 0 ? (
-                  typeof t.summary[0] === 'string' ? (
-                    <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
-                      {t.summary.join('\n')}
-                    </pre>
-                  ) : (
-                    <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
-                      {flattenSummaryToText(t.summary).join('\n')}
-                    </pre>
-                  )
-                ) : (
-                  <div className="text-gray-400 italic">No summary available.</div>
-                )
-              ) : (
-                <p className="text-foreground whitespace-pre-wrap">{t.text}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
