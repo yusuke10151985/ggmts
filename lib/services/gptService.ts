@@ -22,7 +22,7 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
   const targetLanguagesString = targetLangs.join(', ');
 
   const modeInstruction = mode === 'summarize'
-    ? `You are an expert summarizer. Carefully analyze the following text and create a multi-level numbered summary as a JSON array.\n\nInstructions:\n- Divide the text into items based on topics and contents.\n- Create a multi-level numbered structure, using format like:\n  1.\n    1.1\n      1.1.1\n  2.\n    2.1\n      2.1.1\n- Use numbers only (1, 1.1, 1.1.1, etc.) for all items.\n- Do NOT include any greetings, closings, or irrelevant sentences.\n- Each item must be short and focused.\n- If you cannot create a multi-level numbered summary, respond with an error message in the summary array.\n\nRespond ONLY with a JSON object in this format:\n{\n  "sourceLanguage": "...",\n  "translations": [\n    {\n      "lang": "...",\n      "text": "...",\n      "summary": [\n        "1. ...",\n        "1.1 ...",\n        "2. ..."\n      ]\n    }\n  ]\n}\n\nDo NOT include any text or explanation outside the JSON object. The summary array MUST be present and contain a multi-level numbered list.`
+    ? `Summarize the following text as a multi-level numbered list.\n\nInstructions:\n- Divide the text into items based on topics and contents.\n- Use a multi-level numbered structure (1., 1.1, 1.1.1, 2., 2.1, etc).\n- Do NOT include any greetings, closings, or irrelevant sentences.\n- Each item must be short and focused.\n\nRespond ONLY with a JSON object in this format:\n{\n  "sourceLanguage": "...",\n  "translations": [\n    {\n      "lang": "...",\n      "text": "...",\n      "summary": [\n        "1. ...",\n        "1.1 ...",\n        "2. ..."\n      ]\n    }\n  ]\n}\n\nThe summary array MUST be present and contain a multi-level numbered list. Do NOT include any text or explanation outside the JSON object.`
     : 'Your task is to translate the given text into several specified languages.';
 
   let specialInstructions = '';
@@ -127,6 +127,7 @@ export const getTranslations = async (
     }
 
     const data = await response.json();
+    console.log('📋 OpenAI API response data:', JSON.stringify(data, null, 2));
     console.log('📋 OpenAI API response data structure:', {
       hasChoices: !!data.choices,
       choicesLength: data.choices?.length || 0,
