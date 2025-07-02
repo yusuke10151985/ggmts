@@ -26,12 +26,19 @@ type ApiProvider = 'gemini' | 'gpt'
 function enforceSummaryStructure(summary: any[], parentId: string = ''): any[] {
   if (!Array.isArray(summary)) return [];
   return summary.map((item, idx) => {
-    // Generate hierarchical ID if missing or malformed
+    // 文字列の場合はtitleに格納
+    if (typeof item === 'string') {
+      return {
+        id: parentId ? `${parentId}.${idx + 1}` : `${idx + 1}`,
+        title: item,
+        children: [],
+      };
+    }
+    // 既存のobject形式
     let id = item.id;
     if (!id || typeof id !== 'string') {
       id = parentId ? `${parentId}.${idx + 1}` : `${idx + 1}`;
     }
-    // Ensure children is always an array
     let children = Array.isArray(item.children) ? item.children : [];
     children = enforceSummaryStructure(children, id);
     return {
