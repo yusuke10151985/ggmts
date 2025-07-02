@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { History, ChevronDown, Languages, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { SessionProvider } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 
@@ -23,6 +23,19 @@ function HeaderContent() {
   const modeDropdownRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
   const pathname = usePathname();
+  const [usageCount, setUsageCount] = useState<number>(0);
+  const [usageLimit, setUsageLimit] = useState<number>(0);
+
+  useEffect(() => {
+    if (!session?.user) return;
+    fetch('/api/user-usage')
+      .then(res => res.json())
+      .then(data => {
+        setUsageCount(data.usageCount || 0);
+        setUsageLimit(data.usageLimit || 0);
+      });
+  }, [session?.user]);
+
   const AuthButton = () => {
     if (session?.user) {
       const userAny = session.user as any;
@@ -33,6 +46,8 @@ function HeaderContent() {
           badgeLabel = 'Admin'; badgeColor = 'bg-red-600 text-white'; break;
         case 'pro':
           badgeLabel = 'Pro'; badgeColor = 'bg-blue-600 text-white'; break;
+        case 'premier':
+          badgeLabel = 'Premier'; badgeColor = 'bg-yellow-500 text-white'; break;
         case 'special':
           badgeLabel = 'Special'; badgeColor = 'bg-green-600 text-white'; break;
         default:
@@ -45,6 +60,7 @@ function HeaderContent() {
           )}
           <span className="text-sm font-medium text-foreground max-w-[120px] truncate">{userAny.name}</span>
           <span className={`text-xs px-2 py-1 rounded ${badgeColor}`}>{badgeLabel}</span>
+          <span className="ml-2 text-xs text-gray-400">{usageCount} / {usageLimit} 回</span>
           <Button size="sm" variant="outline" onClick={() => signOut()}>Sign out</Button>
         </div>
       );
