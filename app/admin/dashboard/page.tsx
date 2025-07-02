@@ -469,22 +469,24 @@ export default function AdminDashboardPage() {
           <textarea placeholder="本文（日本語）" className="border px-2 py-1 rounded w-full mb-2 text-foreground bg-background" value={noteForm.content_ja} onChange={e => setNoteForm(f => ({ ...f, content_ja: e.target.value }))} rows={2} />
           <button className="px-4 py-1 bg-blue-600 text-white rounded" onClick={async () => {
             setNoteMsg('');
-            // GPTで英語・タイ語生成
-            let content_en = '';
-            let content_th = '';
+            // GPTでタイトル・本文の英語・タイ語生成
+            let title_en = '', title_th = '', content_en = '', content_th = '';
             try {
               const gptRes = await fetch('/api/gpt-translate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  ja: noteForm.content_ja,
+                  jaTitle: noteForm.title,
+                  jaBody: noteForm.content_ja,
                   to: ['en', 'th']
                 })
               });
               if (gptRes.ok) {
                 const gptData = await gptRes.json();
-                content_en = gptData.en || '';
-                content_th = gptData.th || '';
+                title_en = gptData.en?.title || '';
+                title_th = gptData.th?.title || '';
+                content_en = gptData.en?.body || '';
+                content_th = gptData.th?.body || '';
               }
             } catch {}
             const res = await fetch('/api/release-notes', {
@@ -492,6 +494,8 @@ export default function AdminDashboardPage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 title: noteForm.title,
+                title_en,
+                title_th,
                 content_ja: noteForm.content_ja,
                 content_en,
                 content_th
@@ -513,9 +517,13 @@ export default function AdminDashboardPage() {
           <ul className="space-y-2">
             {notes.map(note => (
               <li key={note.id} className="border rounded p-3 bg-background text-foreground">
-                <div className="text-xs text-gray-500 mb-1">{note.createdAt?.slice(0,10)} {note.title && <span className="ml-2 font-bold">{note.title}</span>}</div>
-                <div className="mb-1"><span className="font-bold">[JA]</span> {note.content_ja}</div>
+                <div className="text-xs text-gray-500 mb-1">{note.createdAt?.slice(0,10)}
+                  {note.title_en && <span className="ml-2 font-bold">[EN] {note.title_en}</span>}
+                  {note.title && <span className="ml-2 font-bold">[JA] {note.title}</span>}
+                  {note.title_th && <span className="ml-2 font-bold">[TH] {note.title_th}</span>}
+                </div>
                 <div className="mb-1"><span className="font-bold">[EN]</span> {note.content_en}</div>
+                <div className="mb-1"><span className="font-bold">[JA]</span> {note.content_ja}</div>
                 <div><span className="font-bold">[TH]</span> {note.content_th}</div>
                 <button className="ml-2 px-2 py-1 bg-blue-600 text-white rounded text-xs" onClick={() => setNoteForm({ ...note, isEdit: true })}>編集</button>
                 <button className="ml-2 px-2 py-1 bg-red-600 text-white rounded text-xs" onClick={async () => {

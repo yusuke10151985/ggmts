@@ -278,15 +278,15 @@ export const TranslatorApp: React.FC = () => {
   const selectedCount = useMemo(() => Object.values(selectedForCopy).filter(Boolean).length, [selectedForCopy])
 
   const handleMasterCopy = () => {
-    let textToCopy = '【ご注意】本出力はAIによる機械翻訳・要約です。内容の正確性は保証されません。ご自身で必ずご確認ください。\n\n';
+    let textToCopy = '';
     const sourceLanguageName = result?.sourceLanguage ? getLanguageName(result.sourceLanguage) : 'Source Text'
     selectionOrder.forEach((key, idx) => {
       if (key === 'source' && inputText) {
-        textToCopy += `--- ${sourceLanguageName} ---\n${inputText}\n\n`;
+        textToCopy += `--- ${sourceLanguageName} / English ---\n${inputText}\n\n`;
       } else {
         const t = result?.translations?.find((tr: any) => tr.lang === key);
         if (t) {
-          textToCopy += `--- ${getLanguageName(t.lang)} ---\n${NOTICE_TEXTS[t.lang] || NOTICE_TEXTS.default}\n`;
+          textToCopy += `--- ${getLanguageName(t.lang)} ---\n`;
           if (mode === 'summarize' && Array.isArray(t.summary) && t.summary.length > 0) {
             if (typeof t.summary[0] === 'string') {
               textToCopy += t.summary.join('\n') + '\n\n';
@@ -547,8 +547,6 @@ export const TranslatorApp: React.FC = () => {
                       </div>
                     </motion.div>
                   )}
-
-                  <div className="mb-2 text-xs text-yellow-700 dark:text-yellow-300 font-semibold">{NOTICE_TEXTS[result?.sourceLanguage ?? 'default']}</div>
 
                   <AnimatePresence>
                     {isHistoryVisible && (
