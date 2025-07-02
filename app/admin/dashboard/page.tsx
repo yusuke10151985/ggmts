@@ -605,7 +605,7 @@ export default function AdminDashboardPage() {
       <div className="pb-32"></div>
 
       {/* --- Aboutページ編集 --- */}
-      <section className="mt-8 mb-8">
+      <section className="mt-8 mb-8 pb-32">
         <h2 className="font-bold mb-2">Aboutページ編集</h2>
         <div className="mb-2 flex gap-2">
           {(['ja','en','th'] as const).map(l => (
