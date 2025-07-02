@@ -62,22 +62,11 @@ function HeaderContent() {
           <a href="/" className="text-xl md:text-2xl font-bold text-black dark:text-white whitespace-nowrap mr-2">Multi Translator GGMTS</a>
           <nav className="flex gap-6 text-sm font-medium flex-nowrap items-center ml-6 whitespace-nowrap">
             <a href="/about" className="hover:underline whitespace-nowrap">About</a>
-            <a href="/privacy-policy" className="hover:underline whitespace-nowrap">Privacy Policy</a>
-            <a href="/terms" className="hover:underline whitespace-nowrap">Terms</a>
             <a href="/contact" className="hover:underline whitespace-nowrap">Contact</a>
             <a href="/release-notes" className="hover:underline whitespace-nowrap">Release Notes</a>
           </nav>
         </div>
         <div className="flex-1 flex justify-end items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsHistoryVisible(!isHistoryVisible)}
-            className="mx-2"
-            aria-label="Show translation history"
-          >
-            <History className="w-5 h-5" />
-          </Button>
           <ThemeToggle />
           <AuthButton />
         </div>

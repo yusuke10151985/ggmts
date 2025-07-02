@@ -2,14 +2,12 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
-import dynamic from 'next/dynamic';
 import { SessionProvider, useSession } from 'next-auth/react';
 import ClientLayout from './client-layout';
 import FooterWithAdmin from '@/components/FooterWithAdmin';
+import GlobalHeader from '@/components/GlobalHeader';
 
 const inter = Inter({ subsets: ['latin'] })
-
-const GlobalHeader = dynamic(() => import('@/components/GlobalHeader'), { ssr: false });
 
 export const metadata: Metadata = {
   title: 'Multi Translator GGMTS',
