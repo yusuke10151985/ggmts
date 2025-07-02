@@ -11,7 +11,7 @@ const aboutContent = {
           <li>テキストを入力または貼り付け</li>
           <li>翻訳/要約・対象言語を選択</li>
           <li>結果をコピー・保存・共有</li>
-          <li>履歴・多言語UI・会員管理・管理者ダッシュボード搭載</li>
+          <li>履歴・多言語UI・テーマ切替など便利機能</li>
         </ul>
         <p className="text-sm text-muted-foreground">ご質問・ご要望は<a href="/contact" className="underline">お問い合わせフォーム</a>よりご連絡ください。</p>
       </>
@@ -26,7 +26,7 @@ const aboutContent = {
           <li>Enter or paste your text</li>
           <li>Select Translate/Summarize and target languages</li>
           <li>Copy, save, or share results</li>
-          <li>History, multilingual UI, membership, and admin dashboard</li>
+          <li>Useful features: history, multilingual UI, theme switch, etc.</li>
         </ul>
         <p className="text-sm text-muted-foreground">For questions or feedback, please use the <a href="/contact" className="underline">contact form</a>.</p>
       </>
@@ -36,12 +36,12 @@ const aboutContent = {
     title: 'เกี่ยวกับ Multi Translator GGMTS',
     body: (
       <>
-        <p className="mb-2">Multi Translator GGMTS เป็นเว็บแอป AI สำหรับแปลและสรุปข้อความหลายภาษาแบบทันที รองรับภาษาไทย อังกฤษ ญี่ปุ่น และอื่น ๆ โดยใช้ Google Gemini และ OpenAI GPT</p>
+        <p className="mb-2">Multi Translator GGMTS เป็นเว็บแอป AI สำหรับแปลและสรุปข้อความหลายภาษาแบบทันที รองรับญี่ปุ่น อังกฤษ ไทย และภาษาอื่น ๆ โดยใช้ Google Gemini และ OpenAI GPT</p>
         <ul className="list-disc pl-5 mb-2">
           <li>กรอกหรือวางข้อความ</li>
           <li>เลือกแปล/สรุปและภาษาปลายทาง</li>
           <li>คัดลอก บันทึก หรือแชร์ผลลัพธ์</li>
-          <li>มีประวัติ, UI หลายภาษา, ระบบสมาชิก, แดชบอร์ดผู้ดูแล</li>
+          <li>ฟีเจอร์: ประวัติ, UI หลายภาษา, สลับธีม ฯลฯ</li>
         </ul>
         <p className="text-sm text-muted-foreground">หากมีคำถามหรือข้อเสนอแนะ กรุณาติดต่อผ่าน <a href="/contact" className="underline">แบบฟอร์มติดต่อ</a></p>
       </>
