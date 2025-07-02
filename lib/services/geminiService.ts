@@ -47,9 +47,7 @@ Please summarize the following text in ${targetLanguagesString}:
 
 Text: "${text}"
 
-For each translation, create a concise summary of the content in that same language. The summary MUST be a numbered list that can be nested (e.g., "1.", "1.1.", "2.").
-
-Do NOT omit any requirements, main content, or related URLs. All requirements, main content, and URLs must be included in the summary. Only omit greetings, pleasantries, or non-essential conversational filler (such as 'thank you', 'best regards', etc). Focus only on the core points and all substantive information.
+For each translation, create a concise summary of the content in that same language. The summary MUST be written as a single paragraph without line breaks, bullet points, or numbered lists. Include all content including greetings, pleasantries, and any other text. Do not omit anything from the original text.
 
 IMPORTANT: For each target language, you MUST write the summary in that language. Do NOT answer in Japanese or any language other than the target language. If the target language is Thai, the summary must be in Thai. If the target language is Indonesian, the summary must be in Indonesian. Never answer in Japanese unless Japanese is the target language.
 
@@ -59,7 +57,7 @@ Please respond with a JSON object in this exact format:
   "translations": [
     {
       "lang": "target_lang_code",
-      "text": "summarized_text (as a nested, numbered list)"
+      "text": "summarized_text (as a single paragraph without line breaks, bullet points, or numbered lists)"
     }
   ]
 }

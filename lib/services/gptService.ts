@@ -22,7 +22,7 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
   const targetLanguagesString = targetLangs.join(', ');
 
   const modeInstruction = mode === 'summarize'
-    ? `Your task is to first translate the text into the specified languages, and then for each translation, create a concise summary of the content in that same language. The summary MUST be a numbered list that can be nested (e.g., "1.", "1.1.", "2."). Omit any conversational filler like greetings or pleasantries from the summary. Focus only on the core points.`
+    ? `Your task is to first translate the text into the specified languages, and then for each translation, create a concise summary of the content in that same language. The summary MUST be written as a single paragraph without line breaks, bullet points, or numbered lists. Include all content including greetings, pleasantries, and any other text. Do not omit anything from the original text.`
     : 'Your task is to translate the given text into several specified languages.';
 
   let specialInstructions = '';
