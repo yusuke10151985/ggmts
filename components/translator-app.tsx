@@ -54,8 +54,8 @@ export const TranslatorApp: React.FC = () => {
   const [selectedForCopy, setSelectedForCopy] = useState<Record<string, boolean>>({})
   const [copyButtonText, setCopyButtonText] = useState('Copy Selected')
   const [showMoreLangs, setShowMoreLangs] = useState(false)
-  const apiProvider: ApiProvider = 'gpt'
   const [mode, setMode] = useState<TranslationMode>('translate')
+  const apiProvider: ApiProvider = mode === 'summarize' ? 'gemini' : 'gpt'
   const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false)
   const modeDropdownRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -285,17 +285,17 @@ export const TranslatorApp: React.FC = () => {
   // --- トグルスイッチUI ---
   const ModeToggle = () => (
     <div className="flex items-center gap-4 my-4">
-      <span className={`font-bold text-lg ${mode === 'translate' ? 'text-blue-600' : 'text-gray-400'}`}>翻訳</span>
+      <span className={`font-bold text-lg ${mode === 'translate' ? 'text-blue-600' : 'text-gray-400'}`}>Translate</span>
       <button
         className={`relative w-16 h-8 rounded-full transition-colors duration-300 focus:outline-none ${mode === 'summarize' ? 'bg-green-500' : 'bg-blue-500'}`}
         onClick={() => setMode(mode === 'translate' ? 'summarize' : 'translate')}
-        aria-label="モード切替"
+        aria-label="Toggle mode"
       >
         <span
           className={`absolute left-1 top-1 w-6 h-6 rounded-full bg-white shadow transition-transform duration-300 ${mode === 'summarize' ? 'translate-x-8' : ''}`}
         />
       </button>
-      <span className={`font-bold text-lg ${mode === 'summarize' ? 'text-green-600' : 'text-gray-400'}`}>要約</span>
+      <span className={`font-bold text-lg ${mode === 'summarize' ? 'text-green-600' : 'text-gray-400'}`}>Summarize</span>
     </div>
   );
 
@@ -352,7 +352,7 @@ export const TranslatorApp: React.FC = () => {
                             className={`w-1/2 min-w-0 px-4 py-1.5 text-sm font-bold ${mode === 'summarize' ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
                             disabled={isLoading || !inputText.trim() || targetLangs.length === 0}
                           >
-                            {isLoading ? (mode === 'summarize' ? '要約中...' : '翻訳中...') : (mode === 'summarize' ? '要約する' : '翻訳する')}
+                            {isLoading ? (mode === 'summarize' ? 'Summarizing...' : 'Translating...') : (mode === 'summarize' ? 'Summarize' : 'Translate')}
                           </Button>
                         </div>
                       </div>
