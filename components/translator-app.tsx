@@ -65,6 +65,14 @@ function flattenSummaryToText(items: any[], prefix = ''): string[] {
   return lines;
 }
 
+// 多言語注意文定義
+const NOTICE_TEXTS: Record<string, string> = {
+  ja: '【ご注意】本出力はAIによる機械翻訳・要約です。内容の正確性は保証されません。ご自身で必ずご確認ください。',
+  en: '[Notice] This output is machine-translated/summarized by AI. Accuracy is not guaranteed. Please verify the content yourself.',
+  th: '[ข้อควรระวัง] ข้อมูลนี้เป็นผลลัพธ์จากการแปล/สรุปโดย AI ความถูกต้องอาจไม่สมบูรณ์ กรุณาตรวจสอบด้วยตนเอง',
+  default: '[Notice] This output is machine-translated/summarized by AI. Accuracy is not guaranteed. Please verify the content yourself.'
+};
+
 export const TranslatorApp: React.FC = () => {
   const [inputText, setInputText] = useState('')
   const [sourceLang, setSourceLang] = useState('auto')
@@ -542,7 +550,7 @@ export const TranslatorApp: React.FC = () => {
                     </motion.div>
                   )}
 
-                  <div className="mb-2 text-xs text-yellow-700 dark:text-yellow-300 font-semibold">【ご注意】本出力はAIによる機械翻訳・要約です。内容の正確性は保証されません。ご自身で必ずご確認ください。</div>
+                  <div className="mb-2 text-xs text-yellow-700 dark:text-yellow-300 font-semibold">{NOTICE_TEXTS[result?.sourceLanguage ?? 'default']}</div>
 
                   <AnimatePresence>
                     {isHistoryVisible && (

@@ -238,7 +238,7 @@ export default function AdminDashboardPage() {
                 cost: d._sum.cost,
               }))}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
+                <XAxis dataKey="date" tickFormatter={date => date} />
                 <YAxis yAxisId="left" allowDecimals={false} tick={{ fill: 'var(--foreground)' }} />
                 <YAxis yAxisId="right" orientation="right" allowDecimals={false} tick={{ fill: 'var(--foreground)' }} />
                 <Tooltip />
@@ -457,11 +457,47 @@ export default function AdminDashboardPage() {
       <section className="mt-12 max-w-2xl">
         <h2 className="font-bold mb-2">リリースノート編集（多言語）</h2>
         <div className="mb-2">
-          <input type="text" placeholder="タイトル（任意）" className="border px-2 py-1 rounded w-full mb-2" value={noteForm.title} onChange={e => setNoteForm(f => ({ ...f, title: e.target.value }))} />
-          <textarea placeholder="本文（日本語）" className="border px-2 py-1 rounded w-full mb-2" value={noteForm.content_ja} onChange={e => setNoteForm(f => ({ ...f, content_ja: e.target.value }))} rows={2} />
-          <textarea placeholder="Body (English)" className="border px-2 py-1 rounded w-full mb-2" value={noteForm.content_en} onChange={e => setNoteForm(f => ({ ...f, content_en: e.target.value }))} rows={2} />
-          <textarea placeholder="เนื้อหา (ภาษาไทย)" className="border px-2 py-1 rounded w-full mb-2" value={noteForm.content_th} onChange={e => setNoteForm(f => ({ ...f, content_th: e.target.value }))} rows={2} />
-          <button className="px-4 py-1 bg-blue-600 text-white rounded" onClick={handleAddNote}>追加</button>
+          <input type="text" placeholder="タイトル（任意）" className="border px-2 py-1 rounded w-full mb-2 text-foreground bg-background" value={noteForm.title} onChange={e => setNoteForm(f => ({ ...f, title: e.target.value }))} />
+          <textarea placeholder="本文（日本語）" className="border px-2 py-1 rounded w-full mb-2 text-foreground bg-background" value={noteForm.content_ja} onChange={e => setNoteForm(f => ({ ...f, content_ja: e.target.value }))} rows={2} />
+          <button className="px-4 py-1 bg-blue-600 text-white rounded" onClick={async () => {
+            setNoteMsg('');
+            // GPTで英語・タイ語生成
+            let content_en = '';
+            let content_th = '';
+            try {
+              const gptRes = await fetch('/api/gpt-translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  ja: noteForm.content_ja,
+                  to: ['en', 'th']
+                })
+              });
+              if (gptRes.ok) {
+                const gptData = await gptRes.json();
+                content_en = gptData.en || '';
+                content_th = gptData.th || '';
+              }
+            } catch {}
+            const res = await fetch('/api/release-notes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: noteForm.title,
+                content_ja: noteForm.content_ja,
+                content_en,
+                content_th
+              })
+            });
+            if (res.ok) {
+              setNoteMsg('追加しました');
+              setNoteForm({ title: '', content_ja: '', content_en: '', content_th: '', isEdit: false });
+              fetchNotes();
+            } else {
+              const err = await res.json();
+              setNoteMsg('追加に失敗: ' + (err.error || ''));
+            }
+          }}>リリースノート新規作成</button>
           {noteMsg && <div className="text-sm mt-1 text-red-600">{noteMsg}</div>}
         </div>
         <div>
