@@ -441,6 +441,9 @@ export default function AdminDashboardPage() {
           </ul>
         </div>
       </section>
+      
+      {/* フッターとの重複を避けるためのパディング */}
+      <div className="pb-32"></div>
     </div>
   );
 } 
