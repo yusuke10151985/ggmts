@@ -16,7 +16,7 @@ export default function AdminDashboardPage() {
   const [userMsg, setUserMsg] = useState("");
   const [filters, setFilters] = useState({ from: '', to: '', userId: '', apiType: '' });
   const [notes, setNotes] = useState<any[]>([]);
-  const [noteForm, setNoteForm] = useState({ title: '', content_ja: '', content_en: '', content_th: '' });
+  const [noteForm, setNoteForm] = useState({ title: '', content_ja: '', content_en: '', content_th: '', isEdit: false });
   const [noteMsg, setNoteMsg] = useState('');
   // --- グラフサイズ調整用 state ---
   const [chartWidth, setChartWidth] = useState(600);
@@ -171,7 +171,7 @@ export default function AdminDashboardPage() {
     });
     if (res.ok) {
       setNoteMsg('追加しました');
-      setNoteForm({ title: '', content_ja: '', content_en: '', content_th: '' });
+      setNoteForm({ title: '', content_ja: '', content_en: '', content_th: '', isEdit: false });
       fetchNotes();
     } else {
       const err = await res.json();
@@ -228,7 +228,7 @@ export default function AdminDashboardPage() {
         </div>
         {/* 日別API実行回数グラフ */}
         {usage?.dailyStats && usage.dailyStats.length > 0 && (
-          <div className="mb-6 bg-white p-4 rounded shadow max-w-2xl">
+          <div className="mb-6 p-0" style={{ width: chartWidth, height: chartHeight + 60, background: 'var(--card)' }}>
             <h3 className="font-semibold mb-2">日別API実行回数</h3>
             <ResponsiveContainer width={chartWidth} height={chartHeight}>
               <LineChart data={usage.dailyStats.map((d: any) => ({
@@ -239,11 +239,12 @@ export default function AdminDashboardPage() {
               }))}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
-                <YAxis allowDecimals={false} />
+                <YAxis yAxisId="left" allowDecimals={false} tick={{ fill: 'var(--foreground)' }} />
+                <YAxis yAxisId="right" orientation="right" allowDecimals={false} tick={{ fill: 'var(--foreground)' }} />
                 <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="#8884d8" name="API回数" />
-                <Line type="monotone" dataKey="tokens" stroke="#82ca9d" name="トークン数" />
-                <Line type="monotone" dataKey="cost" stroke="#ff7300" name="コスト" />
+                <Line yAxisId="right" type="monotone" dataKey="count" stroke="#8884d8" name="API回数" />
+                <Line yAxisId="left" type="monotone" dataKey="tokens" stroke="#82ca9d" name="トークン数" />
+                <Line yAxisId="right" type="monotone" dataKey="cost" stroke="#ff7300" name="コスト" />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -322,7 +323,28 @@ export default function AdminDashboardPage() {
                       <td className="border px-2 py-1">{log.tokens}</td>
                       <td className="border px-2 py-1">{log.cost?.toFixed(4)}</td>
                       <td className="border px-2 py-1 max-w-[200px] truncate">{log.inputText}</td>
-                      <td className="border px-2 py-1 max-w-[200px] truncate">{typeof log.result === 'string' ? log.result : JSON.stringify(log.result)}</td>
+                      <td className="border px-2 py-1 max-w-[200px] truncate">
+                        {(() => {
+                          try {
+                            const parsed = typeof log.result === 'string' ? JSON.parse(log.result) : log.result;
+                            if (parsed && parsed.translations && Array.isArray(parsed.translations)) {
+                              return parsed.translations.map((t: any, idx: number) => (
+                                <div key={idx} className="mb-1">
+                                  <div className="font-bold text-xs">{t.lang}</div>
+                                  {Array.isArray(t.summary) && t.summary.length > 0 ? (
+                                    <pre className="whitespace-pre-wrap text-xs" style={{ color: 'var(--foreground)' }}>{typeof t.summary[0] === 'string' ? t.summary.join('\n') : ''}</pre>
+                                  ) : (
+                                    <span className="text-xs" style={{ color: 'var(--foreground)' }}>{t.text}</span>
+                                  )}
+                                </div>
+                              ));
+                            }
+                            return <span className="text-xs" style={{ color: 'var(--foreground)' }}>{log.result}</span>;
+                          } catch {
+                            return <span className="text-xs" style={{ color: 'var(--foreground)' }}>{log.result}</span>;
+                          }
+                        })()}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -451,10 +473,40 @@ export default function AdminDashboardPage() {
                 <div className="mb-1"><span className="font-bold">[JA]</span> {note.content_ja}</div>
                 <div className="mb-1"><span className="font-bold">[EN]</span> {note.content_en}</div>
                 <div><span className="font-bold">[TH]</span> {note.content_th}</div>
+                <button className="ml-2 px-2 py-1 bg-blue-600 text-white rounded text-xs" onClick={() => setNoteForm({ ...note, isEdit: true })}>編集</button>
               </li>
             ))}
           </ul>
         </div>
+        {noteForm.isEdit && (
+          <div className="mb-4 p-4 border rounded bg-gray-50 dark:bg-gray-800">
+            <h4 className="font-bold mb-2">リリースノート編集</h4>
+            <input type="text" placeholder="タイトル（任意）" className="border px-2 py-1 rounded w-full mb-2" value={noteForm.title} onChange={e => setNoteForm(f => ({ ...f, title: e.target.value }))} />
+            <textarea placeholder="本文（日本語）" className="border px-2 py-1 rounded w-full mb-2" value={noteForm.content_ja} onChange={e => setNoteForm(f => ({ ...f, content_ja: e.target.value }))} rows={2} />
+            <textarea placeholder="Body (English)" className="border px-2 py-1 rounded w-full mb-2" value={noteForm.content_en} onChange={e => setNoteForm(f => ({ ...f, content_en: e.target.value }))} rows={2} />
+            <textarea placeholder="เนื้อหา (ภาษาไทย)" className="border px-2 py-1 rounded w-full mb-2" value={noteForm.content_th} onChange={e => setNoteForm(f => ({ ...f, content_th: e.target.value }))} rows={2} />
+            <div className="flex gap-2">
+              <button className="px-4 py-1 bg-blue-600 text-white rounded" onClick={async () => {
+                setNoteMsg('');
+                const res = await fetch(`/api/release-notes`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(noteForm),
+                });
+                if (res.ok) {
+                  setNoteMsg('編集しました');
+                  setNoteForm({ title: '', content_ja: '', content_en: '', content_th: '', isEdit: false });
+                  fetchNotes();
+                } else {
+                  const err = await res.json();
+                  setNoteMsg('編集に失敗: ' + (err.error || ''));
+                }
+              }}>保存</button>
+              <button className="px-4 py-1 bg-gray-400 text-white rounded" onClick={() => setNoteForm({ title: '', content_ja: '', content_en: '', content_th: '', isEdit: false })}>キャンセル</button>
+            </div>
+            {noteMsg && <div className="text-sm mt-1 text-red-600">{noteMsg}</div>}
+          </div>
+        )}
       </section>
       
       {/* フッターとの重複を避けるためのパディング */}

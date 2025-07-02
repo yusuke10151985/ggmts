@@ -84,6 +84,7 @@ export const TranslatorApp: React.FC = () => {
   const abortControllerRef = useRef<AbortController | null>(null)
   const executeTranslationRef = useRef<((text: string, source: string, targets: string[]) => Promise<void>) | null>(null)
   const { data: session, status } = useSession();
+  const [selectionOrder, setSelectionOrder] = useState<string[]>([]);
 
   useEffect(() => {
     const root = document.documentElement
@@ -251,29 +252,49 @@ export const TranslatorApp: React.FC = () => {
   const getLanguageName = (code: string) => getLanguageByCode(code)?.name || code
   
   const handleToggleCopySelection = (key: string) => {
-    setSelectedForCopy(prev => ({ ...prev, [key]: !prev[key] }))
+    setSelectedForCopy(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      setSelectionOrder(order => {
+        if (next[key]) {
+          // 選択時は末尾に追加
+          return [...order, key].filter((v, i, arr) => arr.indexOf(v) === i);
+        } else {
+          // 解除時は除外
+          return order.filter(k => k !== key);
+        }
+      });
+      return next;
+    });
   }
 
   const selectedCount = useMemo(() => Object.values(selectedForCopy).filter(Boolean).length, [selectedForCopy])
 
   const handleMasterCopy = () => {
-    let textToCopy = ''
+    let textToCopy = '【ご注意】本出力はAIによる機械翻訳・要約です。内容の正確性は保証されません。ご自身で必ずご確認ください。\n\n';
     const sourceLanguageName = result?.sourceLanguage ? getLanguageName(result.sourceLanguage) : 'Source Text'
-
-    if (selectedForCopy['source'] && inputText) {
-      textToCopy += `--- ${sourceLanguageName} ---\n${inputText}\n\n`
-    }
-
-    result?.translations.forEach(t => {
-      if (selectedForCopy[t.lang]) {
-        textToCopy += `--- ${getLanguageName(t.lang)} ---\n${t.text}\n\n`
+    selectionOrder.forEach((key, idx) => {
+      if (key === 'source' && inputText) {
+        textToCopy += `--- ${sourceLanguageName} ---\n${inputText}\n\n`;
+      } else {
+        const t = result.translations.find((tr: any) => tr.lang === key);
+        if (t) {
+          textToCopy += `--- ${getLanguageName(t.lang)} ---\n`;
+          if (mode === 'summarize' && Array.isArray(t.summary) && t.summary.length > 0) {
+            if (typeof t.summary[0] === 'string') {
+              textToCopy += t.summary.join('\n') + '\n\n';
+            } else {
+              textToCopy += flattenSummaryToText(t.summary).join('\n') + '\n\n';
+            }
+          } else {
+            textToCopy += t.text + '\n\n';
+          }
+        }
       }
-    })
-    
+    });
     navigator.clipboard.writeText(textToCopy.trim()).then(() => {
-      setCopyButtonText('Copied!')
-      setTimeout(() => setCopyButtonText('Copy Selected'), 2000)
-    })
+      setCopyButtonText('Copied!');
+      setTimeout(() => setCopyButtonText('Copy Selected'), 2000);
+    });
   }
 
   // --- Auth UI ---
@@ -350,6 +371,9 @@ export const TranslatorApp: React.FC = () => {
                     <label htmlFor="copy-source" className="ml-2 block text-sm text-muted-foreground">
                       Select source text for copy
                     </label>
+                    {selectionOrder.includes('source') && selectedForCopy['source'] && (
+                      <span className="ml-1 text-xs text-blue-600">{selectionOrder.indexOf('source') + 1}</span>
+                    )}
                   </div>
                   
                   <div className="mt-4 flex flex-col gap-4">
@@ -486,6 +510,9 @@ export const TranslatorApp: React.FC = () => {
                               />
                               <label htmlFor={`copy-${translation.lang}`} className="ml-3 flex-1">
                                 <h3 className="font-semibold text-foreground">{getLanguageName(translation.lang)}</h3>
+                                {selectionOrder.includes(translation.lang) && selectedForCopy[translation.lang] && (
+                                  <span className="ml-1 text-xs text-blue-600">{selectionOrder.indexOf(translation.lang) + 1}</span>
+                                )}
                               </label>
                               {/* 個別コピーボタン */}
                               <CopyButtonWithFeedback text={translation.text} />
@@ -514,6 +541,8 @@ export const TranslatorApp: React.FC = () => {
                       </div>
                     </motion.div>
                   )}
+
+                  <div className="mb-2 text-xs text-yellow-700 dark:text-yellow-300 font-semibold">【ご注意】本出力はAIによる機械翻訳・要約です。内容の正確性は保証されません。ご自身で必ずご確認ください。</div>
 
                   <AnimatePresence>
                     {isHistoryVisible && (
@@ -571,7 +600,6 @@ export const TranslatorApp: React.FC = () => {
 
       <footer className="bg-card border-t border-border">
         <div className="container mx-auto p-4 md:p-6 max-w-4xl space-y-4">
-          <AdBanner title="Footer Advertisement Area" className="h-16" />
           <p className="text-center text-xs text-muted-foreground">© 2025 Multi Translator. All rights reserved.</p>
         </div>
       </footer>
