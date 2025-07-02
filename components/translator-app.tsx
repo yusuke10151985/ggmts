@@ -42,6 +42,22 @@ function enforceSummaryStructure(summary: any[], parentId: string = ''): any[] {
   });
 }
 
+// summary配列を再帰的に番号付きテキストに変換するユーティリティ
+function flattenSummaryToText(items: any[], prefix = ''): string[] {
+  if (!Array.isArray(items)) return [];
+  let lines: string[] = [];
+  items.forEach((item, idx) => {
+    const number = prefix ? `${prefix}.${idx + 1}` : `${idx + 1}`;
+    if (item.title && item.title.trim()) {
+      lines.push(`${number}. ${item.title.trim()}`);
+    }
+    if (Array.isArray(item.children) && item.children.length > 0) {
+      lines = lines.concat(flattenSummaryToText(item.children, number));
+    }
+  });
+  return lines;
+}
+
 export const TranslatorApp: React.FC = () => {
   const [inputText, setInputText] = useState('')
   const [sourceLang, setSourceLang] = useState('auto')
@@ -537,15 +553,21 @@ export const TranslatorApp: React.FC = () => {
         </div>
       </footer>
 
-      {/* 通常の出力欄: summaryのみ表示 */}
+      {/* 通常の出力欄: summaryまたはtextを表示 */}
       {result && Array.isArray(result.translations) && (
         <div className="mt-6 p-4 bg-white rounded border text-base text-gray-900">
           {result.translations.map((t: any) => (
             <div key={t.lang} className="mb-4">
-              {Array.isArray(t.summary) && t.summary.length > 0 ? (
-                <SummaryList items={t.summary} />
+              {mode === 'summarize' ? (
+                Array.isArray(t.summary) && t.summary.length > 0 ? (
+                  <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
+                    {flattenSummaryToText(t.summary).join('\n')}
+                  </pre>
+                ) : (
+                  <div className="text-gray-400 italic">No summary available.</div>
+                )
               ) : (
-                <div className="text-gray-400 italic">No summary available.</div>
+                <p className="text-foreground whitespace-pre-wrap">{t.text}</p>
               )}
             </div>
           ))}
