@@ -543,11 +543,7 @@ export const TranslatorApp: React.FC = () => {
           {result.translations.map((t: any) => (
             <div key={t.lang} className="mb-4">
               {Array.isArray(t.summary) && t.summary.length > 0 ? (
-                <ol className="list-decimal list-inside space-y-1">
-                  {t.summary.map((item: string, idx: number) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ol>
+                <SummaryList items={t.summary} />
               ) : (
                 <div className="text-gray-400 italic">No summary available.</div>
               )}
@@ -576,5 +572,22 @@ function CopyButtonWithFeedback({ text }: { text: string }) {
       {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
       {copied ? 'Copied!' : 'Copy'}
     </Button>
+  );
+}
+
+// 再帰的にsummaryを表示するコンポーネント
+function SummaryList({ items }: { items: any[] }) {
+  if (!Array.isArray(items) || items.length === 0) return null;
+  return (
+    <ol className="list-decimal list-inside space-y-1">
+      {items.map((item, idx) => (
+        <li key={item.id || idx}>
+          {item.title}
+          {Array.isArray(item.children) && item.children.length > 0 && (
+            <SummaryList items={item.children} />
+          )}
+        </li>
+      ))}
+    </ol>
   );
 } 
