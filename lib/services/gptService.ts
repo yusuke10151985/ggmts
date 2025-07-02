@@ -138,17 +138,19 @@ export const getTranslations = async (
     }
 
     const responseText = data.choices[0].message.content.trim();
-    console.log('📝 OpenAI API response text (first 200 chars):', responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''));
-    
+    console.log('📝 GPT raw response text:', responseText);
     // Clean potential markdown fences
     const fenceRegex = /^```(?:json)?\s*\n?(.*?)\n?\s*```$/;
     const match = responseText.match(fenceRegex);
     const jsonText = match && match[1] ? match[1].trim() : responseText;
-    
-    console.log('🧹 Cleaned JSON text (first 200 chars):', jsonText.substring(0, 200) + (jsonText.length > 200 ? '...' : ''));
-    
+    console.log('🧹 Cleaned JSON text:', jsonText);
     const parsedData = JSON.parse(jsonText);
     console.log('✅ Parsed OpenAI data:', parsedData);
+
+    // summary_markdownがあればsummary配列に変換
+    if (parsedData && parsedData.summary_markdown && (!parsedData.summary || parsedData.summary.length === 0)) {
+      parsedData.summary = parsedData.summary_markdown.split(/\r?\n/).filter((line: string) => line.trim());
+    }
 
     if (parsedData && Array.isArray(parsedData.translations)) {
       return parsedData as TranslationResult;
