@@ -71,7 +71,13 @@ function ContactForm() {
     <div className="max-w-xl mx-auto p-6 bg-background text-foreground dark:bg-gray-900 dark:text-white">
       <div className="mb-4 flex gap-2">
         {langs.map(l => (
-          <button key={l.code} className={`px-3 py-1 rounded ${lang === l.code ? 'bg-blue-600 text-white' : 'bg-gray-200'}`} onClick={() => setLang(l.code)}>{l.label}</button>
+          <button
+            key={l.code}
+            className={`px-3 py-1 rounded transition-colors duration-200 ${lang === l.code ? 'bg-blue-600 text-white' : 'bg-background text-foreground dark:bg-gray-800 dark:text-white border'} `}
+            onClick={() => setLang(l.code)}
+          >
+            {l.label}
+          </button>
         ))}
       </div>
       <h2 className="text-2xl font-bold mb-4">{labels[lang].title}</h2>
@@ -85,7 +91,7 @@ function ContactForm() {
           </div>
           <div>
             <label className="block mb-1">Email</label>
-            <input type="email" className="w-full border rounded p-2 bg-gray-100" value={email} readOnly disabled />
+            <input type="email" className="w-full border rounded p-2 bg-background text-foreground dark:bg-gray-800 dark:text-white" value={email} readOnly disabled />
           </div>
           <div>
             <label className="block mb-1">{labels[lang].message}</label>

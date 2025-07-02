@@ -24,7 +24,13 @@ export default function ReleaseNotesPage() {
       <h2 className="text-2xl font-bold mb-4">リリースノート / Release Notes</h2>
       <div className="mb-4 flex gap-2">
         {langs.map(l => (
-          <button key={l.code} className={`px-3 py-1 rounded ${lang === l.code ? 'bg-blue-600 text-white' : 'bg-gray-200'}`} onClick={() => setLang(l.code)}>{l.label}</button>
+          <button
+            key={l.code}
+            className={`px-3 py-1 rounded transition-colors duration-200 ${lang === l.code ? 'bg-blue-600 text-white' : 'bg-background text-foreground dark:bg-gray-800 dark:text-white border'} `}
+            onClick={() => setLang(l.code)}
+          >
+            {l.label}
+          </button>
         ))}
       </div>
       {loading ? <div>Loading...</div> : (

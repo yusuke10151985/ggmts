@@ -282,7 +282,7 @@ export const TranslatorApp: React.FC = () => {
     const sourceLanguageName = result?.sourceLanguage ? getLanguageName(result.sourceLanguage) : 'Source Text'
     selectionOrder.forEach((key, idx) => {
       if (key === 'source' && inputText) {
-        textToCopy += `--- ${sourceLanguageName} / English ---\n${inputText}\n\n`;
+        textToCopy += `--- ${sourceLanguageName} (Original language) ---\n${inputText}\n\n`;
       } else {
         const t = result?.translations?.find((tr: any) => tr.lang === key);
         if (t) {
