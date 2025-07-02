@@ -82,6 +82,8 @@ model ApiUsageLog {
   userId    String?
   user      User?    @relation(fields: [userId], references: [id])
   apiType   String   // 例: "translate", "summarize"
+  provider  String?  // 追加: APIプロバイダ名（例: openai, google）
+  model     String?  // 追加: モデル名（例: gpt-4o-mini, gemini-1.5-flash）
   tokens    Int      // 消費トークン数
   cost      Float    // APIコスト（USD等）
   createdAt DateTime @default(now())

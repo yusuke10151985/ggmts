@@ -117,13 +117,29 @@ export async function POST(request: NextRequest) {
     try {
       const session = await getServerSession(authOptions);
       const userId = session?.user?.id || null;
-      // 仮: トークン数・コスト計算（後で精緻化）
+      // API種別・プロバイダ・モデルごとにコスト単価を分岐
+      let model = '';
+      let provider = '';
+      let unitCost = 0.00001; // デフォルト
+      if (apiProvider === 'gpt' || (!apiProvider && translationMode === 'summarize')) {
+        provider = 'openai';
+        model = 'gpt-4o-mini'; // gptService.tsで固定
+        // 例: GPT-4o-mini: $0.0005/1K input, $0.0015/1K output（仮: input+output合算で0.001/1K）
+        unitCost = 0.001 / 1000;
+      } else if (apiProvider === 'gemini') {
+        provider = 'google';
+        model = 'gemini-1.5-flash'; // geminiService.tsで固定
+        // 例: Gemini 1.5 Flash: $0.00025/1K input, $0.0005/1K output（仮: input+output合算で0.0004/1K）
+        unitCost = 0.0004 / 1000;
+      }
       const tokens = text.length + (result.translations?.map((t:any)=>t.text.length).reduce((a:number,b:number)=>a+b,0) || 0);
-      const cost = tokens * 0.00001; // 仮コスト
+      const cost = tokens * unitCost;
       await prisma.apiUsageLog.create({
         data: {
           userId,
           apiType: translationMode,
+          provider,
+          model,
           tokens,
           cost,
           inputText: text.substring(0, 500),
