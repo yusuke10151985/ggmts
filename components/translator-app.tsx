@@ -368,6 +368,9 @@ export const TranslatorApp: React.FC = () => {
                     rows={5}
                   />
                   <div className="flex items-center mt-2">
+                    {selectionOrder.includes('source') && selectedForCopy['source'] && (
+                      <span className="text-2xl font-bold text-blue-600 mr-2">{selectionOrder.indexOf('source') + 1}</span>
+                    )}
                     <input
                       type="checkbox"
                       id="copy-source"
@@ -376,12 +379,10 @@ export const TranslatorApp: React.FC = () => {
                       onChange={() => handleToggleCopySelection('source')}
                       disabled={!inputText.trim()}
                     />
-                    <label htmlFor="copy-source" className="ml-2 block text-sm text-muted-foreground">
+                    <label htmlFor="copy-source" className="ml-2 block text-sm text-muted-foreground flex items-center gap-2">
                       Select source text for copy
+                      <span className="text-xs text-muted-foreground">(Original / English)</span>
                     </label>
-                    {selectionOrder.includes('source') && selectedForCopy['source'] && (
-                      <span className="ml-1 text-xs text-blue-600">{selectionOrder.indexOf('source') + 1}</span>
-                    )}
                   </div>
                   
                   <div className="mt-4 flex flex-col gap-4">
@@ -509,6 +510,9 @@ export const TranslatorApp: React.FC = () => {
                             className="rounded-lg border bg-secondary"
                           >
                             <div className="flex items-center p-3 border-b border-border">
+                              {selectionOrder.includes(translation.lang) && selectedForCopy[translation.lang] && (
+                                <span className="text-2xl font-bold text-blue-600 mr-3">{selectionOrder.indexOf(translation.lang) + 1}</span>
+                              )}
                               <input
                                 type="checkbox"
                                 id={`copy-${translation.lang}`}

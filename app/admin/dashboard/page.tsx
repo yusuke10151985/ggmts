@@ -19,8 +19,8 @@ export default function AdminDashboardPage() {
   const [noteForm, setNoteForm] = useState({ title: '', content_ja: '', content_en: '', content_th: '', isEdit: false });
   const [noteMsg, setNoteMsg] = useState('');
   // --- グラフサイズ調整用 state ---
-  const [chartWidth, setChartWidth] = useState(600);
-  const [chartHeight, setChartHeight] = useState(220);
+  const [chartWidth, setChartWidth] = useState(1000);
+  const [chartHeight, setChartHeight] = useState(500);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -278,8 +278,8 @@ export default function AdminDashboardPage() {
             <h3 className="font-semibold mt-4 mb-1">ユーザーごとの集計</h3>
             <div className="overflow-x-auto">
               <table className="min-w-[700px] border">
-                <thead>
-                  <tr className="bg-gray-100">
+                <thead className="bg-gray-900 text-white">
+                  <tr>
                     <th className="px-2 py-1 border">UserID</th>
                     <th className="px-2 py-1 border">User</th>
                     <th className="px-2 py-1 border">回数</th>
@@ -311,8 +311,8 @@ export default function AdminDashboardPage() {
             </h3>
             <div className="overflow-x-auto max-h-80">
               <table className="min-w-[900px] border text-xs">
-                <thead>
-                  <tr className="bg-gray-100">
+                <thead className="bg-gray-900 text-white">
+                  <tr>
                     <th className="px-2 py-1 border">日時</th>
                     <th className="px-2 py-1 border">User</th>
                     <th className="px-2 py-1 border">API種別</th>
@@ -414,8 +414,8 @@ export default function AdminDashboardPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-[700px] border">
-              <thead>
-                <tr className="bg-gray-100">
+              <thead className="bg-gray-900 text-white">
+                <tr>
                   <th className="px-2 py-1 border">ID</th>
                   <th className="px-2 py-1 border">名前</th>
                   <th className="px-2 py-1 border">メール</th>
@@ -469,26 +469,31 @@ export default function AdminDashboardPage() {
           <textarea placeholder="本文（日本語）" className="border px-2 py-1 rounded w-full mb-2 text-foreground bg-background" value={noteForm.content_ja} onChange={e => setNoteForm(f => ({ ...f, content_ja: e.target.value }))} rows={2} />
           <button className="px-4 py-1 bg-blue-600 text-white rounded" onClick={async () => {
             setNoteMsg('');
-            // GPTでタイトル・本文の英語・タイ語生成
             let title_en = '', title_th = '', content_en = '', content_th = '';
-            try {
-              const gptRes = await fetch('/api/gpt-translate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  jaTitle: noteForm.title,
-                  jaBody: noteForm.content_ja,
-                  to: ['en', 'th']
-                })
-              });
-              if (gptRes.ok) {
-                const gptData = await gptRes.json();
-                title_en = gptData.en?.title || '';
-                title_th = gptData.th?.title || '';
-                content_en = gptData.en?.body || '';
-                content_th = gptData.th?.body || '';
-              }
-            } catch {}
+            if (noteForm.title || noteForm.content_ja) {
+              try {
+                const gptRes = await fetch('/api/gpt-translate', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    jaTitle: noteForm.title,
+                    jaBody: noteForm.content_ja,
+                    to: ['en', 'th']
+                  })
+                });
+                if (gptRes.ok) {
+                  const gptData = await gptRes.json();
+                  if (noteForm.title) {
+                    title_en = gptData.en?.title || '';
+                    title_th = gptData.th?.title || '';
+                  }
+                  if (noteForm.content_ja) {
+                    content_en = gptData.en?.body || '';
+                    content_th = gptData.th?.body || '';
+                  }
+                }
+              } catch {}
+            }
             const res = await fetch('/api/release-notes', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
