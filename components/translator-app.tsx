@@ -55,7 +55,7 @@ export const TranslatorApp: React.FC = () => {
   const [copyButtonText, setCopyButtonText] = useState('Copy Selected')
   const [showMoreLangs, setShowMoreLangs] = useState(false)
   const apiProvider: ApiProvider = 'gpt'
-  const [mode, setMode] = useLocalStorage<TranslationMode>('translationMode', 'translate')
+  const [mode, setMode] = useState<TranslationMode>('translate')
   const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false)
   const modeDropdownRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -282,18 +282,36 @@ export const TranslatorApp: React.FC = () => {
     executeTranslation(inputText, sourceLang, targetLangs);
   };
 
+  // --- トグルスイッチUI ---
+  const ModeToggle = () => (
+    <div className="flex items-center gap-4 my-4">
+      <span className={`font-bold text-lg ${mode === 'translate' ? 'text-blue-600' : 'text-gray-400'}`}>翻訳</span>
+      <button
+        className={`relative w-16 h-8 rounded-full transition-colors duration-300 focus:outline-none ${mode === 'summarize' ? 'bg-green-500' : 'bg-blue-500'}`}
+        onClick={() => setMode(mode === 'translate' ? 'summarize' : 'translate')}
+        aria-label="モード切替"
+      >
+        <span
+          className={`absolute left-1 top-1 w-6 h-6 rounded-full bg-white shadow transition-transform duration-300 ${mode === 'summarize' ? 'translate-x-8' : ''}`}
+        />
+      </button>
+      <span className={`font-bold text-lg ${mode === 'summarize' ? 'text-green-600' : 'text-gray-400'}`}>要約</span>
+    </div>
+  );
+
   return (
-    <div className="relative w-full min-h-screen bg-secondary">
+    <div className={`relative w-full min-h-screen ${mode === 'summarize' ? 'bg-green-50' : 'bg-blue-50'}`}>
       <div className="flex-grow w-full">
         <div className="w-full px-0 md:px-2">
           <div className="flex flex-col xl:flex-row gap-4 w-full">
             <main className="flex-1 w-full">
               <Card className="w-full">
                 <CardContent className="p-2 md:p-4 w-full">
+                  <ModeToggle />
                   <textarea
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
-                    placeholder={mode === 'translate' ? "Enter text to translate..." : "Enter text to translate and summarize..."}
+                    placeholder={mode === 'translate' ? "Enter text to translate..." : "Enter text to summarize..."}
                     className="w-full p-3 border border-input bg-transparent rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring resize-none transition-shadow"
                     rows={5}
                   />
@@ -331,11 +349,10 @@ export const TranslatorApp: React.FC = () => {
                           </select>
                           <Button
                             onClick={handleExecute}
+                            className={`w-1/2 min-w-0 px-4 py-1.5 text-sm font-bold ${mode === 'summarize' ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
                             disabled={isLoading || !inputText.trim() || targetLangs.length === 0}
-                            size="sm"
-                            className="w-1/2 min-w-0 px-4 py-1.5 text-sm font-bold"
                           >
-                            Execute
+                            {isLoading ? (mode === 'summarize' ? '要約中...' : '翻訳中...') : (mode === 'summarize' ? '要約する' : '翻訳する')}
                           </Button>
                         </div>
                       </div>
