@@ -55,7 +55,7 @@ export const TranslatorApp: React.FC = () => {
   const [copyButtonText, setCopyButtonText] = useState('Copy Selected')
   const [showMoreLangs, setShowMoreLangs] = useState(false)
   const [mode, setMode] = useState<TranslationMode>('translate')
-  const apiProvider: ApiProvider = mode === 'summarize' ? 'gemini' : 'gpt'
+  const apiProvider: ApiProvider = 'gpt'
   const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false)
   const modeDropdownRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
