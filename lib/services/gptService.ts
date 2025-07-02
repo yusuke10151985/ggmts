@@ -154,7 +154,7 @@ export const getTranslations = async (
     }
 
     if (parsedData && Array.isArray(parsedData.translations)) {
-      return parsedData as TranslationResult;
+      return { ...parsedData, resultRawContent: responseText };
     } else {
       throw new Error("Invalid JSON structure received from API.");
     }
