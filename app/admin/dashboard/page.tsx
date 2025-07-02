@@ -18,6 +18,9 @@ export default function AdminDashboardPage() {
   const [notes, setNotes] = useState<any[]>([]);
   const [noteForm, setNoteForm] = useState({ title: '', content_ja: '', content_en: '', content_th: '' });
   const [noteMsg, setNoteMsg] = useState('');
+  // --- グラフサイズ調整用 state ---
+  const [chartWidth, setChartWidth] = useState(600);
+  const [chartHeight, setChartHeight] = useState(220);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -216,11 +219,18 @@ export default function AdminDashboardPage() {
           <button type="submit" className="px-3 py-1 bg-blue-600 text-white rounded">絞り込み</button>
           <button type="button" className="px-3 py-1 bg-gray-400 text-white rounded" onClick={() => { setFilters({ from: '', to: '', userId: '', apiType: '' }); fetchUsage(); }}>リセット</button>
         </form>
+        {/* グラフサイズ調整UI */}
+        <div className="flex gap-4 items-center mb-2">
+          <label className="text-xs">グラフ幅(px):</label>
+          <input type="number" min={200} max={2000} value={chartWidth} onChange={e => setChartWidth(Number(e.target.value))} className="border px-2 py-1 rounded w-20" />
+          <label className="text-xs">高さ(px):</label>
+          <input type="number" min={100} max={1000} value={chartHeight} onChange={e => setChartHeight(Number(e.target.value))} className="border px-2 py-1 rounded w-20" />
+        </div>
         {/* 日別API実行回数グラフ */}
         {usage?.dailyStats && usage.dailyStats.length > 0 && (
           <div className="mb-6 bg-white p-4 rounded shadow max-w-2xl">
             <h3 className="font-semibold mb-2">日別API実行回数</h3>
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width={chartWidth} height={chartHeight}>
               <LineChart data={usage.dailyStats.map((d: any) => ({
                 date: d.createdAt.slice(0, 10),
                 count: d._count._all,
@@ -258,24 +268,29 @@ export default function AdminDashboardPage() {
             </div>
             <h3 className="font-semibold mt-4 mb-1">ユーザーごとの集計</h3>
             <div className="overflow-x-auto">
-              <table className="min-w-[600px] border">
+              <table className="min-w-[700px] border">
                 <thead>
                   <tr className="bg-gray-100">
                     <th className="px-2 py-1 border">UserID</th>
+                    <th className="px-2 py-1 border">User</th>
                     <th className="px-2 py-1 border">回数</th>
                     <th className="px-2 py-1 border">トークン数</th>
                     <th className="px-2 py-1 border">コスト(USD)</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {usage.userStats.map((u: any) => (
-                    <tr key={u.userId || 'unknown'}>
-                      <td className="border px-2 py-1">{u.userId || <span className="text-gray-400">未ログイン</span>}</td>
-                      <td className="border px-2 py-1">{u._count._all}</td>
-                      <td className="border px-2 py-1">{u._sum.tokens}</td>
-                      <td className="border px-2 py-1">{u._sum.cost?.toFixed(4)}</td>
-                    </tr>
-                  ))}
+                  {usage.userStats.map((u: any) => {
+                    const userObj = users.find((usr: any) => usr.id === u.userId);
+                    return (
+                      <tr key={u.userId || 'unknown'}>
+                        <td className="border px-2 py-1">{u.userId || <span className="text-gray-400">未ログイン</span>}</td>
+                        <td className="border px-2 py-1">{userObj ? `${userObj.name || ''} ${userObj.email ? `<${userObj.email}>` : ''}` : <span className="text-gray-400">不明</span>}</td>
+                        <td className="border px-2 py-1">{u._count._all}</td>
+                        <td className="border px-2 py-1">{u._sum.tokens}</td>
+                        <td className="border px-2 py-1">{u._sum.cost?.toFixed(4)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -307,7 +322,7 @@ export default function AdminDashboardPage() {
                       <td className="border px-2 py-1">{log.tokens}</td>
                       <td className="border px-2 py-1">{log.cost?.toFixed(4)}</td>
                       <td className="border px-2 py-1 max-w-[200px] truncate">{log.inputText}</td>
-                      <td className="border px-2 py-1 max-w-[200px] truncate">{log.result}</td>
+                      <td className="border px-2 py-1 max-w-[200px] truncate">{typeof log.result === 'string' ? log.result : JSON.stringify(log.result)}</td>
                     </tr>
                   ))}
                 </tbody>
