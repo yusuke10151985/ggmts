@@ -541,6 +541,18 @@ export const TranslatorApp: React.FC = () => {
         <div className="mt-6 p-4 bg-gray-100 rounded border text-xs text-gray-800">
           <div className="font-bold mb-1">Raw API Response</div>
           <pre className="whitespace-pre-wrap break-all">{JSON.stringify(result, null, 2)}</pre>
+          {(result as any).resultRawContent && (
+            <>
+              <div className="font-bold mt-4 mb-1">OpenAI API response content (JSON string)</div>
+              <pre className="whitespace-pre-wrap break-all">{(() => {
+                try {
+                  return JSON.stringify(JSON.parse((result as any).resultRawContent), null, 2);
+                } catch {
+                  return (result as any).resultRawContent;
+                }
+              })()}</pre>
+            </>
+          )}
         </div>
       )}
     </div>
