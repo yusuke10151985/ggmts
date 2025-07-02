@@ -6,6 +6,7 @@ export interface Language {
 export interface Translation {
   lang: string;
   text: string;
+  summary?: any[];
 }
 
 export interface TranslationResult {

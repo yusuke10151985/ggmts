@@ -276,7 +276,7 @@ export const TranslatorApp: React.FC = () => {
       if (key === 'source' && inputText) {
         textToCopy += `--- ${sourceLanguageName} ---\n${inputText}\n\n`;
       } else {
-        const t = result.translations.find((tr: any) => tr.lang === key);
+        const t = result?.translations?.find((tr: any) => tr.lang === key);
         if (t) {
           textToCopy += `--- ${getLanguageName(t.lang)} ---\n`;
           if (mode === 'summarize' && Array.isArray(t.summary) && t.summary.length > 0) {
