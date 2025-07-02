@@ -231,12 +231,20 @@ export default function AdminDashboardPage() {
           <div className="mb-6 p-0" style={{ width: chartWidth, height: chartHeight + 60, background: 'var(--card)' }}>
             <h3 className="font-semibold mb-2">日別API実行回数</h3>
             <ResponsiveContainer width={chartWidth} height={chartHeight}>
-              <LineChart data={usage.dailyStats.map((d: any) => ({
-                date: d.createdAt.slice(0, 10),
-                count: d._count._all,
-                tokens: d._sum.tokens,
-                cost: d._sum.cost,
-              }))}>
+              <LineChart data={Array.from(
+                Object.values(
+                  usage.dailyStats.reduce((acc: any, d: any) => {
+                    const date = d.createdAt.slice(0, 10);
+                    if (!acc[date]) {
+                      acc[date] = { date, count: 0, tokens: 0, cost: 0 };
+                    }
+                    acc[date].count += d._count._all;
+                    acc[date].tokens += d._sum.tokens;
+                    acc[date].cost += d._sum.cost;
+                    return acc;
+                  }, {})
+                )
+              )}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" tickFormatter={date => date} />
                 <YAxis yAxisId="left" allowDecimals={false} tick={{ fill: 'var(--foreground)' }} />
@@ -455,7 +463,7 @@ export default function AdminDashboardPage() {
 
       {/* --- リリースノート編集 --- */}
       <section className="mt-12 max-w-2xl">
-        <h2 className="font-bold mb-2">リリースノート編集（多言語）</h2>
+        <h2 className="font-bold mb-2">新規リリースノート</h2>
         <div className="mb-2">
           <input type="text" placeholder="タイトル（任意）" className="border px-2 py-1 rounded w-full mb-2 text-foreground bg-background" value={noteForm.title} onChange={e => setNoteForm(f => ({ ...f, title: e.target.value }))} />
           <textarea placeholder="本文（日本語）" className="border px-2 py-1 rounded w-full mb-2 text-foreground bg-background" value={noteForm.content_ja} onChange={e => setNoteForm(f => ({ ...f, content_ja: e.target.value }))} rows={2} />
@@ -497,19 +505,28 @@ export default function AdminDashboardPage() {
               const err = await res.json();
               setNoteMsg('追加に失敗: ' + (err.error || ''));
             }
-          }}>リリースノート新規作成</button>
+          }}>作成</button>
           {noteMsg && <div className="text-sm mt-1 text-red-600">{noteMsg}</div>}
         </div>
         <div>
           <h3 className="font-semibold mt-4 mb-2">既存リリースノート一覧</h3>
           <ul className="space-y-2">
             {notes.map(note => (
-              <li key={note.id} className="border rounded p-3">
+              <li key={note.id} className="border rounded p-3 bg-background text-foreground">
                 <div className="text-xs text-gray-500 mb-1">{note.createdAt?.slice(0,10)} {note.title && <span className="ml-2 font-bold">{note.title}</span>}</div>
                 <div className="mb-1"><span className="font-bold">[JA]</span> {note.content_ja}</div>
                 <div className="mb-1"><span className="font-bold">[EN]</span> {note.content_en}</div>
                 <div><span className="font-bold">[TH]</span> {note.content_th}</div>
                 <button className="ml-2 px-2 py-1 bg-blue-600 text-white rounded text-xs" onClick={() => setNoteForm({ ...note, isEdit: true })}>編集</button>
+                <button className="ml-2 px-2 py-1 bg-red-600 text-white rounded text-xs" onClick={async () => {
+                  if (!confirm('本当に削除しますか？')) return;
+                  await fetch('/api/release-notes', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: note.id })
+                  });
+                  fetchNotes();
+                }}>削除</button>
               </li>
             ))}
           </ul>

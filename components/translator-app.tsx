@@ -286,7 +286,7 @@ export const TranslatorApp: React.FC = () => {
       } else {
         const t = result?.translations?.find((tr: any) => tr.lang === key);
         if (t) {
-          textToCopy += `--- ${getLanguageName(t.lang)} ---\n`;
+          textToCopy += `--- ${getLanguageName(t.lang)} ---\n${NOTICE_TEXTS[t.lang] || NOTICE_TEXTS.default}\n`;
           if (mode === 'summarize' && Array.isArray(t.summary) && t.summary.length > 0) {
             if (typeof t.summary[0] === 'string') {
               textToCopy += t.summary.join('\n') + '\n\n';
@@ -516,11 +516,9 @@ export const TranslatorApp: React.FC = () => {
                                 checked={!!selectedForCopy[translation.lang]}
                                 onChange={() => handleToggleCopySelection(translation.lang)}
                               />
-                              <label htmlFor={`copy-${translation.lang}`} className="ml-3 flex-1">
+                              <label htmlFor={`copy-${translation.lang}`} className="ml-3 flex-1 flex items-center gap-2">
                                 <h3 className="font-semibold text-foreground">{getLanguageName(translation.lang)}</h3>
-                                {selectionOrder.includes(translation.lang) && selectedForCopy[translation.lang] && (
-                                  <span className="ml-1 text-xs text-blue-600">{selectionOrder.indexOf(translation.lang) + 1}</span>
-                                )}
+                                <span className="text-xs text-muted-foreground">{NOTICE_TEXTS[translation.lang] || NOTICE_TEXTS.default}</span>
                               </label>
                               {/* 個別コピーボタン */}
                               <CopyButtonWithFeedback text={translation.text} />

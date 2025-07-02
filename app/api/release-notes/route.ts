@@ -59,4 +59,17 @@ export async function PATCH(req: NextRequest) {
     },
   });
   return NextResponse.json(note);
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session || (session.user as any)?.role !== 'admin') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const { id } = await req.json();
+  if (!id) {
+    return NextResponse.json({ error: 'ID required' }, { status: 400 });
+  }
+  await prisma.releaseNote.delete({ where: { id } });
+  return NextResponse.json({ success: true });
 } 
