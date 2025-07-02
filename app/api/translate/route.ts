@@ -78,11 +78,13 @@ export async function POST(request: NextRequest) {
     let result
     try {
       let translationPromise;
-      if (translationMode === 'summarize') {
-        // 要約はGemini
+      if (apiProvider === 'gpt') {
+        translationPromise = getGptTranslations(text, sourceLang, targetLangs, translationMode);
+      } else if (apiProvider === 'gemini') {
         translationPromise = getGeminiTranslations(text, sourceLang, targetLangs, translationMode);
+      } else if (translationMode === 'summarize') {
+        translationPromise = getGptTranslations(text, sourceLang, targetLangs, translationMode);
       } else {
-        // 翻訳はGPT
         translationPromise = getGptTranslations(text, sourceLang, targetLangs, translationMode);
       }
       // 25秒でタイムアウト
