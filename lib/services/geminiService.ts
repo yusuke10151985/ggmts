@@ -173,6 +173,19 @@ export const getTranslations = async (
     const parsedResponse = JSON.parse(cleanText);
     console.log('Parsed JSON response:', JSON.stringify(parsedResponse, null, 2));
 
+    // summary配列の自動補完: summaryが空/未定義ならtextを行分割してsummary配列に
+    if (parsedResponse && Array.isArray(parsedResponse.translations)) {
+      parsedResponse.translations = parsedResponse.translations.map((t: any) => {
+        if (!t.summary || t.summary.length === 0) {
+          const lines = (t.text || '').split(/\r?\n/).map((line: string) => line.trim()).filter(Boolean);
+          // 番号付きリスト形式の行のみ抽出（なければ全行）
+          const numbered = lines.filter((line: string) => /^[0-9]+(\.[0-9]+)*[\.、．] /.test(line) || /^[0-9]+(\.[0-9]+)*[\.、．]/.test(line));
+          return { ...t, summary: numbered.length > 0 ? numbered : lines };
+        }
+        return t;
+      });
+    }
+
     // Gemini workaround: Only return the originally requested language(s)
     let filteredTranslations = parsedResponse.translations;
     if (actualTargetLangs.length !== filterTo.length) {
