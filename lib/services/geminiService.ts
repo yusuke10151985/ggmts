@@ -41,31 +41,7 @@ Please respond with a JSON object in this exact format:
 
 Ensure the response is valid JSON and includes all requested target languages.`;
   } else {
-    return `${sourceLanguageInstruction}
-
-Please summarize the following text in ${targetLanguagesString}:
-
-Text: "${text}"
-
-IMPORTANT: You MUST output the summary as a numbered list (e.g., 1., 2., 3., ...), with each item on a new line. DO NOT include any greetings, pleasantries, or introductory/closing remarks. Only include the main points and requirements. If there are URLs or important details, include them as numbered items. Do NOT output a single paragraph. Do NOT omit numbering. Do NOT include any text before or after the list. Example:
-1. Main point one
-2. Main point two
-3. Important URL: https://example.com
-
-For each target language, write the summary in that language. Never answer in Japanese unless Japanese is the target language.
-
-Please respond with a JSON object in this exact format:
-{
-  "sourceLanguage": "detected_or_specified_lang_code",
-  "translations": [
-    {
-      "lang": "target_lang_code",
-      "text": "summarized_text (as a numbered list, each item on a new line)"
-    }
-  ]
-}
-
-Ensure the response is valid JSON and includes all requested target languages.`;
+    return `Please analyze the following long text.\n\n1. Divide the text into items based on topics and contents.\n2. Create a multi-level numbered structure, using format like:\n   1.\n     1.1\n       1.1.1\n   2.\n     2.1\n       2.1.1\n... according to major, medium, and minor categories.\n\n3. Completely remove any sentences that are greetings, closings, or irrelevant to the main content.\n\nStrict instructions:\n- Do NOT include any greetings like "Hello", "Thank you", or closing statements.\n- Always format using numbers: 1, 1.1, 1.1.1, etc.\n- If some parts do not fit, omit them. Only meaningful content should remain.\n- Keep each item short and focused.\n\nRespond ONLY with a JSON object in this format:\n{\n  "sourceLanguage": "${sourceLang}",\n  "translations": [\n    {\n      "lang": "${targetLangs[0]}",\n      "text": "${text}",\n      "summary": [\n        "${text.split('\n').filter(line => line.trim() !== '').map((line, index) => `${index + 1}. ${line.trim()}`).join('\n')}"\n      ]\n    }\n  ]\n}`;
   }
 };
 
