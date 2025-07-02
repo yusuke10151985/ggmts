@@ -537,22 +537,22 @@ export const TranslatorApp: React.FC = () => {
         </div>
       </footer>
 
-      {result && (
-        <div className="mt-6 p-4 bg-gray-100 rounded border text-xs text-gray-800">
-          <div className="font-bold mb-1">Raw API Response</div>
-          <pre className="whitespace-pre-wrap break-all">{JSON.stringify(result, null, 2)}</pre>
-          {(result as any).resultRawContent && (
-            <>
-              <div className="font-bold mt-4 mb-1">OpenAI API response content (JSON string)</div>
-              <pre className="whitespace-pre-wrap break-all">{(() => {
-                try {
-                  return JSON.stringify(JSON.parse((result as any).resultRawContent), null, 2);
-                } catch {
-                  return (result as any).resultRawContent;
-                }
-              })()}</pre>
-            </>
-          )}
+      {/* 通常の出力欄: summaryのみ表示 */}
+      {result && Array.isArray(result.translations) && (
+        <div className="mt-6 p-4 bg-white rounded border text-base text-gray-900">
+          {result.translations.map((t: any) => (
+            <div key={t.lang} className="mb-4">
+              {Array.isArray(t.summary) && t.summary.length > 0 ? (
+                <ol className="list-decimal list-inside space-y-1">
+                  {t.summary.map((item: string, idx: number) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ol>
+              ) : (
+                <div className="text-gray-400 italic">No summary available.</div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
