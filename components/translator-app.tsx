@@ -536,6 +536,13 @@ export const TranslatorApp: React.FC = () => {
           <p className="text-center text-xs text-muted-foreground">© 2025 Multi Translator. All rights reserved.</p>
         </div>
       </footer>
+
+      {result && (
+        <div className="mt-6 p-4 bg-gray-100 rounded border text-xs text-gray-800">
+          <div className="font-bold mb-1">Raw API Response</div>
+          <pre className="whitespace-pre-wrap break-all">{JSON.stringify(result, null, 2)}</pre>
+        </div>
+      )}
     </div>
   )
 }
