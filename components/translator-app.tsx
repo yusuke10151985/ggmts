@@ -493,9 +493,15 @@ export const TranslatorApp: React.FC = () => {
                             <div className="p-4 min-h-[120px]">
                               {mode === 'summarize' ? (
                                 Array.isArray((translation as any).summary) && (translation as any).summary.length > 0 ? (
-                                  <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
-                                    {flattenSummaryToText((translation as any).summary).join('\n')}
-                                  </pre>
+                                  typeof (translation as any).summary[0] === 'string' ? (
+                                    <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
+                                      {(translation as any).summary.join('\n')}
+                                    </pre>
+                                  ) : (
+                                    <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
+                                      {flattenSummaryToText((translation as any).summary).join('\n')}
+                                    </pre>
+                                  )
                                 ) : (
                                   <div className="text-gray-400 italic">No summary available.</div>
                                 )
@@ -577,9 +583,15 @@ export const TranslatorApp: React.FC = () => {
             <div key={t.lang} className="mb-4">
               {mode === 'summarize' ? (
                 Array.isArray(t.summary) && t.summary.length > 0 ? (
-                  <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
-                    {flattenSummaryToText(t.summary).join('\n')}
-                  </pre>
+                  typeof t.summary[0] === 'string' ? (
+                    <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
+                      {t.summary.join('\n')}
+                    </pre>
+                  ) : (
+                    <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
+                      {flattenSummaryToText(t.summary).join('\n')}
+                    </pre>
+                  )
                 ) : (
                   <div className="text-gray-400 italic">No summary available.</div>
                 )
