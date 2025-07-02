@@ -484,7 +484,17 @@ export const TranslatorApp: React.FC = () => {
                               <CopyButtonWithFeedback text={translation.text} />
                             </div>
                             <div className="p-4 min-h-[120px]">
-                              <p className="text-foreground whitespace-pre-wrap">{translation.text}</p>
+                              {mode === 'summarize' ? (
+                                Array.isArray((translation as any).summary) && (translation as any).summary.length > 0 ? (
+                                  <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
+                                    {flattenSummaryToText((translation as any).summary).join('\n')}
+                                  </pre>
+                                ) : (
+                                  <div className="text-gray-400 italic">No summary available.</div>
+                                )
+                              ) : (
+                                <p className="text-foreground whitespace-pre-wrap">{translation.text}</p>
+                              )}
                             </div>
                           </motion.div>
                         ))}
