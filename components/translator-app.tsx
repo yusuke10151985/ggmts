@@ -165,7 +165,7 @@ export const TranslatorApp: React.FC = () => {
         // --- summary post-processing ---
         if (mode === 'summarize' && translationResult && Array.isArray(translationResult.translations)) {
           translationResult.translations = translationResult.translations.map((t: any) => {
-            if (Array.isArray(t.summary)) {
+            if (Array.isArray(t.summary) && t.summary.length > 0 && typeof t.summary[0] === 'object') {
               return { ...t, summary: enforceSummaryStructure(t.summary) };
             }
             return t;
