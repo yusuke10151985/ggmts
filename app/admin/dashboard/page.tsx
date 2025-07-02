@@ -247,8 +247,8 @@ export default function AdminDashboardPage() {
               )}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" tickFormatter={date => date} />
-                <YAxis yAxisId="left" allowDecimals={false} tick={{ fill: 'var(--foreground)' }} />
-                <YAxis yAxisId="right" orientation="right" allowDecimals={false} tick={{ fill: 'var(--foreground)' }} />
+                <YAxis yAxisId="left" allowDecimals={false} tick={{ fill: '#fff' }} />
+                <YAxis yAxisId="right" orientation="right" allowDecimals={false} tick={{ fill: '#fff' }} />
                 <Tooltip />
                 <Line yAxisId="right" type="monotone" dataKey="count" stroke="#8884d8" name="API回数" />
                 <Line yAxisId="left" type="monotone" dataKey="tokens" stroke="#82ca9d" name="トークン数" />
@@ -262,15 +262,15 @@ export default function AdminDashboardPage() {
         ) : (
           <>
             <div className="mb-4 flex gap-8">
-              <div className="p-2 border rounded bg-gray-50">
+              <div className="p-2 border rounded bg-gray-900 text-white dark:bg-gray-900 dark:text-white">
                 <div className="text-xs text-gray-500">全体API実行回数</div>
                 <div className="text-2xl font-bold">{usage.total._count._all}</div>
               </div>
-              <div className="p-2 border rounded bg-gray-50">
+              <div className="p-2 border rounded bg-gray-900 text-white dark:bg-gray-900 dark:text-white">
                 <div className="text-xs text-gray-500">全体消費トークン数</div>
                 <div className="text-2xl font-bold">{usage.total._sum.tokens}</div>
               </div>
-              <div className="p-2 border rounded bg-gray-50">
+              <div className="p-2 border rounded bg-gray-900 text-white dark:bg-gray-900 dark:text-white">
                 <div className="text-xs text-gray-500">全体APIコスト(USD)</div>
                 <div className="text-2xl font-bold">{usage.total._sum.cost?.toFixed(4)}</div>
               </div>
