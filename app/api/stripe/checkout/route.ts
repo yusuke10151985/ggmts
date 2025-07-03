@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       items: [{ id: subscription.items.data[0].id, price: priceId }],
       proration_behavior: 'create_prorations',
     });
-    return NextResponse.json({ url: `/account?upgraded=1` });
+    return NextResponse.json({ url: '/' });
   }
   // 新規サブスクリプション
   const checkoutSession = await stripe.checkout.sessions.create({
