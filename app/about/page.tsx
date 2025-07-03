@@ -11,8 +11,8 @@ export default function AboutPage() {
   }, []);
   return (
     <main className="w-full flex flex-col md:flex-row items-stretch gap-0">
-      <div className="flex-shrink-0 flex justify-start items-start bg-transparent p-0 m-0" style={{marginLeft:'8px', marginTop:'8px', position:'sticky', top:'16px', height:'fit-content'}}>
-        <img src="/about-prompt-ton.png" alt="Prompt-ton" className="h-[80vh] w-auto object-contain rounded-lg shadow m-0 p-0" />
+      <div className="flex-shrink-0 flex justify-center items-center bg-transparent" style={{padding:'24px', height:'100%', boxSizing:'border-box', position:'sticky', top:'16px'}}>
+        <img src="/about-prompt-ton.png" alt="Prompt-ton" className="h-[80vh] w-auto object-contain rounded-lg shadow m-0 p-0" style={{display:'block'}} />
       </div>
       <div className="flex-1 min-w-0 flex flex-col justify-start items-start px-0 md:px-0 ml-0" style={{marginLeft:'8px'}}>
         <div className="mb-4 flex gap-0 mt-4 md:mt-0 justify-start items-start px-0" style={{marginLeft:0}}>
