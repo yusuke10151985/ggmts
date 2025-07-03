@@ -14,7 +14,7 @@ export default function AboutPage() {
       <div className="flex-shrink-0 flex justify-start items-start w-full md:w-[45vw] bg-transparent p-0 m-0">
         <img src="/about-prompt-ton.png" alt="Prompt-ton" className="h-[80vh] w-auto object-contain rounded-lg shadow m-0 p-0" style={{marginTop:0, marginLeft:0}} />
       </div>
-      <div className="flex-1 min-w-0 flex flex-col justify-start items-start px-0 md:px-0 ml-4" style={{maxWidth:'55vw'}}>
+      <div className="flex-1 min-w-0 flex flex-col justify-start items-start px-0 md:px-0 ml-2" style={{maxWidth:'55vw'}}>
         <div className="mb-4 flex gap-2 mt-4 md:mt-0 justify-start items-start px-0" style={{marginLeft:0}}>
           {(['ja','en','th'] as const).map(l => (
             <button
