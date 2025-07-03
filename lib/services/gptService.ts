@@ -77,7 +77,7 @@ export const getTranslations = async (
   if (!text.trim()) {
     return { sourceLanguage: 'auto', translations: [] };
   }
-
+  
   console.log('🔍 OpenAI service called with:', {
     text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
     sourceLang,

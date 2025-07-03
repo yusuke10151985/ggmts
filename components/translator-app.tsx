@@ -308,7 +308,7 @@ export const TranslatorApp: React.FC = () => {
   // --- Auth UI ---
   const AuthButton = () => {
     if (session?.user) {
-      return (
+  return (
         <div className="flex items-center gap-2">
           {session.user.image && (
             <img src={session.user.image} alt="avatar" className="w-8 h-8 rounded-full border" />
@@ -355,7 +355,7 @@ export const TranslatorApp: React.FC = () => {
       >
         <History className="w-8 h-8" />
       </button>
-    </div>
+            </div>
   );
 
   return (
@@ -367,49 +367,49 @@ export const TranslatorApp: React.FC = () => {
               <Card className="w-full">
                 <CardContent className="p-2 md:p-4 w-full">
                   <ModeToggle />
-                  <textarea
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
+                <textarea
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
                     placeholder={mode === 'translate' ? "Enter text to translate..." : "Enter text to summarize..."}
-                    className="w-full p-3 border border-input bg-transparent rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring resize-none transition-shadow"
-                    rows={5}
-                  />
-                  <div className="flex items-center mt-2">
+                  className="w-full p-3 border border-input bg-transparent rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring resize-none transition-shadow"
+                  rows={5}
+                />
+                <div className="flex items-center mt-2">
                     {selectionOrder.includes('source') && selectedForCopy['source'] && (
                       <span className="text-3xl font-extrabold text-primary mr-2">{selectionOrder.indexOf('source') + 1}</span>
                     )}
-                    <input
-                      type="checkbox"
-                      id="copy-source"
-                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                      checked={!!selectedForCopy['source']}
-                      onChange={() => handleToggleCopySelection('source')}
-                      disabled={!inputText.trim()}
-                    />
+                  <input
+                    type="checkbox"
+                    id="copy-source"
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    checked={!!selectedForCopy['source']}
+                    onChange={() => handleToggleCopySelection('source')}
+                    disabled={!inputText.trim()}
+                  />
                     <label htmlFor="copy-source" className="ml-2 block text-sm text-muted-foreground flex items-center gap-2">
-                      Select source text for copy
+                    Select source text for copy
                       <span className="text-base text-primary font-bold ml-2">Original language</span>
-                    </label>
-                  </div>
-                  
-                  <div className="mt-4 flex flex-col gap-4">
-                    <div>
-                      <label htmlFor="source-lang" className="block text-sm font-medium text-muted-foreground">From</label>
+                  </label>
+                </div>
+                
+                <div className="mt-4 flex flex-col gap-4">
+                  <div>
+                    <label htmlFor="source-lang" className="block text-sm font-medium text-muted-foreground">From</label>
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex w-full gap-2">
-                          <select
-                            id="source-lang"
-                            value={sourceLang}
-                            onChange={(e) => setSourceLang(e.target.value)}
+                    <select
+                      id="source-lang"
+                      value={sourceLang}
+                      onChange={(e) => setSourceLang(e.target.value)}
                             className="w-1/2 min-w-0 pl-3 pr-8 py-1.5 text-sm border-border bg-background focus:outline-none focus:ring-primary focus:border-primary rounded-md h-[36px]"
-                          >
-                            <option value="auto">Auto-Detect</option>
-                            {FROM_LANGUAGES.map((lang) => (
-                              <option key={lang.code} value={lang.code}>
-                                {lang.name}
-                              </option>
-                            ))}
-                          </select>
+                    >
+                      <option value="auto">Auto-Detect</option>
+                      {FROM_LANGUAGES.map((lang) => (
+                        <option key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </option>
+                      ))}
+                    </select>
                           <Button
                             onClick={handleExecute}
                             className={`w-1/2 min-w-0 px-4 py-1.5 text-sm font-bold ${mode === 'summarize' ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
@@ -419,66 +419,66 @@ export const TranslatorApp: React.FC = () => {
                           </Button>
                         </div>
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-muted-foreground">To</label>
-                      <div className="mt-1 flex flex-wrap gap-2">
-                        {PRIORITY_LANGUAGES.map(lang => (
-                          <Button
-                            key={lang.code}
-                            variant={targetLangs.includes(lang.code) ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => handleTargetLangClick(lang.code)}
-                          >
-                            {lang.name}
-                          </Button>
-                        ))}
-                      </div>
-                      <div className="mt-2">
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground">To</label>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {PRIORITY_LANGUAGES.map(lang => (
                         <Button
-                          variant="ghost"
+                          key={lang.code}
+                          variant={targetLangs.includes(lang.code) ? 'default' : 'outline'}
                           size="sm"
-                          onClick={() => setShowMoreLangs(!showMoreLangs)}
+                          onClick={() => handleTargetLangClick(lang.code)}
                         >
-                          {showMoreLangs ? 'Hide other languages' : 'Show more languages...'}
+                          {lang.name}
                         </Button>
+                      ))}
+                    </div>
+                    <div className="mt-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowMoreLangs(!showMoreLangs)}
+                      >
+                        {showMoreLangs ? 'Hide other languages' : 'Show more languages...'}
+                      </Button>
 
-                        <AnimatePresence>
-                          {showMoreLangs && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="mt-2 flex flex-wrap gap-2"
-                            >
-                              {OTHER_LANGUAGES.map(lang => (
-                                <Button
-                                  key={lang.code}
-                                  variant={targetLangs.includes(lang.code) ? 'default' : 'outline'}
-                                  size="sm"
-                                  onClick={() => handleTargetLangClick(lang.code)}
-                                >
-                                  {lang.name}
-                                </Button>
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
+                      <AnimatePresence>
+                        {showMoreLangs && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mt-2 flex flex-wrap gap-2"
+                          >
+                            {OTHER_LANGUAGES.map(lang => (
+                              <Button
+                                key={lang.code}
+                                variant={targetLangs.includes(lang.code) ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => handleTargetLangClick(lang.code)}
+                              >
+                                {lang.name}
+                              </Button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
+                </div>
+              
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-destructive/20 text-destructive-foreground p-4 rounded-md border border-destructive/50"
+              >
+                {error}
+              </motion.div>
+            )}
 
-                  {error && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-destructive/20 text-destructive-foreground p-4 rounded-md border border-destructive/50"
-                    >
-                      {error}
-                    </motion.div>
-                  )}
-
-                  {isLoading && (
+            {isLoading && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
                       <div className="flex flex-col items-center">
                         <div className="animate-spin mb-4 h-12 w-12 text-primary border-4 border-primary border-t-transparent rounded-full"></div>
@@ -487,54 +487,54 @@ export const TranslatorApp: React.FC = () => {
                         </p>
                       </div>
                     </div>
-                  )}
+            )}
 
-                  {result && !isLoading && (
+            {result && !isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card p-6 rounded-lg border border-border shadow-sm"
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    Detected language: <span className="font-semibold text-foreground">{getLanguageName(result.sourceLanguage)}</span>
+                  </p>
+                  <Button
+                    onClick={handleMasterCopy}
+                    disabled={selectedCount === 0}
+                    className="inline-flex items-center gap-2"
+                  >
+                    {copyButtonText === 'Copied!' ? <Check className="w-5 h-5"/> : <Copy className="w-5 h-5"/>}
+                    {copyButtonText === 'Copied!' ? 'Copied!' : `Copy Selected (${selectedCount})`}
+                  </Button>
+                </div>
+                <div className="space-y-4">
+                  {result.translations.map((translation) => (
                     <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-card p-6 rounded-lg border border-border shadow-sm"
+                      key={translation.lang}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="rounded-lg border bg-secondary"
                     >
-                      <div className="flex justify-between items-center mb-4">
-                        <p className="text-sm text-muted-foreground">
-                          Detected language: <span className="font-semibold text-foreground">{getLanguageName(result.sourceLanguage)}</span>
-                        </p>
-                        <Button
-                          onClick={handleMasterCopy}
-                          disabled={selectedCount === 0}
-                          className="inline-flex items-center gap-2"
-                        >
-                          {copyButtonText === 'Copied!' ? <Check className="w-5 h-5"/> : <Copy className="w-5 h-5"/>}
-                          {copyButtonText === 'Copied!' ? 'Copied!' : `Copy Selected (${selectedCount})`}
-                        </Button>
-                      </div>
-                      <div className="space-y-4">
-                        {result.translations.map((translation) => (
-                          <motion.div
-                            key={translation.lang}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="rounded-lg border bg-secondary"
-                          >
-                            <div className="flex items-center p-3 border-b border-border">
+                      <div className="flex items-center p-3 border-b border-border">
                               {selectionOrder.includes(translation.lang) && selectedForCopy[translation.lang] && (
                                 <span className="text-3xl font-extrabold text-primary mr-3">{selectionOrder.indexOf(translation.lang) + 1}</span>
                               )}
-                              <input
-                                type="checkbox"
-                                id={`copy-${translation.lang}`}
-                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                checked={!!selectedForCopy[translation.lang]}
-                                onChange={() => handleToggleCopySelection(translation.lang)}
-                              />
+                        <input
+                          type="checkbox"
+                          id={`copy-${translation.lang}`}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          checked={!!selectedForCopy[translation.lang]}
+                          onChange={() => handleToggleCopySelection(translation.lang)}
+                        />
                               <label htmlFor={`copy-${translation.lang}`} className="ml-3 flex-1 flex items-center gap-2">
-                                <h3 className="font-semibold text-foreground">{getLanguageName(translation.lang)}</h3>
+                          <h3 className="font-semibold text-foreground">{getLanguageName(translation.lang)}</h3>
                                 <span className="text-xs text-muted-foreground">{NOTICE_TEXTS[translation.lang] || NOTICE_TEXTS.default}</span>
-                              </label>
+                        </label>
                               {/* 個別コピーボタン */}
                               <CopyButtonWithFeedback text={translation.text} />
-                            </div>
-                            <div className="p-4 min-h-[120px]">
+                      </div>
+                      <div className="p-4 min-h-[120px]">
                               {mode === 'summarize' ? (
                                 Array.isArray((translation as any).summary) && (translation as any).summary.length > 0 ? (
                                   typeof (translation as any).summary[0] === 'string' ? (
@@ -550,65 +550,65 @@ export const TranslatorApp: React.FC = () => {
                                   <div className="text-gray-400 italic">No summary available.</div>
                                 )
                               ) : (
-                                <p className="text-foreground whitespace-pre-wrap">{translation.text}</p>
+                        <p className="text-foreground whitespace-pre-wrap">{translation.text}</p>
                               )}
-                            </div>
-                          </motion.div>
-                        ))}
                       </div>
                     </motion.div>
-                  )}
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
-                  <AnimatePresence>
-                    {isHistoryVisible && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="bg-card p-6 rounded-lg border border-border shadow-sm"
-                      >
-                        <div className="flex justify-between items-center mb-4">
-                          <h2 className="text-xl font-semibold">History</h2>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleClearHistory}
-                            className="flex items-center gap-2 text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" /> Clear
-                          </Button>
-                        </div>
-                        {history.length > 0 ? (
-                          <ul className="space-y-2 max-h-80 overflow-y-auto">
-                            {history.map(item => (
-                              <li
-                                key={item.id}
-                                onClick={() => handleLoadHistory(item)}
-                                className="p-3 rounded-md bg-secondary hover:bg-accent cursor-pointer transition-colors"
-                              >
-                                <p className="truncate font-medium text-foreground">{item.inputText}</p>
-                                <p className="text-xs text-muted-foreground">{item.timestamp}</p>
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-muted-foreground text-center py-4">No translation history.</p>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+            <AnimatePresence>
+              {isHistoryVisible && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="bg-card p-6 rounded-lg border border-border shadow-sm"
+                >
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold">History</h2>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearHistory}
+                      className="flex items-center gap-2 text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" /> Clear
+                    </Button>
+                  </div>
+                  {history.length > 0 ? (
+                    <ul className="space-y-2 max-h-80 overflow-y-auto">
+                      {history.map(item => (
+                        <li
+                          key={item.id}
+                          onClick={() => handleLoadHistory(item)}
+                          className="p-3 rounded-md bg-secondary hover:bg-accent cursor-pointer transition-colors"
+                        >
+                          <p className="truncate font-medium text-foreground">{item.inputText}</p>
+                          <p className="text-xs text-muted-foreground">{item.timestamp}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">No translation history.</p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
                 </CardContent>
               </Card>
               
               <AdBanner title="Advertisement Area" className="h-24" />
-            </main>
+          </main>
 
-            <aside className="hidden xl:block w-48 flex-shrink-0 py-8">
-              <div className="sticky top-24 space-y-8">
-                <AdBanner title="Right Sidebar Ad" className="h-96" />
-                <AdBanner title="Right Sidebar Ad 2" className="h-64" />
-              </div>
-            </aside>
+          <aside className="hidden xl:block w-48 flex-shrink-0 py-8">
+            <div className="sticky top-24 space-y-8">
+              <AdBanner title="Right Sidebar Ad" className="h-96" />
+              <AdBanner title="Right Sidebar Ad 2" className="h-64" />
+            </div>
+          </aside>
           </div>
         </div>
       </div>

@@ -10,8 +10,8 @@ export default function AboutPage() {
     });
   }, []);
   return (
-    <main className="w-full min-h-screen flex flex-col md:flex-row items-stretch gap-0">
-      <div className="flex-shrink-0 flex justify-start items-start bg-transparent p-0 m-0" style={{marginLeft:'8px', marginTop:'8px'}}>
+    <main className="w-full flex flex-col md:flex-row items-stretch gap-0">
+      <div className="flex-shrink-0 flex justify-start items-start bg-transparent p-0 m-0" style={{marginLeft:'8px', marginTop:'8px', position:'sticky', top:'16px', height:'fit-content'}}>
         <img src="/about-prompt-ton.png" alt="Prompt-ton" className="h-[80vh] w-auto object-contain rounded-lg shadow m-0 p-0" />
       </div>
       <div className="flex-1 min-w-0 flex flex-col justify-start items-start px-0 md:px-0 ml-0" style={{marginLeft:'8px'}}>
@@ -26,7 +26,7 @@ export default function AboutPage() {
             </button>
           ))}
         </div>
-        <section className="mb-6 bg-card p-4 rounded shadow border min-h-[200px] w-full max-w-none" style={{alignSelf:'stretch', marginLeft:0}}>
+        <section className="mb-6 bg-card p-4 rounded shadow border min-h-[200px] w-full max-w-none overflow-auto" style={{alignSelf:'stretch', marginLeft:0, maxHeight:'80vh'}}>
           <h1 className="text-2xl font-bold mb-2">About Multi Translator GGMTS</h1>
           <div dangerouslySetInnerHTML={{__html: about[`content_${lang}`]||''}} />
         </section>
