@@ -8,6 +8,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 
+const PRO_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || '';
+
 export default function GlobalHeader() {
   return <HeaderContent />;
 }
@@ -21,6 +23,7 @@ function HeaderContent() {
   const pathname = usePathname();
   const [usageCount, setUsageCount] = useState<number>(0);
   const [usageLimit, setUsageLimit] = useState<number>(0);
+  const [loadingStripe, setLoadingStripe] = useState(false);
 
   useEffect(() => {
     if (!session?.user) return;
@@ -71,6 +74,23 @@ function HeaderContent() {
       </div>
     );
   };
+
+  const handleProPurchase = async () => {
+    setLoadingStripe(true);
+    const res = await fetch('/api/stripe/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priceId: PRO_PRICE_ID }),
+    });
+    const data = await res.json();
+    setLoadingStripe(false);
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert('Stripe決済ページの生成に失敗しました');
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-card border-b w-full">
       <div className="flex justify-between items-center px-4 py-2 border-t">
@@ -87,6 +107,13 @@ function HeaderContent() {
         </div>
         <div className="flex-1 flex justify-end items-center gap-2">
           <ThemeToggle />
+          <button
+            className="px-3 py-1 bg-yellow-500 text-white rounded text-sm font-bold disabled:opacity-50"
+            onClick={handleProPurchase}
+            disabled={loadingStripe || !PRO_PRICE_ID}
+          >
+            {loadingStripe ? 'Loading...' : 'Proプラン購入'}
+          </button>
           <AuthButton />
         </div>
       </div>
