@@ -23,6 +23,16 @@ export async function PATCH(req: NextRequest) {
   if (!userId || !role) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  const from = user.role;
+  const to = role;
+  const allowed =
+    (from === 'free' && (to === 'pro' || to === 'premier')) ||
+    (from === 'pro' && to === 'premier');
+  if (!allowed) {
+    return NextResponse.json({ error: 'この会員種別変更は許可されていません' }, { status: 400 });
+  }
   const updated = await prisma.user.update({
     where: { id: userId },
     data: { role },

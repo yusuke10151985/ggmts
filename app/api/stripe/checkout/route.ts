@@ -15,6 +15,23 @@ export async function POST(req: NextRequest) {
   if (!priceId) {
     return NextResponse.json({ error: 'Price ID required' }, { status: 400 });
   }
+  // 既存サブスクリプションがpro→premierの場合はアップグレード
+  const customerList = await stripe.customers.list({ email: session.user.email });
+  const customer = customerList.data[0];
+  let subscription;
+  if (customer) {
+    const subs = await stripe.subscriptions.list({ customer: customer.id, status: 'active' });
+    subscription = subs.data.find(s => s.status === 'active');
+  }
+  if (subscription) {
+    // 既存サブスクリプションのアイテムをアップグレード
+    const updated = await stripe.subscriptions.update(subscription.id, {
+      items: [{ id: subscription.items.data[0].id, price: priceId }],
+      proration_behavior: 'create_prorations',
+    });
+    return NextResponse.json({ url: `/account?upgraded=1` });
+  }
+  // 新規サブスクリプション
   const checkoutSession = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     mode: 'subscription',

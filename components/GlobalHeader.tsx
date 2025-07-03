@@ -2,7 +2,7 @@
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { History, ChevronDown, Languages, FileText } from 'lucide-react';
+import { History, ChevronDown, Languages, FileText, ShoppingCart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
@@ -120,11 +120,12 @@ function HeaderContent() {
             <option value="premier">Premierプラン</option>
           </select>
           <button
-            className="px-3 py-1 bg-yellow-500 text-white rounded text-sm font-bold disabled:opacity-50"
+            className="px-3 py-1 bg-yellow-500 text-white rounded text-sm font-bold flex items-center gap-1 disabled:opacity-50"
             onClick={handleStripePurchase}
             disabled={loadingStripe || !PRO_PRICE_ID || !PREMIER_PRICE_ID}
           >
-            {loadingStripe ? 'Loading...' : '購入'}
+            <ShoppingCart size={16} />
+            {loadingStripe ? 'Loading...' : 'Upgrade'}
           </button>
           <AuthButton />
         </div>

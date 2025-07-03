@@ -557,12 +557,12 @@ export default function AdminDashboardPage() {
                         onChange={(e) => handleRoleChange(u.id, e.target.value)}
                         className="border rounded px-1 py-0.5"
                       >
-                        <option value="free">Free</option>
-                        <option value="pro">Pro</option>
-                        <option value="special">Special</option>
-                        <option value="premier">Premier</option>
-                        <option value="admin">Admin</option>
-                        <option value="block">Block</option>
+                        <option value="free" disabled={u.role !== 'free'}>Free</option>
+                        <option value="pro" disabled={!(u.role === 'free' || u.role === 'pro')}>Pro</option>
+                        <option value="premier" disabled={!(u.role === 'free' || u.role === 'pro' || u.role === 'premier')}>Premier</option>
+                        <option value="special" disabled>Special</option>
+                        <option value="admin" disabled>Admin</option>
+                        <option value="block" disabled>Block</option>
                       </select>
                     </td>
                     <td className="border px-2 py-1">{u.plan}</td>
