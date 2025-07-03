@@ -365,6 +365,7 @@ export default function AdminDashboardPage() {
                     <th className="px-2 py-1 border">User</th>
                     <th className="px-2 py-1 border">API種別</th>
                     <th className="px-2 py-1 border">APIモデル</th>
+                    <th className="px-2 py-1 border">API単価(USD/1K)</th>
                     <th className="px-2 py-1 border">トークン数</th>
                     <th className="px-2 py-1 border">コスト</th>
                     <th className="px-2 py-1 border">入力</th>
@@ -378,6 +379,13 @@ export default function AdminDashboardPage() {
                       <td className="border px-2 py-1">{log.user?.name || log.user?.email || log.userId || <span className="text-gray-400">未ログイン</span>}</td>
                       <td className="border px-2 py-1">{log.apiType}</td>
                       <td className="border px-2 py-1">{log.model || <span className="text-gray-400">不明</span>}</td>
+                      <td className="border px-2 py-1">{
+                        log.model === 'gpt-4o-mini' ? '0.001' :
+                        log.model === 'gpt-4.1-nano' ? '0.002' :
+                        log.model === 'gemini-1.5-flash' ? '0.0004' :
+                        log.model === 'gemini-1.5-pro' ? '0.0008' :
+                        <span className="text-gray-400">-</span>
+                      }</td>
                       <td className="border px-2 py-1">{log.tokens}</td>
                       <td className="border px-2 py-1">{log.cost?.toFixed(4)}</td>
                       <td className="border px-2 py-1 max-w-[200px] truncate">{log.inputText}</td>

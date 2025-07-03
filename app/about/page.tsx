@@ -10,29 +10,27 @@ export default function AboutPage() {
     });
   }, []);
   return (
-    <main className="max-w-4xl mx-auto p-4">
-      <div className="mb-4 flex gap-2">
-        {(['ja','en','th'] as const).map(l => (
-          <button
-            key={l}
-            className={`px-3 py-1 rounded transition-colors duration-200 ${lang === l ? 'bg-blue-600 text-white' : 'bg-background text-foreground dark:bg-gray-800 dark:text-white border'}`}
-            onClick={() => setLang(l)}
-          >
-            {l === 'ja' ? '日本語' : l === 'en' ? 'English' : 'ไทย'}
-          </button>
-        ))}
+    <main className="max-w-7xl mx-auto p-4 flex flex-col md:flex-row items-start gap-8">
+      <div className="flex-shrink-0 flex justify-center md:justify-start w-full md:w-auto">
+        <img src="/about-prompt-ton.png" alt="Prompt-ton" className="max-h-[480px] w-auto object-contain rounded-lg shadow" />
       </div>
-      <section className="mb-6 bg-card p-4 rounded shadow border min-h-[200px]">
-        <h1 className="text-2xl font-bold mb-2">About Multi Translator GGMTS</h1>
-        <div className="flex flex-col md:flex-row gap-12 items-start">
-          <div className="flex-shrink-0 w-full md:w-80 flex justify-center md:justify-start mb-4 md:mb-0 pl-4 md:pl-8">
-            <img src="/about-prompt-ton.png" alt="Prompt-ton" className="w-60 h-60 object-contain rounded-lg shadow" />
-          </div>
-          <div className="flex-1 min-w-0 text-right" style={{minWidth:0}}>
-            <div dangerouslySetInnerHTML={{__html: about[`content_${lang}`]||''}} />
-          </div>
+      <div className="flex-1 min-w-0">
+        <div className="mb-4 flex gap-2">
+          {(['ja','en','th'] as const).map(l => (
+            <button
+              key={l}
+              className={`px-3 py-1 rounded transition-colors duration-200 ${lang === l ? 'bg-blue-600 text-white' : 'bg-background text-foreground dark:bg-gray-800 dark:text-white border'}`}
+              onClick={() => setLang(l)}
+            >
+              {l === 'ja' ? '日本語' : l === 'en' ? 'English' : 'ไทย'}
+            </button>
+          ))}
         </div>
-      </section>
+        <section className="mb-6 bg-card p-4 rounded shadow border min-h-[200px]">
+          <h1 className="text-2xl font-bold mb-2">About Multi Translator GGMTS</h1>
+          <div dangerouslySetInnerHTML={{__html: about[`content_${lang}`]||''}} />
+        </section>
+      </div>
     </main>
   );
 } 
