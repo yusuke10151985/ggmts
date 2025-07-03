@@ -18,8 +18,12 @@ export async function POST(req: NextRequest) {
     const session = event.data.object as any;
     const email = session.customer_email || session.metadata?.userEmail;
     if (email) {
-      // ユーザーroleをproに変更
-      await prisma.user.updateMany({ where: { email }, data: { role: 'pro' } });
+      // どちらのプランか判定
+      const line = session.display_items?.[0] || session.line_items?.[0] || (session.lines?.data?.[0]);
+      const priceId = line?.price?.id || line?.price || line?.plan?.id;
+      let role = 'pro';
+      if (priceId === process.env.NEXT_PUBLIC_STRIPE_PREMIER_PRICE_ID) role = 'premier';
+      await prisma.user.updateMany({ where: { email }, data: { role: role as any } });
     }
   }
   return NextResponse.json({ received: true });

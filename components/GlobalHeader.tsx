@@ -9,6 +9,7 @@ import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 
 const PRO_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || '';
+const PREMIER_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PREMIER_PRICE_ID || '';
 
 export default function GlobalHeader() {
   return <HeaderContent />;
@@ -24,6 +25,7 @@ function HeaderContent() {
   const [usageCount, setUsageCount] = useState<number>(0);
   const [usageLimit, setUsageLimit] = useState<number>(0);
   const [loadingStripe, setLoadingStripe] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'pro'|'premier'>('pro');
 
   useEffect(() => {
     if (!session?.user) return;
@@ -75,12 +77,13 @@ function HeaderContent() {
     );
   };
 
-  const handleProPurchase = async () => {
+  const handleStripePurchase = async () => {
     setLoadingStripe(true);
+    const priceId = selectedPlan === 'pro' ? PRO_PRICE_ID : PREMIER_PRICE_ID;
     const res = await fetch('/api/stripe/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ priceId: PRO_PRICE_ID }),
+      body: JSON.stringify({ priceId }),
     });
     const data = await res.json();
     setLoadingStripe(false);
@@ -107,12 +110,21 @@ function HeaderContent() {
         </div>
         <div className="flex-1 flex justify-end items-center gap-2">
           <ThemeToggle />
+          <select
+            className="px-2 py-1 rounded border text-sm"
+            value={selectedPlan}
+            onChange={e => setSelectedPlan(e.target.value as 'pro'|'premier')}
+            style={{minWidth:100}}
+          >
+            <option value="pro">Proプラン</option>
+            <option value="premier">Premierプラン</option>
+          </select>
           <button
             className="px-3 py-1 bg-yellow-500 text-white rounded text-sm font-bold disabled:opacity-50"
-            onClick={handleProPurchase}
-            disabled={loadingStripe || !PRO_PRICE_ID}
+            onClick={handleStripePurchase}
+            disabled={loadingStripe || !PRO_PRICE_ID || !PREMIER_PRICE_ID}
           >
-            {loadingStripe ? 'Loading...' : 'Proプラン購入'}
+            {loadingStripe ? 'Loading...' : '購入'}
           </button>
           <AuthButton />
         </div>

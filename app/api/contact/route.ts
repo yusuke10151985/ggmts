@@ -12,20 +12,22 @@ export async function POST(req: NextRequest) {
     await prisma.contact.create({
       data: { name, email, message },
     });
-    // メール送信
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_FROM,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to: process.env.EMAIL_FROM, // 管理者宛
-      subject: `[ggmts] お問い合わせ: ${name}`,
-      text: `お名前: ${name}\nメール: ${email}\n内容: ${message}`,
-    });
+    // メール送信（環境変数が揃っている場合のみ）
+    if (process.env.EMAIL_FROM && process.env.EMAIL_PASS) {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_FROM,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM,
+        to: process.env.EMAIL_FROM, // 管理者宛
+        subject: `[ggmts] お問い合わせ: ${name}`,
+        text: `お名前: ${name}\nメール: ${email}\n内容: ${message}`,
+      });
+    }
     return NextResponse.json({ success: true });
   } catch (e) {
     return NextResponse.json({ error: '送信に失敗しました。', detail: e instanceof Error ? e.message + '\n' + e.stack : String(e) }, { status: 500 });

@@ -218,3 +218,20 @@ For support, email support@example.com or create an issue in the repository.
 - [ ] Implement rate limiting
 - [ ] Add translation memory
 - [ ] Support for more file formats
+
+## Stripe（Pro/Premierプラン）導入手順
+
+1. [Stripe公式サイト](https://dashboard.stripe.com/)でアカウント作成
+2. 「商品」→「+商品を追加」で「Pro」「Premier」などのプランを作成
+3. 各プランの「価格ID（Price ID）」を控える
+4. 「開発者」→「APIキー」から「公開可能キー」「シークレットキー」を取得
+5. 「開発者」→「Webhook」→「エンドポイントを追加」で
+   - URL: `https://<your-domain>/api/stripe/webhook`
+   - イベントタイプ: `checkout.session.completed`
+   - Webhookシークレットを控える
+6. 取得した値をVercelの環境変数に設定
+   - `STRIPE_SECRET_KEY`
+   - `STRIPE_PUBLISHABLE_KEY`
+   - `STRIPE_WEBHOOK_SECRET`
+   - `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`
+   - `NEXT_PUBLIC_STRIPE_PREMIER_PRICE_ID`
