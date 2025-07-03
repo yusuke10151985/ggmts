@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       const priceId = line?.price?.id || line?.price || line?.plan?.id;
       let role = 'pro';
       if (priceId === process.env.NEXT_PUBLIC_STRIPE_PREMIER_PRICE_ID) role = 'premier';
-      const result = await prisma.user.updateMany({ where: { email }, data: { role: role as any } });
+      const result = await prisma.user.updateMany({ where: { email: { equals: email, mode: 'insensitive' } }, data: { role: role as any } });
       console.log('Stripe Webhook:', { email, role, updatedCount: result.count });
       if (result.count === 0) {
         console.error('Stripe Webhook: No user found for email', email);
