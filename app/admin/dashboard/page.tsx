@@ -562,6 +562,7 @@ export default function AdminDashboardPage() {
                         <option value="special">Special</option>
                         <option value="premier">Premier</option>
                         <option value="admin">Admin</option>
+                        <option value="block">Block</option>
                       </select>
                     </td>
                     <td className="border px-2 py-1">{u.plan}</td>

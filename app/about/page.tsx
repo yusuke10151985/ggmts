@@ -10,12 +10,12 @@ export default function AboutPage() {
     });
   }, []);
   return (
-    <main className="max-w-7xl mx-auto p-4 flex flex-col md:flex-row items-start gap-8">
-      <div className="flex-shrink-0 flex justify-center md:justify-start w-full md:w-auto">
-        <img src="/about-prompt-ton.png" alt="Prompt-ton" className="max-h-[480px] w-auto object-contain rounded-lg shadow" />
+    <main className="w-full min-h-screen flex flex-col md:flex-row items-stretch gap-0">
+      <div className="flex-shrink-0 flex justify-center items-center w-full md:w-[45vw] bg-transparent p-0 m-0">
+        <img src="/about-prompt-ton.png" alt="Prompt-ton" className="h-[80vh] w-auto object-contain rounded-lg shadow" />
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="mb-4 flex gap-2">
+      <div className="flex-1 min-w-0 flex flex-col justify-center">
+        <div className="mb-4 flex gap-2 mt-4 md:mt-0">
           {(['ja','en','th'] as const).map(l => (
             <button
               key={l}
@@ -26,7 +26,7 @@ export default function AboutPage() {
             </button>
           ))}
         </div>
-        <section className="mb-6 bg-card p-4 rounded shadow border min-h-[200px]">
+        <section className="mb-6 bg-card p-4 rounded shadow border min-h-[200px] max-w-3xl mx-auto">
           <h1 className="text-2xl font-bold mb-2">About Multi Translator GGMTS</h1>
           <div dangerouslySetInnerHTML={{__html: about[`content_${lang}`]||''}} />
         </section>

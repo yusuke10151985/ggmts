@@ -19,6 +19,7 @@ enum UserRole {
   special
   admin
   premier
+  block
 }
 
 model User {
