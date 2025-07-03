@@ -2,6 +2,7 @@ import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { SessionStrategy } from 'next-auth';
 import prisma from './prisma';
+import nodemailer from 'nodemailer';
 
 export const authOptions = {
   providers: [
@@ -25,4 +26,26 @@ export const authOptions = {
     },
   },
   adapter: PrismaAdapter(prisma),
+  events: {
+    async createUser({ user }: { user: any }) {
+      // 新規サインイン時のみ管理者へメール送信
+      try {
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_FROM,
+            pass: process.env.EMAIL_PASS,
+          },
+        });
+        await transporter.sendMail({
+          from: process.env.EMAIL_FROM,
+          to: 'ggtms.info@gmail.com',
+          subject: `[ggmts] 新規ユーザーサインイン: ${user.name || user.email}`,
+          text: `新しいユーザーがサインインしました。\n\n名前: ${user.name}\nメール: ${user.email}`,
+        });
+      } catch (e) {
+        console.error('新規サインイン通知メール送信エラー:', e);
+      }
+    },
+  },
 }; 
