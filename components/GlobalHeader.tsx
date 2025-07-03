@@ -5,16 +5,11 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { History, ChevronDown, Languages, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useRef, useEffect } from 'react';
-import { SessionProvider } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
 
 export default function GlobalHeader() {
-  return (
-    <SessionProvider>
-      <HeaderContent />
-    </SessionProvider>
-  );
+  return <HeaderContent />;
 }
 
 function HeaderContent() {
