@@ -24,11 +24,11 @@ export default function AboutPage() {
       </div>
       <section className="mb-6 bg-card p-4 rounded shadow border min-h-[200px]">
         <h1 className="text-2xl font-bold mb-2">About Multi Translator GGMTS</h1>
-        <div className="flex flex-col md:flex-row gap-8 items-start">
-          <div className="flex-shrink-0 w-full md:w-64 flex justify-center md:justify-start mb-4 md:mb-0">
-            <img src="/logo.png" alt="Prompt-ton" className="w-48 h-48 object-contain rounded-lg shadow" />
+        <div className="flex flex-col md:flex-row gap-12 items-start">
+          <div className="flex-shrink-0 w-full md:w-80 flex justify-center md:justify-start mb-4 md:mb-0 pl-4 md:pl-8">
+            <img src="/about-prompt-ton.png" alt="Prompt-ton" className="w-60 h-60 object-contain rounded-lg shadow" />
           </div>
-          <div className="flex-1 min-w-0" style={{minWidth:0}}>
+          <div className="flex-1 min-w-0 text-right" style={{minWidth:0}}>
             <div dangerouslySetInnerHTML={{__html: about[`content_${lang}`]||''}} />
           </div>
         </div>

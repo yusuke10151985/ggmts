@@ -308,6 +308,8 @@ export default function AdminDashboardPage() {
                   <tr>
                     <th className="px-2 py-1 border">UserID</th>
                     <th className="px-2 py-1 border">User</th>
+                    <th className="px-2 py-1 border">APIモデル</th>
+                    <th className="px-2 py-1 border">API単価(USD/1K)</th>
                     <th className="px-2 py-1 border">回数</th>
                     <th className="px-2 py-1 border">トークン数</th>
                     <th className="px-2 py-1 border">コスト(USD)</th>
@@ -316,10 +318,30 @@ export default function AdminDashboardPage() {
                 <tbody>
                   {usage.userStats.map((u: any) => {
                     const userObj = users.find((usr: any) => usr.id === u.userId);
-                    return (
-                      <tr key={u.userId || 'unknown'}>
+                    // モデル・単価推定（userStatsにはモデル情報がないため、userStatsByModelから合算する）
+                    const userModels = usage.userStatsByModel?.filter((m: any) => m.userId === u.userId) || [];
+                    return userModels.length > 0 ? userModels.map((m: any, idx: number) => (
+                      <tr key={u.userId + '-' + (m.model || 'unknown') + '-' + idx}>
                         <td className="border px-2 py-1">{u.userId || <span className="text-gray-400">未ログイン</span>}</td>
                         <td className="border px-2 py-1">{userObj ? `${userObj.name || ''} ${userObj.email ? `<${userObj.email}>` : ''}` : <span className="text-gray-400">不明</span>}</td>
+                        <td className="border px-2 py-1">{m.model || <span className="text-gray-400">不明</span>}</td>
+                        <td className="border px-2 py-1">{
+                          m.model === 'gpt-4o-mini' ? '0.001' :
+                          m.model === 'gpt-4.1-nano' ? '0.002' :
+                          m.model === 'gemini-1.5-flash' ? '0.0004' :
+                          m.model === 'gemini-1.5-pro' ? '0.0008' :
+                          <span className="text-gray-400">-</span>
+                        }</td>
+                        <td className="border px-2 py-1">{m._count._all}</td>
+                        <td className="border px-2 py-1">{m._sum.tokens}</td>
+                        <td className="border px-2 py-1">{m._sum.cost?.toFixed(4)}</td>
+                      </tr>
+                    )) : (
+                      <tr key={u.userId + '-no-model'}>
+                        <td className="border px-2 py-1">{u.userId || <span className="text-gray-400">未ログイン</span>}</td>
+                        <td className="border px-2 py-1">{userObj ? `${userObj.name || ''} ${userObj.email ? `<${userObj.email}>` : ''}` : <span className="text-gray-400">不明</span>}</td>
+                        <td className="border px-2 py-1"><span className="text-gray-400">不明</span></td>
+                        <td className="border px-2 py-1"><span className="text-gray-400">-</span></td>
                         <td className="border px-2 py-1">{u._count._all}</td>
                         <td className="border px-2 py-1">{u._sum.tokens}</td>
                         <td className="border px-2 py-1">{u._sum.cost?.toFixed(4)}</td>
