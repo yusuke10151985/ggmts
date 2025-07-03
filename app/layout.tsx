@@ -2,11 +2,9 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
-import { SessionProvider, useSession } from 'next-auth/react';
 import ClientLayout from './client-layout';
 import FooterWithAdmin from '@/components/FooterWithAdmin';
 import GlobalHeader from '@/components/GlobalHeader';
-import { useEffect } from "react";
 import BlockGuard from '@/components/BlockGuard';
 
 const inter = Inter({ subsets: ['latin'] })

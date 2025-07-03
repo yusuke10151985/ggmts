@@ -4,6 +4,7 @@ import React from 'react';
 
 export default function BlockGuard({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
+  console.log('BlockGuard session:', session, status);
   if (status === "loading") return null;
   if (session?.user?.role === "block") {
     return (
