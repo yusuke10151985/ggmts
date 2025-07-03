@@ -1,12 +1,17 @@
 "use client";
 import { useSession } from 'next-auth/react';
 import React from 'react';
+import { usePathname } from 'next/navigation';
 
 export default function BlockGuard({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
   console.log('BlockGuard session:', session, status);
   if (status === "loading") return null;
   if (session?.user?.role === "block") {
+    if (pathname === "/contact") {
+      return <>{children}</>;
+    }
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-8">
         <div className="max-w-xl bg-card p-8 rounded shadow border text-center">
