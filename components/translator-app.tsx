@@ -348,6 +348,13 @@ export const TranslatorApp: React.FC = () => {
         />
       </button>
       <span className={`font-bold text-lg ${mode === 'summarize' ? 'text-green-600' : 'text-gray-400'}`}>Summarize</span>
+      <button
+        className="ml-6 w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-primary text-3xl hover:bg-blue-100 dark:hover:bg-blue-900 transition"
+        onClick={() => setIsHistoryVisible(v => !v)}
+        aria-label="Show translation history"
+      >
+        <History className="w-8 h-8" />
+      </button>
     </div>
   );
 

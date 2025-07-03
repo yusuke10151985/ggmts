@@ -398,37 +398,31 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* --- 設定値編集（既存） --- */}
-      <h2 className="mt-8 mb-2 font-bold">設定値の編集</h2>
-      {settings.length === 0 && <div>設定値を取得中...</div>}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-        }}
-        className="space-y-4"
-      >
-        {settings
-          .filter((setting) => ["free_user_daily_limit", "pro_user_daily_limit", "premier_user_daily_limit"].includes(setting.key))
-          .map((setting) => (
-            <div key={setting.key} className="flex items-center gap-2">
-              <label className="w-56 font-mono">{setting.key}</label>
+      <h2 className="mt-8 mb-2 font-bold">API実行上限回数の編集</h2>
+      <form className="space-y-4">
+        {["free_user_daily_limit", "pro_user_daily_limit", "premier_user_daily_limit"].map((key) => {
+          const setting = settings.find((s) => s.key === key);
+          if (!setting) return null;
+          return (
+            <div key={key} className="flex items-center gap-2">
+              <label className="w-56 font-mono">{key}</label>
               <input
                 type="text"
                 value={setting.value}
-                onChange={(e) => handleChange(setting.key, e.target.value)}
+                onChange={e => handleChange(key, e.target.value)}
                 className="border px-2 py-1 rounded w-40"
                 disabled={loading}
               />
               <button
                 type="button"
-                onClick={() => handleSave(setting.key, setting.value)}
+                onClick={() => handleSave(key, setting.value)}
                 className="px-3 py-1 bg-blue-600 text-white rounded disabled:opacity-50"
                 disabled={loading}
-              >
-                保存
-              </button>
+              >保存</button>
               <span className="text-gray-500 text-xs ml-2">{setting.description}</span>
             </div>
-          ))}
+          );
+        })}
       </form>
       {message && <div className="mt-2 text-green-600">{message}</div>}
 
