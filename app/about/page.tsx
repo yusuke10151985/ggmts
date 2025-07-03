@@ -11,10 +11,10 @@ export default function AboutPage() {
   }, []);
   return (
     <main className="w-full min-h-screen flex flex-col md:flex-row items-stretch gap-0">
-      <div className="flex-shrink-0 flex justify-start items-start w-full md:w-[45vw] bg-transparent p-0 m-0">
-        <img src="/about-prompt-ton.png" alt="Prompt-ton" className="h-[80vh] w-auto object-contain rounded-lg shadow m-0 p-0" style={{marginTop:0, marginLeft:0}} />
+      <div className="flex-shrink-0 flex justify-start items-start bg-transparent p-0 m-0" style={{marginLeft:'8px', marginTop:'8px'}}>
+        <img src="/about-prompt-ton.png" alt="Prompt-ton" className="h-[80vh] w-auto object-contain rounded-lg shadow m-0 p-0" />
       </div>
-      <div className="flex-1 min-w-0 flex flex-col justify-start items-start px-0 md:px-0 ml-0" style={{maxWidth:'55vw', marginLeft:'2px'}}>
+      <div className="flex-1 min-w-0 flex flex-col justify-start items-start px-0 md:px-0 ml-0" style={{marginLeft:'8px'}}>
         <div className="mb-4 flex gap-0 mt-4 md:mt-0 justify-start items-start px-0" style={{marginLeft:0}}>
           {(['ja','en','th'] as const).map(l => (
             <button
