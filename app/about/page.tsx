@@ -11,11 +11,11 @@ export default function AboutPage() {
   }, []);
   return (
     <main className="w-full min-h-screen flex flex-col md:flex-row items-stretch gap-0">
-      <div className="flex-shrink-0 flex justify-center items-center w-full md:w-[45vw] bg-transparent p-0 m-0">
-        <img src="/about-prompt-ton.png" alt="Prompt-ton" className="h-[80vh] w-auto object-contain rounded-lg shadow" />
+      <div className="flex-shrink-0 flex justify-start items-start w-full md:w-[45vw] bg-transparent p-0 m-0">
+        <img src="/about-prompt-ton.png" alt="Prompt-ton" className="h-[80vh] w-auto object-contain rounded-lg shadow m-0 p-0" style={{marginTop:0, marginLeft:0}} />
       </div>
-      <div className="flex-1 min-w-0 flex flex-col justify-center">
-        <div className="mb-4 flex gap-2 mt-4 md:mt-0">
+      <div className="flex-1 min-w-0 flex flex-col justify-start items-start">
+        <div className="mb-4 flex gap-2 mt-4 md:mt-0 justify-start items-start">
           {(['ja','en','th'] as const).map(l => (
             <button
               key={l}
@@ -26,7 +26,7 @@ export default function AboutPage() {
             </button>
           ))}
         </div>
-        <section className="mb-6 bg-card p-4 rounded shadow border min-h-[200px] max-w-3xl mx-auto">
+        <section className="mb-6 bg-card p-4 rounded shadow border min-h-[200px] w-full max-w-none" style={{alignSelf:'stretch'}}>
           <h1 className="text-2xl font-bold mb-2">About Multi Translator GGMTS</h1>
           <div dangerouslySetInnerHTML={{__html: about[`content_${lang}`]||''}} />
         </section>
