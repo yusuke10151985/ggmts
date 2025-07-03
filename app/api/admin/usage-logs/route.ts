@@ -42,6 +42,14 @@ export async function GET(req: NextRequest) {
     _count: { _all: true },
   });
 
+  // ユーザーごと・モデルごとの集計（フィルタ適用）
+  const userStatsByModel = await prisma.apiUsageLog.groupBy({
+    by: ['userId', 'model'],
+    where,
+    _sum: { tokens: true, cost: true },
+    _count: { _all: true },
+  });
+
   // 全体集計（フィルタ適用）
   const total = await prisma.apiUsageLog.aggregate({
     where,
@@ -58,5 +66,5 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'asc' },
   });
 
-  return NextResponse.json({ logs, userStats, total, dailyStats });
+  return NextResponse.json({ logs, userStats, userStatsByModel, total, dailyStats });
 } 

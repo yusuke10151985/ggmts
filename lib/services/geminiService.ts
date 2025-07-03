@@ -49,9 +49,11 @@ export const getTranslations = async (
   text: string,
   sourceLang: string,
   targetLangs: string[],
-  mode: TranslationMode
+  mode: TranslationMode,
+  model?: string
 ): Promise<TranslationResult> => {
   try {
+    const modelName = model || 'gemini-1.5-flash';
     console.log('Making Gemini API request...');
     
     // Gemini workaround: If only one of ['th', 'ms', 'vi', 'my'] is requested, add 'en' to the request
@@ -67,7 +69,7 @@ export const getTranslations = async (
     if (mode === 'summarize' && sourceLang !== 'en' && !targetLangs.includes('en')) {
       // 1. Summarize in English
       const englishPrompt = getPrompt(text, sourceLang, ['en'], 'summarize');
-      const englishResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      const englishResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -93,7 +95,7 @@ export const getTranslations = async (
       const englishSummaryText = englishSummary.translations?.[0]?.text || '';
       // 2. Translate English summary to each target language
       const translatePrompt = `Translate the following summary into these languages: ${targetLangs.join(', ')}\n\nSummary:\n${englishSummaryText}\n\nRespond in this JSON format:\n{\n  "translations": [\n    { "lang": "target_lang_code", "text": "translated_summary" }\n  ]\n}`;
-      const translateResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      const translateResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -125,7 +127,7 @@ export const getTranslations = async (
 
     const prompt = getPrompt(text, sourceLang, actualTargetLangs, mode);
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

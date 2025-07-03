@@ -75,20 +75,40 @@ export async function POST(request: NextRequest) {
       apiProvider
     })
     
-    let result
+    const session = await getServerSession(authOptions);
+    const userRole = session?.user?.role || 'free';
+    // SettingsからAPIモデル設定を取得
+    const settings = await prisma.settings.findMany();
+    const getSetting = (key: string) => settings.find(s => s.key === key)?.value;
+    // roleごとのモデル設定
+    let model = '';
+    let provider = '';
+    let unitCost = 0.00001;
+    if (translationMode === 'summarize') {
+      model = getSetting('summarize_api_model') || 'gpt-4o-mini';
+    } else {
+      model = getSetting('translate_api_model') || 'gpt-4o-mini';
+    }
+    // モデル名からプロバイダ判定
+    if (model.startsWith('gpt')) {
+      provider = 'openai';
+      unitCost = model === 'gpt-4o-mini' ? 0.001 / 1000 : 0.002 / 1000; // 仮: nanoは0.002/1K
+    } else if (model.startsWith('gemini')) {
+      provider = 'google';
+      unitCost = model === 'gemini-1.5-flash' ? 0.0004 / 1000 : 0.0008 / 1000; // 仮: proは0.0008/1K
+    }
+    // API実行（管理画面設定値で強制）
+    let result;
     try {
       let translationPromise;
-      if (apiProvider === 'gpt') {
-        translationPromise = getGptTranslations(text, sourceLang, targetLangs, translationMode);
-      } else if (apiProvider === 'gemini') {
-        translationPromise = getGeminiTranslations(text, sourceLang, targetLangs, translationMode);
-      } else if (translationMode === 'summarize') {
-        translationPromise = getGptTranslations(text, sourceLang, targetLangs, translationMode);
+      if (provider === 'openai') {
+        translationPromise = getGptTranslations(text, sourceLang, targetLangs, translationMode, model);
+      } else if (provider === 'google') {
+        translationPromise = getGeminiTranslations(text, sourceLang, targetLangs, translationMode, model);
       } else {
-        translationPromise = getGptTranslations(text, sourceLang, targetLangs, translationMode);
+        translationPromise = getGptTranslations(text, sourceLang, targetLangs, translationMode, model);
       }
-      // 25秒でタイムアウト
-      result = await timeoutPromise(translationPromise, 25000)
+      result = await timeoutPromise(translationPromise, 25000);
     } catch (translationError) {
       console.error('Translation service error:', translationError)
       if (translationError instanceof Error && translationError.message === 'Request timed out') {
@@ -115,23 +135,7 @@ export async function POST(request: NextRequest) {
 
     // --- API実行履歴を記録 ---
     try {
-      const session = await getServerSession(authOptions);
       const userId = session?.user?.id || null;
-      // API種別・プロバイダ・モデルごとにコスト単価を分岐
-      let model = '';
-      let provider = '';
-      let unitCost = 0.00001; // デフォルト
-      if (apiProvider === 'gpt' || (!apiProvider && translationMode === 'summarize')) {
-        provider = 'openai';
-        model = 'gpt-4o-mini'; // gptService.tsで固定
-        // 例: GPT-4o-mini: $0.0005/1K input, $0.0015/1K output（仮: input+output合算で0.001/1K）
-        unitCost = 0.001 / 1000;
-      } else if (apiProvider === 'gemini') {
-        provider = 'google';
-        model = 'gemini-1.5-flash'; // geminiService.tsで固定
-        // 例: Gemini 1.5 Flash: $0.00025/1K input, $0.0005/1K output（仮: input+output合算で0.0004/1K）
-        unitCost = 0.0004 / 1000;
-      }
       const tokens = text.length + (result.translations?.map((t:any)=>t.text.length).reduce((a:number,b:number)=>a+b,0) || 0);
       const cost = tokens * unitCost;
       await prisma.apiUsageLog.create({

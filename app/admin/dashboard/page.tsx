@@ -384,6 +384,36 @@ export default function AdminDashboardPage() {
                 </tbody>
               </table>
             </div>
+            <h3 className="font-semibold mt-4 mb-1">ユーザー・APIモデルごとの集計</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-[900px] border">
+                <thead className="bg-gray-900 text-white">
+                  <tr>
+                    <th className="px-2 py-1 border">UserID</th>
+                    <th className="px-2 py-1 border">User</th>
+                    <th className="px-2 py-1 border">モデル</th>
+                    <th className="px-2 py-1 border">回数</th>
+                    <th className="px-2 py-1 border">トークン数</th>
+                    <th className="px-2 py-1 border">コスト(USD)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usage.userStatsByModel && usage.userStatsByModel.map((u: any) => {
+                    const userObj = users.find((usr: any) => usr.id === u.userId);
+                    return (
+                      <tr key={u.userId + '-' + (u.model || 'unknown')}>
+                        <td className="border px-2 py-1">{u.userId || <span className="text-gray-400">未ログイン</span>}</td>
+                        <td className="border px-2 py-1">{userObj ? `${userObj.name || ''} ${userObj.email ? `<${userObj.email}>` : ''}` : <span className="text-gray-400">不明</span>}</td>
+                        <td className="border px-2 py-1">{u.model || <span className="text-gray-400">不明</span>}</td>
+                        <td className="border px-2 py-1">{u._count._all}</td>
+                        <td className="border px-2 py-1">{u._sum.tokens}</td>
+                        <td className="border px-2 py-1">{u._sum.cost?.toFixed(4)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
       </section>

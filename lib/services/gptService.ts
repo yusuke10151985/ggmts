@@ -71,7 +71,8 @@ export const getTranslations = async (
   text: string,
   sourceLang: string,
   targetLangs: string[],
-  mode: TranslationMode
+  mode: TranslationMode,
+  model?: string
 ): Promise<TranslationResult> => {
   if (!text.trim()) {
     return { sourceLanguage: 'auto', translations: [] };
@@ -81,13 +82,15 @@ export const getTranslations = async (
     text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
     sourceLang,
     targetLangs,
-    mode
+    mode,
+    model
   });
 
   const prompt = getPrompt(text, sourceLang, targetLangs, mode);
   
   try {
-    console.log('🚀 Making OpenAI API request with model: gpt-4o-mini');
+    const modelName = model || 'gpt-4o-mini';
+    console.log('🚀 Making OpenAI API request with model:', modelName);
     console.log('🔑 API Key (first 10 chars):', OPENAI_API_KEY.substring(0, 10) + '...');
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -97,7 +100,7 @@ export const getTranslations = async (
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: modelName,
         messages: [
           {
             role: 'system',
