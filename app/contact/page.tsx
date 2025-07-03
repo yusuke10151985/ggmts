@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { SessionProvider } from "next-auth/react";
 
 type Lang = 'ja' | 'en' | 'th';
 const langs: { code: Lang; label: string }[] = [
@@ -17,11 +16,7 @@ const labels: Record<Lang, { title: string; name: string; email: string; message
 };
 
 export default function ContactPage() {
-  return (
-    <SessionProvider>
-      <ContactForm />
-    </SessionProvider>
-  );
+  return <ContactForm />;
 }
 
 function ContactForm() {
