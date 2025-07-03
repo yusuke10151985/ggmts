@@ -394,6 +394,7 @@ export default function AdminDashboardPage() {
                     <th className="px-2 py-1 border">UserID</th>
                     <th className="px-2 py-1 border">User</th>
                     <th className="px-2 py-1 border">モデル</th>
+                    <th className="px-2 py-1 border">API単価(USD/1K)</th>
                     <th className="px-2 py-1 border">回数</th>
                     <th className="px-2 py-1 border">トークン数</th>
                     <th className="px-2 py-1 border">コスト(USD)</th>
@@ -407,6 +408,13 @@ export default function AdminDashboardPage() {
                         <td className="border px-2 py-1">{u.userId || <span className="text-gray-400">未ログイン</span>}</td>
                         <td className="border px-2 py-1">{userObj ? `${userObj.name || ''} ${userObj.email ? `<${userObj.email}>` : ''}` : <span className="text-gray-400">不明</span>}</td>
                         <td className="border px-2 py-1">{u.model || <span className="text-gray-400">不明</span>}</td>
+                        <td className="border px-2 py-1">{
+                          u.model === 'gpt-4o-mini' ? '0.001' :
+                          u.model === 'gpt-4.1-nano' ? '0.002' :
+                          u.model === 'gemini-1.5-flash' ? '0.0004' :
+                          u.model === 'gemini-1.5-pro' ? '0.0008' :
+                          <span className="text-gray-400">-</span>
+                        }</td>
                         <td className="border px-2 py-1">{u._count._all}</td>
                         <td className="border px-2 py-1">{u._sum.tokens}</td>
                         <td className="border px-2 py-1">{u._sum.cost?.toFixed(4)}</td>
