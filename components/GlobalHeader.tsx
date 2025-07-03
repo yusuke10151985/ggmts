@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useRef, useEffect } from 'react';
 import { SessionProvider } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 
 export default function GlobalHeader() {
   return (
@@ -60,7 +61,7 @@ function HeaderContent() {
           )}
           <span className="text-sm font-medium text-foreground max-w-[120px] truncate">{userAny.name}</span>
           <span className={`text-xs px-2 py-1 rounded ${badgeColor}`}>{badgeLabel}</span>
-          <span className="ml-2 text-xs text-gray-400">{usageCount} / {usageLimit} 回</span>
+          <span className="ml-2 text-xs text-gray-400">{usageCount} / {usageLimit}</span>
           <Button size="sm" variant="outline" onClick={() => signOut()}>Sign out</Button>
         </div>
       );
@@ -75,7 +76,10 @@ function HeaderContent() {
     <header className="sticky top-0 z-50 bg-card border-b w-full">
       <div className="flex justify-between items-center px-4 py-2 border-t">
         <div className="flex-1 flex items-center gap-8 min-w-0">
-          <a href="/" className="text-xl md:text-2xl font-bold text-black dark:text-white whitespace-nowrap mr-2">Multi Translator GGMTS</a>
+          <a href="/" className="flex items-center text-xl md:text-2xl font-bold text-black dark:text-white whitespace-nowrap mr-2">
+            <Image src="/logo.png" alt="Logo" width={36} height={36} className="mr-2 rounded-full" />
+            Multi Translator GGMTS
+          </a>
           <nav className="flex gap-6 text-sm font-medium flex-nowrap items-center ml-6 whitespace-nowrap">
             <a href="/about" className="hover:underline whitespace-nowrap">About</a>
             <a href="/contact" className="hover:underline whitespace-nowrap">Contact</a>

@@ -71,4 +71,14 @@
 
 textarea {
   resize: both !important;
+}
+
+a {
+  color: #2563eb; /* Tailwindのblue-600相当 */
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+a:hover, a:focus {
+  color: #1d4ed8; /* Tailwindのblue-700相当 */
 } 

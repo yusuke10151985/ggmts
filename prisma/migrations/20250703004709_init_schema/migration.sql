@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('free', 'pro', 'special', 'admin', 'premier');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -8,7 +11,7 @@ CREATE TABLE "User" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "plan" TEXT NOT NULL DEFAULT 'free',
-    "role" TEXT NOT NULL DEFAULT 'free',
+    "role" "UserRole" NOT NULL DEFAULT 'free',
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -62,6 +65,15 @@ CREATE TABLE "Contact" (
 -- CreateTable
 CREATE TABLE "Settings" (
     "id" TEXT NOT NULL,
+    "freeLimit" INTEGER NOT NULL DEFAULT 20,
+    "proLimit" INTEGER NOT NULL DEFAULT 100,
+    "premierLimit" INTEGER NOT NULL DEFAULT 200,
+    "freeModel" TEXT DEFAULT 'gpt-4o-mini',
+    "proModel" TEXT DEFAULT 'gpt-4o-mini',
+    "premierModel" TEXT DEFAULT 'gpt-4o-mini',
+    "freeProvider" TEXT DEFAULT 'gpt',
+    "proProvider" TEXT DEFAULT 'gpt',
+    "premierProvider" TEXT DEFAULT 'gpt',
     "key" TEXT NOT NULL,
     "value" TEXT NOT NULL,
     "description" TEXT,
@@ -75,6 +87,8 @@ CREATE TABLE "ApiUsageLog" (
     "id" TEXT NOT NULL,
     "userId" TEXT,
     "apiType" TEXT NOT NULL,
+    "provider" TEXT,
+    "model" TEXT,
     "tokens" INTEGER NOT NULL,
     "cost" DOUBLE PRECISION NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -82,6 +96,34 @@ CREATE TABLE "ApiUsageLog" (
     "result" TEXT,
 
     CONSTRAINT "ApiUsageLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ReleaseNote" (
+    "id" TEXT NOT NULL,
+    "title" TEXT,
+    "title_en" TEXT,
+    "title_th" TEXT,
+    "content_ja" TEXT NOT NULL,
+    "content_en" TEXT NOT NULL,
+    "content_th" TEXT NOT NULL,
+    "authorId" TEXT,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ReleaseNote_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AboutContent" (
+    "id" TEXT NOT NULL,
+    "content_ja" TEXT NOT NULL,
+    "content_en" TEXT NOT NULL,
+    "content_th" TEXT NOT NULL,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AboutContent_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -110,3 +152,6 @@ ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId"
 
 -- AddForeignKey
 ALTER TABLE "ApiUsageLog" ADD CONSTRAINT "ApiUsageLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ReleaseNote" ADD CONSTRAINT "ReleaseNote_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
