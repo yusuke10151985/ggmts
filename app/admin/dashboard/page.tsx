@@ -342,6 +342,7 @@ export default function AdminDashboardPage() {
                     <th className="px-2 py-1 border">日時</th>
                     <th className="px-2 py-1 border">User</th>
                     <th className="px-2 py-1 border">API種別</th>
+                    <th className="px-2 py-1 border">APIモデル</th>
                     <th className="px-2 py-1 border">トークン数</th>
                     <th className="px-2 py-1 border">コスト</th>
                     <th className="px-2 py-1 border">入力</th>
@@ -354,6 +355,7 @@ export default function AdminDashboardPage() {
                       <td className="border px-2 py-1 whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</td>
                       <td className="border px-2 py-1">{log.user?.name || log.user?.email || log.userId || <span className="text-gray-400">未ログイン</span>}</td>
                       <td className="border px-2 py-1">{log.apiType}</td>
+                      <td className="border px-2 py-1">{log.model || <span className="text-gray-400">不明</span>}</td>
                       <td className="border px-2 py-1">{log.tokens}</td>
                       <td className="border px-2 py-1">{log.cost?.toFixed(4)}</td>
                       <td className="border px-2 py-1 max-w-[200px] truncate">{log.inputText}</td>
