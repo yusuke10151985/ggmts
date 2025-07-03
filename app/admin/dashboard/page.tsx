@@ -407,7 +407,7 @@ export default function AdminDashboardPage() {
         className="space-y-4"
       >
         {settings
-          .filter((setting) => setting.key === "free_user_daily_limit")
+          .filter((setting) => ["free_user_daily_limit", "pro_user_daily_limit", "premier_user_daily_limit"].includes(setting.key))
           .map((setting) => (
             <div key={setting.key} className="flex items-center gap-2">
               <label className="w-56 font-mono">{setting.key}</label>
@@ -431,6 +431,47 @@ export default function AdminDashboardPage() {
           ))}
       </form>
       {message && <div className="mt-2 text-green-600">{message}</div>}
+
+      {/* --- APIプロバイダ・モデル名の設定UIを追加 --- */}
+      <h2 className="mt-8 mb-2 font-bold">APIプロバイダ・モデル設定</h2>
+      <form className="space-y-4">
+        {["translate_api_provider", "translate_api_model", "summarize_api_provider", "summarize_api_model"].map((key) => {
+          const setting = settings.find((s) => s.key === key);
+          if (!setting) return null;
+          return (
+            <div key={key} className="flex items-center gap-2">
+              <label className="w-56 font-mono">{key}</label>
+              {key.endsWith("provider") ? (
+                <select
+                  value={setting.value}
+                  onChange={e => handleChange(key, e.target.value)}
+                  className="border px-2 py-1 rounded w-40"
+                  disabled={loading}
+                >
+                  <option value="gpt">GPT</option>
+                  <option value="gemini">Gemini</option>
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={setting.value}
+                  onChange={e => handleChange(key, e.target.value)}
+                  className="border px-2 py-1 rounded w-40"
+                  disabled={loading}
+                  placeholder="例: gpt-4o-mini, gemini-1.5-flash"
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => handleSave(key, setting.value)}
+                className="px-3 py-1 bg-blue-600 text-white rounded disabled:opacity-50"
+                disabled={loading}
+              >保存</button>
+              <span className="text-gray-500 text-xs ml-2">{setting.description}</span>
+            </div>
+          );
+        })}
+      </form>
 
       {/* --- ユーザー一覧・会員種別管理 --- */}
       <section className="mt-12">
@@ -466,6 +507,7 @@ export default function AdminDashboardPage() {
                         <option value="free">Free</option>
                         <option value="pro">Pro</option>
                         <option value="special">Special</option>
+                        <option value="premier">Premier</option>
                         <option value="admin">Admin</option>
                       </select>
                     </td>
