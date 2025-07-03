@@ -273,11 +273,11 @@ export default function AdminDashboardPage() {
               )}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" tickFormatter={date => date} />
-                <YAxis yAxisId="left" allowDecimals={false} tick={{ fill: '#fff' }} />
+                <YAxis yAxisId="left" orientation="left" allowDecimals={false} tick={{ fill: '#fff' }} />
                 <YAxis yAxisId="right" orientation="right" allowDecimals={false} tick={{ fill: '#fff' }} />
                 <Tooltip />
-                <Line yAxisId="right" type="monotone" dataKey="count" stroke="#8884d8" name="API回数" />
-                <Line yAxisId="left" type="monotone" dataKey="tokens" stroke="#82ca9d" name="トークン数" />
+                <Line yAxisId="left" type="monotone" dataKey="count" stroke="#8884d8" name="API回数" />
+                <Line yAxisId="right" type="monotone" dataKey="tokens" stroke="#82ca9d" name="トークン数" />
                 <Line yAxisId="right" type="monotone" dataKey="cost" stroke="#ff7300" name="コスト" />
               </LineChart>
             </ResponsiveContainer>
@@ -426,35 +426,24 @@ export default function AdminDashboardPage() {
       </form>
       {message && <div className="mt-2 text-green-600">{message}</div>}
 
-      {/* --- APIプロバイダ・モデル名の設定UIを追加 --- */}
-      <h2 className="mt-8 mb-2 font-bold">APIプロバイダ・モデル設定</h2>
+      {/* --- APIモデル設定 */}
+      <h2 className="mt-8 mb-2 font-bold">APIモデル設定</h2>
       <form className="space-y-4">
-        {["translate_api_provider", "translate_api_model", "summarize_api_provider", "summarize_api_model"].map((key) => {
+        {[{ key: "translate_api_model", label: "翻訳APIモデル", options: ["gpt-4o-mini", "gpt-4.1-nano", "gemini-1.5-flash", "gemini-1.5-pro"] },
+          { key: "summarize_api_model", label: "要約APIモデル", options: ["gpt-4o-mini", "gpt-4.1-nano", "gemini-1.5-flash", "gemini-1.5-pro"] }].map(({ key, label, options }) => {
           const setting = settings.find((s) => s.key === key);
           if (!setting) return null;
           return (
             <div key={key} className="flex items-center gap-2">
-              <label className="w-56 font-mono">{key}</label>
-              {key.endsWith("provider") ? (
-                <select
-                  value={setting.value}
-                  onChange={e => handleChange(key, e.target.value)}
-                  className="border px-2 py-1 rounded w-40"
-                  disabled={loading}
-                >
-                  <option value="gpt">GPT</option>
-                  <option value="gemini">Gemini</option>
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  value={setting.value}
-                  onChange={e => handleChange(key, e.target.value)}
-                  className="border px-2 py-1 rounded w-40"
-                  disabled={loading}
-                  placeholder="例: gpt-4o-mini, gemini-1.5-flash"
-                />
-              )}
+              <label className="w-56 font-mono">{label}</label>
+              <select
+                value={setting.value}
+                onChange={e => handleChange(key, e.target.value)}
+                className="border px-2 py-1 rounded w-60"
+                disabled={loading}
+              >
+                {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
               <button
                 type="button"
                 onClick={() => handleSave(key, setting.value)}

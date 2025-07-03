@@ -61,7 +61,11 @@ function HeaderContent() {
           )}
           <span className="text-sm font-medium text-foreground max-w-[120px] truncate">{userAny.name}</span>
           <span className={`text-xs px-2 py-1 rounded ${badgeColor}`}>{badgeLabel}</span>
-          <span className="ml-2 text-xs text-gray-400">{usageCount} / {usageLimit}</span>
+          <span className="ml-2 text-xs text-gray-400">
+            {badgeLabel === 'Admin' || badgeLabel === 'Special'
+              ? `${usageCount} / ∞`
+              : `${usageCount} / ${usageLimit}`}
+          </span>
           <Button size="sm" variant="outline" onClick={() => signOut()}>Sign out</Button>
         </div>
       );
