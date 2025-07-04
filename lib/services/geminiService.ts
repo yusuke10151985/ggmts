@@ -435,6 +435,68 @@ const fixCommonErrorRange = (text: string, errorPos: number): string => {
   return result;
 };
 
+// Extra aggressive array fix for stubborn positions like 3658
+const extraAggressiveArrayFix = (text: string, errorPos: number): string => {
+  console.log('🔧 Applying extra aggressive array fix for position:', errorPos);
+  
+  // Get an even larger context
+  const start = Math.max(0, errorPos - 500);
+  const end = Math.min(text.length, errorPos + 500);
+  const before = text.substring(0, start);
+  const context = text.substring(start, end);
+  const after = text.substring(end);
+  
+  let fixedContext = context;
+  
+  // Ultra-aggressive patterns for stubborn cases
+  
+  // Pattern 1: Any two quotes with any whitespace between them
+  fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*")\s+("(?:[^"\\]|\\.)*")/g, '$1, $2');
+  
+  // Pattern 2: Force comma insertion after any quote followed by space and another quote
+  fixedContext = fixedContext.replace(/("[^"]*")(\s+)("[^"]*")/g, '$1,$2$3');
+  
+  // Pattern 3: Handle array elements with line breaks
+  fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*")(\s*\n\s*)("(?:[^"\\]|\\.)*")/g, '$1,$2$3');
+  
+  // Pattern 4: Multiple consecutive replacements for nested patterns
+  let iterations = 0;
+  let prevFixed = '';
+  while (fixedContext !== prevFixed && iterations < 3) {
+    prevFixed = fixedContext;
+    fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*")\s+("(?:[^"\\]|\\.)*")/g, '$1, $2');
+    iterations++;
+    console.log(`🔧 Extra aggressive iteration ${iterations}`);
+  }
+  
+  // Pattern 5: Character-by-character comma insertion around error position
+  const relativeErrorPos = errorPos - start;
+  if (relativeErrorPos > 0 && relativeErrorPos < fixedContext.length) {
+    const charBefore = fixedContext.charAt(relativeErrorPos - 1);
+    const charAt = fixedContext.charAt(relativeErrorPos);
+    const charAfter = relativeErrorPos < fixedContext.length - 1 ? fixedContext.charAt(relativeErrorPos + 1) : '';
+    
+    // If we have quote-space-quote pattern at exact error position, force comma
+    if (charBefore === '"' && charAt === ' ' && charAfter === '"') {
+      console.log('🔧 Force inserting comma at exact error position');
+      fixedContext = fixedContext.substring(0, relativeErrorPos) + ', ' + fixedContext.substring(relativeErrorPos + 1);
+    }
+    // If we have quote-quote pattern, insert comma and space
+    else if (charBefore === '"' && charAt === '"') {
+      console.log('🔧 Force inserting comma and space between adjacent quotes');
+      fixedContext = fixedContext.substring(0, relativeErrorPos) + ', ' + fixedContext.substring(relativeErrorPos);
+    }
+  }
+  
+  const result = before + fixedContext + after;
+  
+  if (result !== text) {
+    console.log('🔧 Extra aggressive fix applied, changes made');
+  }
+  
+  return result;
+};
+
 // Advanced JSON builder for stubborn cases
 const buildJsonFromFragments = (text: string, sourceLang: string, targetLangs: string[], mode: TranslationMode): any => {
   console.log('🔧 Building JSON from fragments using advanced extraction...');
@@ -534,12 +596,28 @@ const buildJsonFromFragments = (text: string, sourceLang: string, targetLangs: s
     }
   }
   
-  // Strategy 4: If still empty, create basic fallback
+  // Strategy 4: If still empty, create basic fallback for ALL requested languages
   if (result.translations.length === 0) {
-    result.translations.push({
-      lang: targetLangs[0] || 'en',
-      text: 'Translation extraction failed. Please try again with shorter text.'
-    });
+    console.log('🔧 Creating fallback translations for all requested languages:', targetLangs);
+    result.translations = targetLangs.map(lang => ({
+      lang: lang,
+      text: 'Translation extraction failed. Please try again with shorter text.',
+      summary: mode === 'summarize' ? ['1. Translation extraction failed', '2. Please retry with shorter text'] : undefined
+    }));
+  }
+  
+  // Strategy 5: Ensure we have all requested languages
+  const presentLangs = result.translations.map((t: any) => t.lang);
+  const missingLangs = targetLangs.filter(lang => !presentLangs.includes(lang));
+  
+  if (missingLangs.length > 0) {
+    console.log('🔧 Adding missing languages to fragment result:', missingLangs);
+    const missingTranslations = missingLangs.map(lang => ({
+      lang: lang,
+      text: 'Translation not fully extracted. Please try again.',
+      summary: mode === 'summarize' ? ['1. Translation not fully extracted', '2. Please retry your request'] : undefined
+    }));
+    result.translations.push(...missingTranslations);
   }
   
   console.log('🔧 Built JSON from fragments:', result);
@@ -833,9 +911,15 @@ export const getTranslations = async (
             aggressiveFixed = fixSpecificPosition(aggressiveFixed, errorPos);
             
             // Additional targeted fix for common error position ranges
-            if (errorPos >= 3200 && errorPos <= 3700) {
-              console.log('🔧 Applying special fix for position range 3200-3700');
+            if (errorPos >= 3200 && errorPos <= 3800) {
+              console.log('🔧 Applying special fix for position range 3200-3800');
               aggressiveFixed = fixCommonErrorRange(aggressiveFixed, errorPos);
+            }
+            
+            // Extra aggressive fix for stubborn positions like 3658
+            if (errorPos >= 3600 && errorPos <= 3700) {
+              console.log('🔧 Applying extra aggressive fix for position range 3600-3700');
+              aggressiveFixed = extraAggressiveArrayFix(aggressiveFixed, errorPos);
             }
           }
           
@@ -1000,16 +1084,44 @@ export const getTranslations = async (
       console.log('🔧 All translation languages:', filteredTranslations.map((t: any) => t.lang));
     }
     
-    // Additional check: Ensure we have the requested languages
-    const missingLangs = filterTo.filter(lang => !filteredTranslations.some((t: any) => t.lang === lang));
+    // Enhanced check: Ensure we have all requested languages
+    const requestedLangs = filterTo;
+    const receivedLangs = filteredTranslations.map((t: any) => t.lang);
+    const missingLangs = requestedLangs.filter(lang => !receivedLangs.includes(lang));
+    
+    console.log('🔧 Language completeness check:');
+    console.log('🔧 Requested languages:', requestedLangs);
+    console.log('🔧 Received languages:', receivedLangs);
+    console.log('🔧 Missing languages:', missingLangs);
+    
     if (missingLangs.length > 0) {
       console.warn('⚠️ Missing requested languages:', missingLangs);
+      
       // Try to find them in the full translation set
       const foundMissing = parsedData.translations.filter((t: any) => missingLangs.includes(t.lang));
       if (foundMissing.length > 0) {
         console.log('✅ Found missing languages in full set, adding them back:', foundMissing.map((t: any) => t.lang));
         filteredTranslations = [...filteredTranslations, ...foundMissing];
+      } else {
+        // Create placeholder translations for missing languages
+        console.log('🔧 Creating placeholder translations for missing languages');
+        const placeholderTranslations = missingLangs.map(lang => ({
+          lang: lang,
+          text: `Translation not available for language: ${lang}. Please try again.`,
+          summary: mode === 'summarize' ? ['1. Translation not available', '2. Please retry your request'] : undefined
+        }));
+        filteredTranslations = [...filteredTranslations, ...placeholderTranslations];
+        console.log('🔧 Added placeholder translations for:', missingLangs);
       }
+    }
+    
+    // Final verification
+    const finalLangCount = filteredTranslations.length;
+    const expectedCount = requestedLangs.length;
+    console.log(`🔧 Final translation count: ${finalLangCount}/${expectedCount}`);
+    
+    if (finalLangCount !== expectedCount) {
+      console.warn(`⚠️ Translation count mismatch: expected ${expectedCount}, got ${finalLangCount}`);
     }
 
     if (parsedData && Array.isArray(filteredTranslations)) {
