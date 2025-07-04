@@ -192,14 +192,28 @@ export const getTranslations = async (
       console.error('❌ JSON parsing failed:', parseError);
       console.error('❌ Error position:', (parseError as any).message);
       
-      // Try to fix common JSON issues
+      // Try to fix common JSON issues with enhanced patterns
       let fixedText = cleanText;
       
-      // 1. Fix missing commas in arrays
-      fixedText = fixedText.replace(/("[\s\S]*?")\s*\n\s*("[\s\S]*?")/g, '$1,\n$2');
+      // Enhanced comma fixing - multiple patterns for different cases
       
-      // 2. Fix trailing commas
+      // 1a. Fix missing commas between quoted strings (with or without newlines)
+      fixedText = fixedText.replace(/("[\s\S]*?")(\s*\n?\s*)("[\s\S]*?")/g, '$1,$2$3');
+      
+      // 1b. Fix missing commas between array elements (objects/strings)
+      fixedText = fixedText.replace(/([\}\]"])(\s*\n?\s*)([\[\{"])/g, '$1,$2$3');
+      
+      // 1c. Fix missing commas in summary arrays specifically
+      fixedText = fixedText.replace(/("summary":\s*\[[\s\S]*?)("[\s\S]*?")(\s+)("[\s\S]*?")/g, '$1$2,$3$4');
+      
+      // 1d. Fix pattern: "text"\n"text" -> "text",\n"text"
+      fixedText = fixedText.replace(/("[\s\S]*?")\s*[\r\n]+\s*("[\s\S]*?")/g, '$1,\n$2');
+      
+      // 2. Fix trailing commas before closing brackets
       fixedText = fixedText.replace(/,(\s*[}\]])/g, '$1');
+      
+      // 3. Fix double commas
+      fixedText = fixedText.replace(/,,+/g, ',');
       
       // 3. Fix incomplete arrays by closing them
       const openBrackets = (fixedText.match(/\[/g) || []).length;
@@ -220,7 +234,18 @@ export const getTranslations = async (
       }
       
       console.log('🔧 Attempting to fix JSON...');
+      console.log('🔧 Original text length:', cleanText.length);
       console.log('🔧 Fixed text length:', fixedText.length);
+      
+      // Show the problematic area around position 3911 if we can locate it
+      const errorPos = 3911;
+      if (cleanText.length > errorPos) {
+        const start = Math.max(0, errorPos - 100);
+        const end = Math.min(cleanText.length, errorPos + 100);
+        console.log('🔧 Problem area (original):', cleanText.substring(start, end));
+        console.log('🔧 Problem area (fixed):', fixedText.substring(start, end));
+      }
+      
       console.log('🔧 Fixed last 200 chars:', fixedText.substring(Math.max(0, fixedText.length - 200)));
       
       try {
@@ -229,20 +254,40 @@ export const getTranslations = async (
       } catch (secondError) {
         console.error('❌ JSON fix attempt failed:', secondError);
         
-        // Final fallback: extract only valid JSON portion
+        // Final fallback: use more aggressive JSON repair
         try {
-          const jsonStart = cleanText.indexOf('{');
-          const jsonEnd = cleanText.lastIndexOf('}');
-          if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-            const truncatedJson = cleanText.substring(jsonStart, jsonEnd + 1);
-            parsedData = JSON.parse(truncatedJson);
-            console.log('✅ Parsed truncated JSON successfully');
-          } else {
-            throw new Error('Could not extract valid JSON structure');
+          console.log('🔧 Attempting aggressive JSON repair...');
+          
+          // Try to find and fix the specific error pattern
+          let aggressiveFixed = fixedText;
+          
+          // Pattern: find arrays with missing commas between elements
+          // Look for "text" followed by whitespace followed by "text" (no comma)
+          aggressiveFixed = aggressiveFixed.replace(/("[\s\S]*?")(\s+)(?="[\s\S]*?")/g, '$1,$2');
+          
+          // Pattern: fix array elements that are on separate lines without commas
+          aggressiveFixed = aggressiveFixed.replace(/("])\s*\n\s*(?=")/g, '$1,\n');
+          
+          // Try to parse again
+          parsedData = JSON.parse(aggressiveFixed);
+          console.log('✅ Parsed with aggressive repair');
+        } catch (aggressiveError) {
+          // Ultra fallback: extract only valid JSON portion
+          try {
+            const jsonStart = cleanText.indexOf('{');
+            const jsonEnd = cleanText.lastIndexOf('}');
+            if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+              const truncatedJson = cleanText.substring(jsonStart, jsonEnd + 1);
+              parsedData = JSON.parse(truncatedJson);
+              console.log('✅ Parsed truncated JSON successfully');
+            } else {
+              throw new Error('Could not extract valid JSON structure');
+            }
+          } catch (finalError) {
+            console.error('❌ All JSON parsing attempts failed');
+            console.error('❌ Final error:', finalError);
+            throw new Error(`Failed to parse JSON response from Gemini API. Original error: ${(parseError as any).message}`);
           }
-        } catch (finalError) {
-          console.error('❌ All JSON parsing attempts failed');
-          throw new Error(`Failed to parse JSON response from Gemini API. Original error: ${(parseError as any).message}`);
         }
       }
     }
