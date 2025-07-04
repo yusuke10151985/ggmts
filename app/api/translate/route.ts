@@ -144,21 +144,37 @@ export async function POST(request: NextRequest) {
 
     // --- API実行履歴を記録 ---
     try {
-      const userId = session?.user?.id || null;
+      const userId = session?.user?.id;
       const tokens = text.length + (result.translations?.map((t:any)=>t.text.length).reduce((a:number,b:number)=>a+b,0) || 0);
       const cost = tokens * unitCost;
-      await prisma.apiUsageLog.create({
-        data: {
-          userId,
-          apiType: translationMode,
-          provider,
-          model,
-          tokens,
-          cost,
-          inputText: text.substring(0, 500),
-          result: JSON.stringify(result).substring(0, 1000),
+      
+      // ユーザーIDがある場合のみ記録（外部キー制約を満たすため）
+      if (userId) {
+        // ユーザーが存在するか確認
+        const userExists = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true }
+        });
+        
+        if (userExists) {
+          await prisma.apiUsageLog.create({
+            data: {
+              userId,
+              apiType: translationMode,
+              provider,
+              model,
+              tokens,
+              cost,
+              inputText: text.substring(0, 500),
+              result: JSON.stringify(result).substring(0, 1000),
+            }
+          });
+        } else {
+          console.warn('ユーザーが存在しないため履歴記録をスキップ:', userId);
         }
-      });
+      } else {
+        console.warn('未認証ユーザーのため履歴記録をスキップ');
+      }
     } catch (logErr) {
       console.error('履歴記録エラー', logErr);
     }
