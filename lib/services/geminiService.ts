@@ -14,6 +14,289 @@ const getApiKey = (): string => {
 
 const GEMINI_API_KEY = getApiKey();
 
+// Advanced JSON structure analysis
+const analyzeJsonStructure = (jsonText: string) => {
+  const analysis = {
+    totalLength: jsonText.length,
+    braceBalance: 0,
+    bracketBalance: 0,
+    quoteBalance: 0,
+    commaCount: 0,
+    suspiciousPatterns: [] as string[],
+    structureIssues: [] as string[]
+  };
+  
+  let inQuotes = false;
+  let escapeNext = false;
+  
+  for (let i = 0; i < jsonText.length; i++) {
+    const char = jsonText[i];
+    const prevChar = i > 0 ? jsonText[i - 1] : '';
+    const nextChar = i < jsonText.length - 1 ? jsonText[i + 1] : '';
+    
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+    
+    if (char === '\\') {
+      escapeNext = true;
+      continue;
+    }
+    
+    if (char === '"' && !escapeNext) {
+      inQuotes = !inQuotes;
+      analysis.quoteBalance += inQuotes ? 1 : -1;
+    }
+    
+    if (!inQuotes) {
+      if (char === '{') analysis.braceBalance++;
+      if (char === '}') analysis.braceBalance--;
+      if (char === '[') analysis.bracketBalance++;
+      if (char === ']') analysis.bracketBalance--;
+      if (char === ',') analysis.commaCount++;
+      
+      // Check for suspicious patterns
+      if (char === '"' && nextChar === '"' && prevChar !== ',' && prevChar !== '[' && prevChar !== ':') {
+        analysis.suspiciousPatterns.push(`Adjacent quotes at position ${i}`);
+      }
+      
+      if (char === '"' && /\s/.test(nextChar) && i < jsonText.length - 2 && jsonText[i + 2] === '"') {
+        analysis.suspiciousPatterns.push(`Quote-space-quote pattern at position ${i}`);
+      }
+    }
+  }
+  
+  // Check for structural issues
+  if (analysis.braceBalance !== 0) {
+    analysis.structureIssues.push(`Unbalanced braces: ${analysis.braceBalance}`);
+  }
+  if (analysis.bracketBalance !== 0) {
+    analysis.structureIssues.push(`Unbalanced brackets: ${analysis.bracketBalance}`);
+  }
+  if (analysis.quoteBalance !== 0) {
+    analysis.structureIssues.push(`Unbalanced quotes: ${analysis.quoteBalance}`);
+  }
+  
+  return analysis;
+};
+
+// Advanced JSON preprocessing
+const preprocessJsonResponse = (responseText: string): string => {
+  console.log('🔧 Starting advanced JSON preprocessing...');
+  
+  let processed = responseText;
+  
+  // Step 1: Remove common Gemini response prefixes/suffixes
+  processed = processed.replace(/^Here's the.*?:\s*/i, '');
+  processed = processed.replace(/^The translation.*?:\s*/i, '');
+  processed = processed.replace(/\s*I hope this helps!?\s*$/i, '');
+  
+  // Step 2: Character-by-character validation for array elements
+  processed = fixArrayElements(processed);
+  
+  // Step 3: Real-time comma insertion based on context
+  processed = insertMissingCommas(processed);
+  
+  console.log('🔧 Preprocessing complete');
+  return processed;
+};
+
+// Fix array elements with character-by-character analysis
+const fixArrayElements = (text: string): string => {
+  const result = [];
+  let i = 0;
+  let inQuotes = false;
+  let escapeNext = false;
+  let inArray = false;
+  let arrayDepth = 0;
+  
+  while (i < text.length) {
+    const char = text[i];
+    const prevChar = i > 0 ? text[i - 1] : '';
+    const nextChar = i < text.length - 1 ? text[i + 1] : '';
+    
+    if (escapeNext) {
+      result.push(char);
+      escapeNext = false;
+      i++;
+      continue;
+    }
+    
+    if (char === '\\') {
+      escapeNext = true;
+      result.push(char);
+      i++;
+      continue;
+    }
+    
+    if (char === '"' && !escapeNext) {
+      inQuotes = !inQuotes;
+      result.push(char);
+      i++;
+      continue;
+    }
+    
+    if (!inQuotes) {
+      if (char === '[') {
+        arrayDepth++;
+        inArray = true;
+      } else if (char === ']') {
+        arrayDepth--;
+        if (arrayDepth === 0) inArray = false;
+      }
+      
+      // Critical fix: detect missing commas in arrays
+      if (inArray && char === '"' && nextChar !== ',' && nextChar !== ']' && nextChar !== '}') {
+        // Look ahead to see if there's another quote after whitespace
+        let j = i + 1;
+        while (j < text.length && /\s/.test(text[j])) j++;
+        
+        if (j < text.length && text[j] === '"') {
+          result.push(char);
+          result.push(',');
+          i++;
+          continue;
+        }
+      }
+    }
+    
+    result.push(char);
+    i++;
+  }
+  
+  return result.join('');
+};
+
+// Insert missing commas with context awareness
+const insertMissingCommas = (text: string): string => {
+  let result = text;
+  
+  // Pattern 1: "text" followed by whitespace and "text"
+  result = result.replace(/(")(\s+)(")/g, (match, quote1, space, quote2) => {
+    return quote1 + ',' + space + quote2;
+  });
+  
+  // Pattern 2: "text" immediately followed by "text"
+  result = result.replace(/(")(")/g, '$1,$2');
+  
+  // Pattern 3: Array elements on new lines
+  result = result.replace(/("\s*)\n\s*(")/g, '$1,\n$2');
+  
+  return result;
+};
+
+// Advanced JSON builder for stubborn cases
+const buildJsonFromFragments = (text: string, sourceLang: string, targetLangs: string[], mode: TranslationMode): any => {
+  console.log('🔧 Building JSON from fragments using advanced extraction...');
+  
+  // Strategy 1: Extract using multiple regex patterns
+  const extractors = [
+    // Pattern 1: Find complete JSON-like structures
+    /\{[\s\S]*"sourceLanguage"[\s\S]*"translations"[\s\S]*\}/,
+    // Pattern 2: Find just the translations array
+    /"translations":\s*\[[\s\S]*?\]/,
+    // Pattern 3: Find individual translation objects
+    /\{[\s\S]*?"lang":\s*"[^"]*"[\s\S]*?"text":\s*"[^"]*"[\s\S]*?\}/g
+  ];
+  
+  let result: any = {
+    sourceLanguage: sourceLang === 'auto' ? 'en' : sourceLang,
+    translations: []
+  };
+  
+  // Try to extract sourceLanguage
+  const sourceLangMatch = text.match(/"sourceLanguage":\s*"([^"]+)"/);
+  if (sourceLangMatch) {
+    result.sourceLanguage = sourceLangMatch[1];
+  }
+  
+  // Strategy 2: Character-by-character JSON building
+  let buildFromChar = '';
+  let braceDepth = 0;
+  let inQuotes = false;
+  let escapeNext = false;
+  let foundStart = false;
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    
+    if (escapeNext) {
+      if (foundStart) buildFromChar += char;
+      escapeNext = false;
+      continue;
+    }
+    
+    if (char === '\\') {
+      escapeNext = true;
+      if (foundStart) buildFromChar += char;
+      continue;
+    }
+    
+    if (char === '"' && !escapeNext) {
+      inQuotes = !inQuotes;
+      if (foundStart) buildFromChar += char;
+      continue;
+    }
+    
+    if (!inQuotes) {
+      if (char === '{') {
+        braceDepth++;
+        foundStart = true;
+      } else if (char === '}') {
+        braceDepth--;
+      }
+      
+      if (foundStart) buildFromChar += char;
+      
+      // If we've closed all braces, try to parse
+      if (foundStart && braceDepth === 0) {
+        try {
+          const parsed = JSON.parse(buildFromChar);
+          if (parsed.translations && Array.isArray(parsed.translations)) {
+            console.log('✅ Successfully built JSON from character analysis');
+            return parsed;
+          }
+        } catch (e) {
+          // Continue building
+        }
+      }
+    } else {
+      if (foundStart) buildFromChar += char;
+    }
+  }
+  
+  // Strategy 3: Extract individual translation pieces
+  const langMatches = text.match(/"lang":\s*"([^"]+)"/g);
+  const textMatches = text.match(/"text":\s*"([^"]+(?:\\.[^"]*)*)"/g);
+  
+  if (langMatches && textMatches) {
+    const minLength = Math.min(langMatches.length, textMatches.length);
+    for (let i = 0; i < minLength; i++) {
+      const langMatch = langMatches[i].match(/"lang":\s*"([^"]+)"/);
+      const textMatch = textMatches[i].match(/"text":\s*"([^"]+(?:\\.[^"]*)*)"/);
+      
+      if (langMatch && textMatch) {
+        result.translations.push({
+          lang: langMatch[1],
+          text: textMatch[1]
+        });
+      }
+    }
+  }
+  
+  // Strategy 4: If still empty, create basic fallback
+  if (result.translations.length === 0) {
+    result.translations.push({
+      lang: targetLangs[0] || 'en',
+      text: 'Translation extraction failed. Please try again with shorter text.'
+    });
+  }
+  
+  console.log('🔧 Built JSON from fragments:', result);
+  return result;
+};
+
 const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode: TranslationMode): string => {
   const sourceLanguageInstruction = sourceLang === 'auto'
     ? 'First, automatically detect the language of the following text.'
@@ -150,8 +433,12 @@ export const getTranslations = async (
     const responseText = data.candidates[0].content.parts[0].text;
     console.log('📝 Gemini raw response text:', responseText);
 
+    // Advanced preprocessing before JSON extraction
+    const preprocessedText = preprocessJsonResponse(responseText);
+    console.log('🔧 Preprocessed text length:', preprocessedText.length);
+
     // Clean potential markdown fences and extract JSON - enhanced version
-    let cleanText = responseText.trim();
+    let cleanText = preprocessedText.trim();
     
     // Step 1: Remove markdown code blocks with multiline support
     const fenceRegex = /^```(?:json)?\s*\n?([\s\S]*?)\n?\s*```$/;
@@ -192,6 +479,10 @@ export const getTranslations = async (
       console.error('❌ Initial JSON parsing failed, attempting comprehensive repair...');
       console.error('❌ JSON parsing failed:', parseError);
       console.error('❌ Error position:', (parseError as any).message);
+      
+      // Advanced preprocessing: analyze JSON structure before repair
+      const structureAnalysis = analyzeJsonStructure(cleanText);
+      console.log('🔍 JSON structure analysis:', structureAnalysis);
       
       // Try to fix common JSON issues with enhanced patterns
       let fixedText = cleanText;
@@ -392,38 +683,8 @@ export const getTranslations = async (
             try {
               console.log('🚨 Attempting emergency JSON reconstruction...');
               
-              // Try to extract and reconstruct a minimal valid response
-              let emergencyJson = cleanText;
-              
-              // Find the sourceLanguage field
-              const sourceLangMatch = emergencyJson.match(/"sourceLanguage":\s*"([^"]+)"/);
-              const sourceLanguage = sourceLangMatch ? sourceLangMatch[1] : 'en';
-              
-              // Find translations array start
-              const translationsStart = emergencyJson.indexOf('"translations"');
-              if (translationsStart === -1) {
-                throw new Error('Cannot find translations array');
-              }
-              
-              // Build minimal valid JSON
-              const minimalJson: any = {
-                sourceLanguage: sourceLanguage,
-                translations: []
-              };
-              
-              // Try to extract at least one translation
-              const langMatch = emergencyJson.match(/"lang":\s*"([^"]+)"/);
-              const textMatch = emergencyJson.match(/"text":\s*"([^"]+)"/);
-              
-              if (langMatch && textMatch) {
-                minimalJson.translations.push({
-                  lang: langMatch[1],
-                  text: textMatch[1]
-                });
-              }
-              
-              console.log('🚨 Emergency JSON reconstructed:', minimalJson);
-              parsedData = minimalJson;
+              // Use advanced JSON builder with multiple extraction strategies
+              parsedData = buildJsonFromFragments(cleanText, sourceLang, targetLangs, mode);
               
             } catch (emergencyError) {
               // Absolute final fallback: extract only valid JSON portion
