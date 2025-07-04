@@ -7,6 +7,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import dynamic from 'next/dynamic';
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 import 'react-quill/dist/quill.snow.css';
+import AnalyticsStats from '@/components/AnalyticsStats';
 
 export default function AdminDashboardPage() {
   const { data: session, status } = useSession();
@@ -213,6 +214,12 @@ export default function AdminDashboardPage() {
     <div className="pl-8">
       <h1>Admin Dashboard</h1>
       <p>管理者専用ページです。</p>
+
+      {/* --- Google Analytics統計 --- */}
+      <section className="mt-8">
+        <h2 className="font-bold mb-4">Google Analytics統計</h2>
+        <AnalyticsStats />
+      </section>
 
       {/* --- 利用状況・コスト集計 --- */}
       <section className="mt-8">
