@@ -136,10 +136,7 @@ JSONレスポンス形式:
       }
     }
 
-    return NextResponse.json({
-      sourceLanguage: 'auto',
-      ...result
-    })
+    return NextResponse.json(result)
 
   } catch (error) {
     console.error('❌ SNS content generation error:', error)
