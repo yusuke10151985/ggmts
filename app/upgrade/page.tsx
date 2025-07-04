@@ -59,10 +59,14 @@ export default function UpgradePage() {
   const [lang, setLang] = useState<'ja'|'en'|'th'>('en');
   const userRole = (session?.user as any)?.role || 'free';
   const [limits, setLimits] = useState<Record<'free'|'pro'|'premier', string>>({free: '-', pro: '-', premier: '-'});
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/settings')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch settings');
+        return res.json();
+      })
       .then((data) => {
         const lim: Record<'free'|'pro'|'premier', string> = {
           free: '-',
@@ -74,7 +78,9 @@ export default function UpgradePage() {
           lim[p] = found ? found.value : '-';
         }
         setLimits(lim);
-      });
+        setFetchError(null);
+      })
+      .catch(() => setFetchError('Failed to load plan limits. Please try again later.'));
   }, []);
 
   return (
@@ -92,6 +98,7 @@ export default function UpgradePage() {
       </div>
       <h2 className="text-2xl font-bold mb-4">Upgrade</h2>
       <p className="mb-4 text-gray-600">{descText[lang]}</p>
+      {fetchError && <div className="mb-4 text-red-600">{fetchError}</div>}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {planKeys.map(plan => {
           const isCurrent = userRole === plan;
@@ -111,6 +118,11 @@ export default function UpgradePage() {
                 <li className="flex items-center gap-2 mt-2">
                   <span className="inline-block w-4 h-4 rounded-full border flex items-center justify-center text-xs font-bold bg-blue-600 text-white">✓</span>
                   <span>{planLimitLabel[lang]}: <b>{limits[plan]}</b></span>
+                </li>
+                <li className="text-xs text-gray-500 mt-1">
+                  {lang === 'ja' && `このプランの1日あたりの実行上限回数は ${limits[plan]} 回です。`}
+                  {lang === 'en' && `This plan's daily usage limit is ${limits[plan]} times.`}
+                  {lang === 'th' && `ขีดจำกัดการใช้งานรายวันของแผนนี้คือ ${limits[plan]} ครั้ง`}
                 </li>
               </ul>
               {isCurrent ? (
