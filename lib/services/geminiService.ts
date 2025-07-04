@@ -56,7 +56,7 @@ Please respond with a JSON object in this exact format:
 Use only Arabic numerals (1, 2, 3, ...) for all numbers and numbering. Do NOT use any language-specific digits. Use only English units (m, kg, etc.) for all measurements. Do NOT use any language-specific units.
 Ensure the response is valid JSON and includes all requested target languages.`;
   } else {
-    return `You are an expert summarizer. Carefully analyze the following text and create a multi-level numbered summary as a JSON array.
+    const basePrompt = `You are an expert summarizer. Carefully analyze the following text and create a multi-level numbered summary as a JSON array.
 
 Instructions:
 - Divide the text into items based on topics and contents.
@@ -92,6 +92,8 @@ Respond ONLY with a JSON object in this format:
 }
 
 Do NOT include any text or explanation outside the JSON object. The summary array MUST be present and contain a multi-level numbered list.`;
+
+    return basePrompt;
   }
 };
 

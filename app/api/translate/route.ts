@@ -100,17 +100,26 @@ export async function POST(request: NextRequest) {
     // API実行（管理画面設定値で強制）
     let result;
     try {
+      console.log('Starting translation with provider:', provider, 'model:', model);
       let translationPromise;
       if (provider === 'openai') {
+        console.log('Using OpenAI/GPT service');
         translationPromise = getGptTranslations(text, sourceLang, targetLangs, translationMode, model);
       } else if (provider === 'google') {
+        console.log('Using Google/Gemini service');
         translationPromise = getGeminiTranslations(text, sourceLang, targetLangs, translationMode, model);
       } else {
+        console.log('Defaulting to OpenAI/GPT service');
         translationPromise = getGptTranslations(text, sourceLang, targetLangs, translationMode, model);
       }
       result = await timeoutPromise(translationPromise, 25000);
+      console.log('Translation completed successfully');
     } catch (translationError) {
       console.error('Translation service error:', translationError)
+      console.error('Error details:', {
+        message: translationError instanceof Error ? translationError.message : 'Unknown error',
+        stack: translationError instanceof Error ? translationError.stack : undefined
+      });
       if (translationError instanceof Error && translationError.message === 'Request timed out') {
         return NextResponse.json(
           { error: 'Translation service timed out. Please try again or use shorter input.' },
