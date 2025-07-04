@@ -183,6 +183,128 @@ const insertMissingCommas = (text: string): string => {
   // Pattern 3: Array elements on new lines
   result = result.replace(/("\s*)\n\s*(")/g, '$1,\n$2');
   
+  // Pattern 4: Specific line 12 issue - array elements without commas
+  result = fixLine12ArrayElements(result);
+  
+  return result;
+};
+
+// Fix specific line 12 array element issues
+const fixLine12ArrayElements = (text: string): string => {
+  const lines = text.split('\n');
+  
+  // Focus on line 12 (index 11) and surrounding lines
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lineNum = i + 1;
+    
+    // Check if this line contains array elements without proper commas
+    if (line.includes('"') && (line.includes('summary') || lineNum >= 10 && lineNum <= 15)) {
+      // Fix pattern: "text" followed by space and "text" on same line
+      lines[i] = line.replace(/(")(\s+)(")/g, '$1,$2$3');
+      
+      // Fix pattern: "text"space"text" (no comma)
+      lines[i] = lines[i].replace(/(")(\s*)(")/g, (match, q1, space, q2) => {
+        // Only add comma if there's content between quotes and it's not already properly formatted
+        if (space.length > 0 && !match.includes(',')) {
+          return q1 + ',' + space + q2;
+        }
+        return match;
+      });
+      
+      // Fix array elements that are concatenated
+      lines[i] = lines[i].replace(/("\s*[^",\[\]]*?\s*")(\s+)(")/g, '$1,$2$3');
+    }
+  }
+  
+  return lines.join('\n');
+};
+
+// Fix specific position errors with comprehensive analysis
+const fixSpecificPosition = (text: string, errorPos: number): string => {
+  let result = text;
+  
+  if (errorPos >= 0 && errorPos < text.length) {
+    // Extended context analysis
+    const start = Math.max(0, errorPos - 100);
+    const end = Math.min(text.length, errorPos + 100);
+    const context = text.substring(start, end);
+    
+    console.log('🔧 Extended context analysis:');
+    console.log('🔧 Context around error:', context);
+    
+    // Find the exact position within context
+    const relativePos = errorPos - start;
+    const charAtError = context.charAt(relativePos);
+    const charBefore = relativePos > 0 ? context.charAt(relativePos - 1) : '';
+    const charAfter = relativePos < context.length - 1 ? context.charAt(relativePos + 1) : '';
+    
+    console.log(`🔧 Position ${errorPos}: "${charAtError}" (${charAtError.charCodeAt(0)})`);
+    console.log(`🔧 Before: "${charBefore}" (${charBefore.charCodeAt(0)})`);
+    console.log(`🔧 After: "${charAfter}" (${charAfter.charCodeAt(0)})`);
+    
+    // Strategy 1: Insert comma if missing between array elements
+    if (charBefore === '"' && (charAtError === ' ' || charAtError === '\n' || charAtError === '\t')) {
+      // Look for the next quote
+      let nextQuotePos = -1;
+      for (let i = relativePos + 1; i < context.length; i++) {
+        if (context.charAt(i) === '"') {
+          nextQuotePos = i;
+          break;
+        }
+      }
+      
+      if (nextQuotePos !== -1) {
+        console.log('🔧 Inserting comma after quote at position', errorPos);
+        result = result.substring(0, errorPos) + ',' + result.substring(errorPos);
+        return result;
+      }
+    }
+    
+    // Strategy 2: Fix quote-space-quote pattern
+    if (charBefore === '"' && charAtError === ' ' && charAfter === '"') {
+      console.log('🔧 Fixing quote-space-quote pattern at position', errorPos);
+      result = result.substring(0, errorPos) + ',' + result.substring(errorPos);
+      return result;
+    }
+    
+    // Strategy 3: Fix direct quote-quote pattern
+    if (charBefore === '"' && charAtError === '"') {
+      console.log('🔧 Fixing direct quote-quote pattern at position', errorPos);
+      result = result.substring(0, errorPos) + ',' + result.substring(errorPos);
+      return result;
+    }
+    
+    // Strategy 4: Fix line-based array elements
+    const lines = result.split('\n');
+    let lineIndex = 0;
+    let charCount = 0;
+    
+    // Find which line contains the error
+    for (let i = 0; i < lines.length; i++) {
+      if (charCount + lines[i].length >= errorPos) {
+        lineIndex = i;
+        break;
+      }
+      charCount += lines[i].length + 1; // +1 for newline
+    }
+    
+    const lineContent = lines[lineIndex];
+    const posInLine = errorPos - charCount;
+    
+    console.log(`🔧 Error on line ${lineIndex + 1}, position ${posInLine}:`, lineContent);
+    
+    // Fix the specific line
+    if (lineContent.includes('"') && !lineContent.includes(',')) {
+      const fixedLine = lineContent.replace(/(")(\s+)(")/g, '$1,$2$3');
+      if (fixedLine !== lineContent) {
+        lines[lineIndex] = fixedLine;
+        result = lines.join('\n');
+        console.log('🔧 Fixed line:', fixedLine);
+      }
+    }
+  }
+  
   return result;
 };
 
@@ -378,9 +500,16 @@ export const getTranslations = async (
     const problematicLangs = ['th', 'ms', 'vi', 'my'];
     let actualTargetLangs = targetLangs;
     let filterTo: string[] = targetLangs;
+    
+    console.log('🔧 Original target languages:', targetLangs);
+    
     if (targetLangs.length === 1 && problematicLangs.includes(targetLangs[0])) {
       actualTargetLangs = [targetLangs[0], 'en'];
-      console.log('Gemini workaround: Adding en to targetLangs for', targetLangs[0]);
+      console.log('🔧 Gemini workaround: Adding en to targetLangs for', targetLangs[0]);
+      console.log('🔧 Actual request will use:', actualTargetLangs);
+      console.log('🔧 Will filter back to:', filterTo);
+    } else {
+      console.log('🔧 No workaround needed, using original languages:', actualTargetLangs);
     }
 
     const prompt = getPrompt(text, sourceLang, actualTargetLangs, mode);
@@ -568,31 +697,8 @@ export const getTranslations = async (
           
           // Position-specific repair around the error location
           if (errorPos && errorPos < aggressiveFixed.length) {
-            const start = Math.max(0, errorPos - 10);
-            const end = Math.min(aggressiveFixed.length, errorPos + 10);
-            const problemArea = aggressiveFixed.substring(start, end);
-            
-            console.log('🔧 Examining problem area:', problemArea);
-            
-            // Check if we need to insert a comma at the specific position
-            if (errorPos > 0) {
-              const charAtError = aggressiveFixed.charAt(errorPos);
-              const charBefore = aggressiveFixed.charAt(errorPos - 1);
-              
-              // Pattern: "text" followed by " (quote) without comma
-              if (charBefore === '"' && charAtError === ' ') {
-                const nextQuotePos = aggressiveFixed.indexOf('"', errorPos);
-                if (nextQuotePos !== -1) {
-                  console.log('🔧 Inserting comma at position', errorPos);
-                  aggressiveFixed = aggressiveFixed.substring(0, errorPos) + ',' + aggressiveFixed.substring(errorPos);
-                }
-              }
-              // Pattern: "text" followed directly by "text" (no space, no comma)
-              else if (charBefore === '"' && charAtError === '"') {
-                console.log('🔧 Inserting comma between quotes at position', errorPos);
-                aggressiveFixed = aggressiveFixed.substring(0, errorPos) + ',' + aggressiveFixed.substring(errorPos);
-              }
-            }
+            console.log('🔧 Applying comprehensive position-specific repair...');
+            aggressiveFixed = fixSpecificPosition(aggressiveFixed, errorPos);
           }
           
           // Additional aggressive patterns with iterative fixing
@@ -740,8 +846,15 @@ export const getTranslations = async (
 
     // Gemini workaround: Only return the originally requested language(s)
     let filteredTranslations = parsedData.translations;
+    
+    // Only filter if we added extra languages (like 'en' for problematic langs)
     if (actualTargetLangs.length !== filterTo.length) {
+      console.log('🔧 Filtering translations from', actualTargetLangs, 'to', filterTo);
       filteredTranslations = parsedData.translations.filter((t: any) => filterTo.includes(t.lang));
+      console.log('🔧 Filtered translations count:', filteredTranslations.length);
+    } else {
+      // No filtering needed - return all translations
+      console.log('🔧 Returning all translations, count:', filteredTranslations.length);
     }
 
     if (parsedData && Array.isArray(filteredTranslations)) {
