@@ -303,35 +303,104 @@ export const getTranslations = async (
             }
           }
           
-          // Additional aggressive patterns
-          // Pattern: find arrays with missing commas between elements
-          aggressiveFixed = aggressiveFixed.replace(/("[\s\S]*?")(\s+)(?="[\s\S]*?")/g, '$1,$2');
+          // Additional aggressive patterns with iterative fixing
+          let prevLength = aggressiveFixed.length;
+          let iterations = 0;
+          const maxIterations = 5;
           
-          // Pattern: fix array elements that are on separate lines without commas
-          aggressiveFixed = aggressiveFixed.replace(/("])\s*\n\s*(?=")/g, '$1,\n');
+          // Iterative fixing to catch all patterns
+          do {
+            prevLength = aggressiveFixed.length;
+            iterations++;
+            
+            console.log(`🔧 Iteration ${iterations} - fixing patterns...`);
+            
+            // Pattern 1: "text" followed by whitespace and "text" (most common)
+            aggressiveFixed = aggressiveFixed.replace(/("[\s\S]*?")(\s+)("[\s\S]*?")/g, '$1,$2$3');
+            
+            // Pattern 2: "text" immediately followed by "text" (no space)
+            aggressiveFixed = aggressiveFixed.replace(/("[\s\S]*?")("[\s\S]*?")/g, '$1,$2');
+            
+            // Pattern 3: array elements on separate lines without commas
+            aggressiveFixed = aggressiveFixed.replace(/("])\s*\n\s*(")/g, '$1,\n$2');
+            
+            // Pattern 4: fix array ending patterns
+            aggressiveFixed = aggressiveFixed.replace(/(")\s+(")/g, '$1,$2');
+            
+            // Pattern 5: fix summary array specific patterns
+            aggressiveFixed = aggressiveFixed.replace(/("summary":\s*\[[\s\S]*?)("[\s\S]*?")(\s+)("[\s\S]*?")/g, '$1$2,$3$4');
+            
+            // Pattern 6: fix line break patterns in arrays
+            aggressiveFixed = aggressiveFixed.replace(/("[\s\S]*?")\n\s*("[\s\S]*?")/g, '$1,\n$2');
+            
+            console.log(`🔧 After iteration ${iterations}, length: ${aggressiveFixed.length}`);
+            
+          } while (aggressiveFixed.length !== prevLength && iterations < maxIterations);
           
-          // Pattern: fix specific array element endings
-          aggressiveFixed = aggressiveFixed.replace(/("\s*)\s+(")/g, '$1,$2');
+          console.log(`🔧 Completed ${iterations} iterations of pattern fixing`);
           
           console.log('🔧 Aggressive fix complete, attempting parse...');
           parsedData = JSON.parse(aggressiveFixed);
           console.log('✅ Parsed with aggressive repair');
         } catch (aggressiveError) {
-          // Ultra fallback: extract only valid JSON portion
+          console.error('❌ Aggressive repair failed:', aggressiveError);
+          
+          // Ultra fallback: try to validate and fix array structure manually
           try {
-            const jsonStart = cleanText.indexOf('{');
-            const jsonEnd = cleanText.lastIndexOf('}');
-            if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-              const truncatedJson = cleanText.substring(jsonStart, jsonEnd + 1);
-              parsedData = JSON.parse(truncatedJson);
-              console.log('✅ Parsed truncated JSON successfully');
-            } else {
-              throw new Error('Could not extract valid JSON structure');
+            console.log('🔧 Attempting manual array structure repair...');
+            
+            let manualFixed = cleanText;
+            
+            // Find all arrays and manually validate them
+            const arrayPattern = /\[[\s\S]*?\]/g;
+            let match;
+            const arrays = [];
+            
+            while ((match = arrayPattern.exec(manualFixed)) !== null) {
+              arrays.push({
+                content: match[0],
+                start: match.index,
+                end: match.index + match[0].length
+              });
             }
-          } catch (finalError) {
-            console.error('❌ All JSON parsing attempts failed');
-            console.error('❌ Final error:', finalError);
-            throw new Error(`Failed to parse JSON response from Gemini API. Original error: ${(parseError as any).message}`);
+            
+            console.log(`🔧 Found ${arrays.length} arrays to validate`);
+            
+            // Fix each array individually
+            for (const arrayInfo of arrays) {
+              let arrayContent = arrayInfo.content;
+              
+              // Fix missing commas in this specific array
+              arrayContent = arrayContent.replace(/("[\s\S]*?")(\s+)("[\s\S]*?")/g, '$1,$2$3');
+              arrayContent = arrayContent.replace(/("[\s\S]*?")("[\s\S]*?")/g, '$1,$2');
+              arrayContent = arrayContent.replace(/,(\s*\])/g, '$1'); // Remove trailing comma
+              
+              // Replace in the main text
+              manualFixed = manualFixed.substring(0, arrayInfo.start) + 
+                           arrayContent + 
+                           manualFixed.substring(arrayInfo.end);
+            }
+            
+            parsedData = JSON.parse(manualFixed);
+            console.log('✅ Parsed with manual array repair');
+            
+          } catch (manualError) {
+            // Final fallback: extract only valid JSON portion
+            try {
+              const jsonStart = cleanText.indexOf('{');
+              const jsonEnd = cleanText.lastIndexOf('}');
+              if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+                const truncatedJson = cleanText.substring(jsonStart, jsonEnd + 1);
+                parsedData = JSON.parse(truncatedJson);
+                console.log('✅ Parsed truncated JSON successfully');
+              } else {
+                throw new Error('Could not extract valid JSON structure');
+              }
+            } catch (finalError) {
+              console.error('❌ All JSON parsing attempts failed');
+              console.error('❌ Final error:', finalError);
+              throw new Error(`Failed to parse JSON response from Gemini API. Original error: ${(parseError as any).message}`);
+            }
           }
         }
       }
