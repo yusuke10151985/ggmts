@@ -210,7 +210,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div>
+    <div className="pl-8">
       <h1>Admin Dashboard</h1>
       <p>管理者専用ページです。</p>
 
