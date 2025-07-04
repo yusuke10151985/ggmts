@@ -412,12 +412,12 @@ export const TranslatorApp: React.FC = () => {
   // --- 3つのトグルスイッチUI ---
   const ModeToggle = () => (
     <div className="flex flex-col sm:flex-row items-center gap-4 my-4">
-      <div className="flex items-center gap-2 w-full sm:w-auto">
+      <div className="flex items-center bg-gray-200 dark:bg-gray-800 rounded-xl p-1 w-full sm:w-auto">
         <button
           className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg font-bold transition-all text-sm sm:text-base ${
             mode === 'translate' 
-              ? 'bg-blue-500 text-white shadow-lg' 
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              ? 'bg-blue-500 text-white shadow-md' 
+              : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
           }`}
           onClick={() => setMode('translate')}
         >
@@ -426,8 +426,8 @@ export const TranslatorApp: React.FC = () => {
         <button
           className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg font-bold transition-all text-sm sm:text-base ${
             mode === 'summarize' 
-              ? 'bg-green-500 text-white shadow-lg' 
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              ? 'bg-green-500 text-white shadow-md' 
+              : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
           }`}
           onClick={() => setMode('summarize')}
         >
@@ -436,12 +436,12 @@ export const TranslatorApp: React.FC = () => {
         <button
           className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg font-bold transition-all text-sm sm:text-base ${
             mode === 'generate' 
-              ? 'bg-purple-500 text-white shadow-lg' 
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+              ? 'bg-purple-500 text-white shadow-md' 
+              : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
           }`}
           onClick={() => setMode('generate')}
         >
-          Generate
+          Generate for SNS
         </button>
       </div>
       <button
@@ -456,8 +456,8 @@ export const TranslatorApp: React.FC = () => {
 
   return (
     <div className={`relative w-full min-h-screen ${mode === 'summarize' ? 'bg-green-50' : mode === 'generate' ? 'bg-purple-50' : 'bg-blue-50'}`}>
-      <div className="flex-grow w-full">
-        <div className="w-full px-0 md:px-2">
+      <div className="flex-grow w-full pt-4 sm:pt-6 md:pt-8">
+        <div className="w-full px-2 sm:px-4 md:px-2">
           <div className="flex flex-col xl:flex-row gap-4 w-full">
             <main className="flex-1 w-full">
               <Card className="w-full">
@@ -717,7 +717,7 @@ export const TranslatorApp: React.FC = () => {
                                               <Copy className="w-4 h-4" />
                                               Copy
                                             </Button>
-                                            {(sns.platform === 'x' || sns.platform === 'facebook') && (
+                                            {(sns.platform === 'x' || sns.platform === 'facebook' || sns.platform === 'youtube' || sns.platform === 'tiktok') && (
                                               <Button
                                                 size="sm"
                                                 variant="outline"
@@ -730,10 +730,19 @@ export const TranslatorApp: React.FC = () => {
                                                       shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(content)}`
                                                       break
                                                     case 'facebook':
-                                                      // Facebook only shares URL, not pre-filled text
-                                                      shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin)}`
-                                                      // Copy content to clipboard for user to paste
+                                                      // Copy content to clipboard and open Facebook
                                                       navigator.clipboard.writeText(content)
+                                                      shareUrl = 'https://www.facebook.com/'
+                                                      break
+                                                    case 'youtube':
+                                                      // Copy content to clipboard and open YouTube Studio
+                                                      navigator.clipboard.writeText(content)
+                                                      shareUrl = 'https://studio.youtube.com/channel/UC/videos/upload?d=ud'
+                                                      break
+                                                    case 'tiktok':
+                                                      // Copy content to clipboard and open TikTok upload
+                                                      navigator.clipboard.writeText(content)
+                                                      shareUrl = 'https://www.tiktok.com/upload'
                                                       break
                                                   }
                                                   
