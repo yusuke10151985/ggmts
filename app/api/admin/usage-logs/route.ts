@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     include: { user: { select: { id: true, name: true, email: true, role: true } } },
   });
 
-  // ユーザーごとの集計（フィルタ適用）
+  // ユーザーごとの集計（フィルタ適用）- nullユーザーも含む
   const userStats = await prisma.apiUsageLog.groupBy({
     by: ['userId'],
     where,
@@ -42,13 +42,34 @@ export async function GET(req: NextRequest) {
     _count: { _all: true },
   });
 
-  // ユーザーごと・モデルごとの集計（フィルタ適用）
+  // ユーザーごと・モデルごとの集計（フィルタ適用）- nullユーザーも含む
   const userStatsByModel = await prisma.apiUsageLog.groupBy({
     by: ['userId', 'model'],
     where,
     _sum: { tokens: true, cost: true },
     _count: { _all: true },
   });
+
+  // ユーザー情報を付加してuserStatsを拡張
+  const userStatsWithDetails = await Promise.all(
+    userStats.map(async (stat) => {
+      let userDetails = null;
+      if (stat.userId) {
+        try {
+          userDetails = await prisma.user.findUnique({
+            where: { id: stat.userId },
+            select: { id: true, name: true, email: true, role: true }
+          });
+        } catch (error) {
+          console.error('Error fetching user details:', error);
+        }
+      }
+      return {
+        ...stat,
+        userDetails
+      };
+    })
+  );
 
   // 全体集計（フィルタ適用）
   const total = await prisma.apiUsageLog.aggregate({
@@ -66,5 +87,11 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'asc' },
   });
 
-  return NextResponse.json({ logs, userStats, userStatsByModel, total, dailyStats });
+  return NextResponse.json({ 
+    logs, 
+    userStats: userStatsWithDetails, 
+    userStatsByModel, 
+    total, 
+    dailyStats 
+  });
 } 
