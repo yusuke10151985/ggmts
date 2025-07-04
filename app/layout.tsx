@@ -56,9 +56,8 @@ export default function RootLayout({
         <link rel="icon" href="/logo.png" type="image/png" />
       </head>
       <body className={inter.className}>
-        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
-          <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
-        )}
+        {/* Google Analytics - 測定ID: G-BV3ZRJ84DP */}
+        <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-BV3ZRJ84DP'} />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
