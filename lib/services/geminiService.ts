@@ -189,6 +189,7 @@ export const getTranslations = async (
     try {
       parsedData = JSON.parse(cleanText);
     } catch (parseError) {
+      console.error('❌ Initial JSON parsing failed, attempting comprehensive repair...');
       console.error('❌ JSON parsing failed:', parseError);
       console.error('❌ Error position:', (parseError as any).message);
       
@@ -385,21 +386,72 @@ export const getTranslations = async (
             console.log('✅ Parsed with manual array repair');
             
           } catch (manualError) {
-            // Final fallback: extract only valid JSON portion
+            console.error('❌ Manual array repair failed:', manualError);
+            
+            // Emergency fallback: Build valid JSON from fragments
             try {
-              const jsonStart = cleanText.indexOf('{');
-              const jsonEnd = cleanText.lastIndexOf('}');
-              if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-                const truncatedJson = cleanText.substring(jsonStart, jsonEnd + 1);
-                parsedData = JSON.parse(truncatedJson);
-                console.log('✅ Parsed truncated JSON successfully');
-              } else {
-                throw new Error('Could not extract valid JSON structure');
+              console.log('🚨 Attempting emergency JSON reconstruction...');
+              
+              // Try to extract and reconstruct a minimal valid response
+              let emergencyJson = cleanText;
+              
+              // Find the sourceLanguage field
+              const sourceLangMatch = emergencyJson.match(/"sourceLanguage":\s*"([^"]+)"/);
+              const sourceLanguage = sourceLangMatch ? sourceLangMatch[1] : 'en';
+              
+              // Find translations array start
+              const translationsStart = emergencyJson.indexOf('"translations"');
+              if (translationsStart === -1) {
+                throw new Error('Cannot find translations array');
               }
-            } catch (finalError) {
-              console.error('❌ All JSON parsing attempts failed');
-              console.error('❌ Final error:', finalError);
-              throw new Error(`Failed to parse JSON response from Gemini API. Original error: ${(parseError as any).message}`);
+              
+              // Build minimal valid JSON
+              const minimalJson: any = {
+                sourceLanguage: sourceLanguage,
+                translations: []
+              };
+              
+              // Try to extract at least one translation
+              const langMatch = emergencyJson.match(/"lang":\s*"([^"]+)"/);
+              const textMatch = emergencyJson.match(/"text":\s*"([^"]+)"/);
+              
+              if (langMatch && textMatch) {
+                minimalJson.translations.push({
+                  lang: langMatch[1],
+                  text: textMatch[1]
+                });
+              }
+              
+              console.log('🚨 Emergency JSON reconstructed:', minimalJson);
+              parsedData = minimalJson;
+              
+            } catch (emergencyError) {
+              // Absolute final fallback: extract only valid JSON portion
+              try {
+                const jsonStart = cleanText.indexOf('{');
+                const jsonEnd = cleanText.lastIndexOf('}');
+                if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+                  const truncatedJson = cleanText.substring(jsonStart, jsonEnd + 1);
+                  parsedData = JSON.parse(truncatedJson);
+                  console.log('✅ Parsed truncated JSON successfully');
+                } else {
+                  throw new Error('Could not extract valid JSON structure');
+                }
+              } catch (finalError) {
+                console.error('❌ All JSON parsing attempts failed');
+                console.error('❌ Final error:', finalError);
+                
+                // Last resort: return a basic error response that won't crash the system
+                console.log('🚨 Returning emergency fallback response');
+                parsedData = {
+                  sourceLanguage: 'auto',
+                  translations: [{
+                    lang: targetLangs[0] || 'en',
+                    text: 'Translation failed due to JSON parsing error. Please try again.',
+                    summary: mode === 'summarize' ? ['1. Translation service encountered an error', '2. Please retry your request'] : undefined
+                  }]
+                };
+              }
             }
           }
         }
