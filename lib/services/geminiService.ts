@@ -150,12 +150,25 @@ export const getTranslations = async (
     const responseText = data.candidates[0].content.parts[0].text;
     console.log('📝 Gemini raw response text:', responseText);
 
-    // Clean potential markdown fences
-    const fenceRegex = /^```(?:json)?\s*\n?(.*?)\n?\s*```$/;
-    const match = responseText.match(fenceRegex);
-    const jsonText = match && match[1] ? match[1].trim() : responseText.trim();
-    console.log('🧹 Cleaned JSON text:', jsonText);
-    const parsedData = JSON.parse(jsonText);
+    // Clean potential markdown fences - improved with fallback for older JS versions
+    let cleanText = responseText.trim();
+    
+    // Remove markdown code blocks with multiline support
+    // Use [\s\S]*? instead of 's' flag for compatibility
+    const fenceRegex = /^```(?:json)?\s*\n?([\s\S]*?)\n?\s*```$/;
+    const match = cleanText.match(fenceRegex);
+    if (match && match[1]) {
+      cleanText = match[1].trim();
+    } else {
+      // Fallback: remove starting and ending code block markers
+      cleanText = cleanText
+        .replace(/^```(?:json)?\s*\n?/i, '')  // Remove opening fence
+        .replace(/\n?\s*```\s*$/i, '')        // Remove closing fence
+        .trim();
+    }
+    
+    console.log('🧹 Cleaned JSON text:', cleanText);
+    const parsedData = JSON.parse(cleanText);
     console.log('✅ Parsed Gemini data:', parsedData);
 
     // summary_markdownがあればsummary配列に変換
