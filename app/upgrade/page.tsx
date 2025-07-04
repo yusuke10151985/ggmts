@@ -64,7 +64,11 @@ export default function UpgradePage() {
     fetch('/api/admin/settings')
       .then(res => res.json())
       .then((data) => {
-        const lim: Record<'free'|'pro'|'premier', string> = {};
+        const lim: Record<'free'|'pro'|'premier', string> = {
+          free: '-',
+          pro: '-',
+          premier: '-'
+        };
         for (const p of planKeys) {
           const found = data.find((s:any) => s.key === planLimitKeys[p]);
           lim[p] = found ? found.value : '-';
