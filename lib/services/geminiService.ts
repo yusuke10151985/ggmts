@@ -150,11 +150,10 @@ export const getTranslations = async (
     const responseText = data.candidates[0].content.parts[0].text;
     console.log('📝 Gemini raw response text:', responseText);
 
-    // Clean potential markdown fences - improved with fallback for older JS versions
+    // Clean potential markdown fences and extract JSON - enhanced version
     let cleanText = responseText.trim();
     
-    // Remove markdown code blocks with multiline support
-    // Use [\s\S]*? instead of 's' flag for compatibility
+    // Step 1: Remove markdown code blocks with multiline support
     const fenceRegex = /^```(?:json)?\s*\n?([\s\S]*?)\n?\s*```$/;
     const match = cleanText.match(fenceRegex);
     if (match && match[1]) {
@@ -167,7 +166,24 @@ export const getTranslations = async (
         .trim();
     }
     
+    // Step 2: Extract JSON object from mixed content (find first { to last })
+    const jsonStartIndex = cleanText.indexOf('{');
+    const jsonEndIndex = cleanText.lastIndexOf('}');
+    
+    if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
+      cleanText = cleanText.substring(jsonStartIndex, jsonEndIndex + 1);
+    }
+    
+    // Step 3: Additional cleanup for common issues
+    cleanText = cleanText
+      .replace(/^[^{]*{/, '{')  // Remove anything before first {
+      .replace(/}[^}]*$/, '}')  // Remove anything after last }
+      .trim();
+    
     console.log('🧹 Cleaned JSON text:', cleanText);
+    console.log('🧹 First 100 chars:', cleanText.substring(0, 100));
+    console.log('🧹 Last 100 chars:', cleanText.substring(Math.max(0, cleanText.length - 100)));
+    
     const parsedData = JSON.parse(cleanText);
     console.log('✅ Parsed Gemini data:', parsedData);
 
