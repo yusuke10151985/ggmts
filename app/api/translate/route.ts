@@ -70,7 +70,8 @@ export async function POST(request: NextRequest) {
     // Character limit validation
     const characterLimits = {
       translate: 8000,
-      summarize: 12000
+      summarize: 12000,
+      generate: 5000
     };
     
     const currentLimit = characterLimits[translationMode];
