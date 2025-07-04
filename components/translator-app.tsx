@@ -411,10 +411,10 @@ export const TranslatorApp: React.FC = () => {
 
   // --- 3つのトグルスイッチUI ---
   const ModeToggle = () => (
-    <div className="flex items-center gap-4 my-4 flex-wrap">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row items-center gap-4 my-4">
+      <div className="flex items-center gap-2 w-full sm:w-auto">
         <button
-          className={`px-4 py-2 rounded-lg font-bold transition-all ${
+          className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg font-bold transition-all text-sm sm:text-base ${
             mode === 'translate' 
               ? 'bg-blue-500 text-white shadow-lg' 
               : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -424,7 +424,7 @@ export const TranslatorApp: React.FC = () => {
           Translate
         </button>
         <button
-          className={`px-4 py-2 rounded-lg font-bold transition-all ${
+          className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg font-bold transition-all text-sm sm:text-base ${
             mode === 'summarize' 
               ? 'bg-green-500 text-white shadow-lg' 
               : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -434,7 +434,7 @@ export const TranslatorApp: React.FC = () => {
           Summarize
         </button>
         <button
-          className={`px-4 py-2 rounded-lg font-bold transition-all ${
+          className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg font-bold transition-all text-sm sm:text-base ${
             mode === 'generate' 
               ? 'bg-purple-500 text-white shadow-lg' 
               : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
@@ -463,45 +463,6 @@ export const TranslatorApp: React.FC = () => {
               <Card className="w-full">
                 <CardContent className="p-2 md:p-4 w-full">
                   <ModeToggle />
-                {mode === 'generate' && (
-                  <div className="flex gap-2 mb-3 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => setInputText('YouTube video: ')}
-                      className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-                    >
-                      📺 YouTube
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setInputText('X/Twitter post: ')}
-                      className="px-3 py-1 text-sm bg-blue-400 text-white rounded hover:bg-blue-500 transition-colors"
-                    >
-                      🐦 X/Twitter
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setInputText('Facebook post: ')}
-                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                    >
-                      📘 Facebook
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setInputText('TikTok video: ')}
-                      className="px-3 py-1 text-sm bg-black text-white rounded hover:bg-gray-800 transition-colors"
-                    >
-                      🎵 TikTok
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setInputText('All platforms: ')}
-                      className="px-3 py-1 text-sm bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
-                    >
-                      ✨ All Platforms
-                    </button>
-                  </div>
-                )}
                 <textarea
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
@@ -603,7 +564,7 @@ export const TranslatorApp: React.FC = () => {
                             disabled={isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading' || inputText.length > (mode === 'translate' ? 8000 : mode === 'summarize' ? 12000 : 5000)}
                             title={`Debug: isLoading=${isLoading}, hasText=${!!inputText.trim()}, targetLangs=${targetLangs.length}, status=${status}, charLimit=${inputText.length}/${mode === 'translate' ? 8000 : 12000}`}
                           >
-                            {isLoading ? (mode === 'summarize' ? 'Summarizing...' : mode === 'generate' ? 'Generating...' : 'Translating...') : (mode === 'summarize' ? 'Summarize' : mode === 'generate' ? 'Generate' : 'Translate')}
+                            {isLoading ? (mode === 'summarize' ? 'Summarizing...' : mode === 'generate' ? 'Generating...' : 'Translating...') : (mode === 'summarize' ? 'Summarize' : mode === 'generate' ? 'Generate for SNS' : 'Translate')}
                           </Button>
                         </div>
                       </div>
@@ -736,7 +697,7 @@ export const TranslatorApp: React.FC = () => {
                                   <div className="space-y-6">
                                     {(translation as any).snsContents.map((sns: any, index: number) => (
                                       <div key={sns.platform} className="border rounded-lg p-4 bg-background">
-                                        <div className="flex items-center justify-between mb-3">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
                                           <h4 className="font-bold text-lg capitalize flex items-center gap-2">
                                             {sns.platform === 'youtube' && '📺'}
                                             {sns.platform === 'x' && '🐦'}
@@ -744,7 +705,7 @@ export const TranslatorApp: React.FC = () => {
                                             {sns.platform === 'tiktok' && '🎵'}
                                             {sns.platform.toUpperCase()}
                                           </h4>
-                                          <div className="flex items-center gap-2">
+                                          <div className="flex items-center gap-2 flex-shrink-0">
                                             <Button
                                               size="sm"
                                               onClick={() => {
@@ -756,39 +717,35 @@ export const TranslatorApp: React.FC = () => {
                                               <Copy className="w-4 h-4" />
                                               Copy
                                             </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => {
-                                                const content = encodeURIComponent(`${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}`)
-                                                const url = encodeURIComponent(window.location.origin)
-                                                let shareUrl = ''
-                                                
-                                                switch (sns.platform) {
-                                                  case 'x':
-                                                    shareUrl = `https://twitter.com/intent/tweet?text=${content}&url=${url}`
-                                                    break
-                                                  case 'facebook':
-                                                    shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${content}`
-                                                    break
-                                                  case 'youtube':
-                                                    // YouTube doesn't have direct sharing for content, copy to clipboard instead
-                                                    navigator.clipboard.writeText(`${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}`)
-                                                    return
-                                                  case 'tiktok':
-                                                    // TikTok doesn't have web sharing API, copy to clipboard
-                                                    navigator.clipboard.writeText(`${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}`)
-                                                    return
-                                                }
-                                                
-                                                if (shareUrl) {
-                                                  window.open(shareUrl, '_blank', 'width=600,height=400')
-                                                }
-                                              }}
-                                              className="flex items-center gap-1"
-                                            >
-                                              📤 Share
-                                            </Button>
+                                            {(sns.platform === 'x' || sns.platform === 'facebook') && (
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => {
+                                                  const content = `${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}`
+                                                  let shareUrl = ''
+                                                  
+                                                  switch (sns.platform) {
+                                                    case 'x':
+                                                      shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(content)}`
+                                                      break
+                                                    case 'facebook':
+                                                      // Facebook only shares URL, not pre-filled text
+                                                      shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin)}`
+                                                      // Copy content to clipboard for user to paste
+                                                      navigator.clipboard.writeText(content)
+                                                      break
+                                                  }
+                                                  
+                                                  if (shareUrl) {
+                                                    window.open(shareUrl, '_blank', 'width=600,height=400')
+                                                  }
+                                                }}
+                                                className="flex items-center gap-1"
+                                              >
+                                                📤 Share
+                                              </Button>
+                                            )}
                                           </div>
                                         </div>
                                         <div className="space-y-3">
