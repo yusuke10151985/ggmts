@@ -19,10 +19,28 @@ export const authOptions = {
         try {
           const userAny = session.user as any;
           userAny.id = token.sub;
-          const user = await prisma.user.findUnique({ where: { email: userAny.email ?? undefined } });
+          
+          // ユーザーが存在するかチェック
+          let user = await prisma.user.findUnique({ where: { email: userAny.email ?? undefined } });
+          
+          // ユーザーが存在しない場合は作成
+          if (!user && userAny.email) {
+            console.log('Creating new user:', userAny.email);
+            user = await prisma.user.create({
+              data: {
+                id: token.sub,
+                email: userAny.email,
+                name: userAny.name || null,
+                image: userAny.image || null,
+                role: 'free'
+              }
+            });
+            console.log('User created successfully:', user.id);
+          }
+          
           userAny.role = user?.role || 'free';
         } catch (error) {
-          console.error('Error fetching user role:', error);
+          console.error('Error fetching or creating user:', error);
           // セッションを維持し、デフォルトロールを設定
           (session.user as any).role = 'free';
         }
