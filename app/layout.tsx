@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/theme-provider'
-import ClientLayout from './client-layout';
+import { SessionProvider } from 'next-auth/react';
 import FooterWithAdmin from '@/components/FooterWithAdmin';
 import GlobalHeader from '@/components/GlobalHeader';
 import BlockGuard from '@/components/BlockGuard';
@@ -39,13 +39,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ClientLayout>
+          <SessionProvider>
             <BlockGuard>
               <GlobalHeader />
               <main>{children}</main>
               <FooterWithAdmin />
             </BlockGuard>
-          </ClientLayout>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>
