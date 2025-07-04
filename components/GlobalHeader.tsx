@@ -110,15 +110,6 @@ function HeaderContent() {
         </div>
         <div className="flex-1 flex justify-end items-center gap-2">
           <ThemeToggle />
-          <select
-            className="px-2 py-1 rounded border text-sm"
-            value={selectedPlan}
-            onChange={e => setSelectedPlan(e.target.value as 'pro'|'premier')}
-            style={{minWidth:100}}
-          >
-            <option value="pro">Proプラン</option>
-            <option value="premier">Premierプラン</option>
-          </select>
           <a
             href="/upgrade"
             className="px-3 py-1 bg-yellow-500 text-white rounded text-sm font-bold flex items-center gap-1 disabled:opacity-50"
