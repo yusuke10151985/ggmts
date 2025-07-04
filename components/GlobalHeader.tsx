@@ -119,14 +119,14 @@ function HeaderContent() {
             <option value="pro">Proプラン</option>
             <option value="premier">Premierプラン</option>
           </select>
-          <button
+          <a
+            href="/upgrade"
             className="px-3 py-1 bg-yellow-500 text-white rounded text-sm font-bold flex items-center gap-1 disabled:opacity-50"
-            onClick={handleStripePurchase}
-            disabled={loadingStripe || !PRO_PRICE_ID || !PREMIER_PRICE_ID}
+            style={{ textDecoration: 'none' }}
           >
             <ShoppingCart size={16} />
-            {loadingStripe ? 'Loading...' : 'Upgrade'}
-          </button>
+            Upgrade
+          </a>
           <AuthButton />
         </div>
       </div>
