@@ -96,8 +96,8 @@ export default function UpgradePage() {
           </button>
         ))}
       </div>
-      <h2 className="text-2xl font-bold mb-4">Upgrade</h2>
-      <p className="mb-4 text-gray-600">{descText[lang]}</p>
+      <h2 className="text-2xl font-bold mb-4 text-foreground dark:text-white">Upgrade</h2>
+      <p className="mb-4 text-gray-600 dark:text-gray-300">{descText[lang]}</p>
       {fetchError && <div className="mb-4 text-red-600">{fetchError}</div>}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {planKeys.map(plan => {
@@ -105,21 +105,21 @@ export default function UpgradePage() {
           return (
             <div
               key={plan}
-              className={`border rounded p-4 flex flex-col items-center ${isCurrent ? 'border-blue-600 bg-blue-50' : 'bg-gray-100 opacity-60'} ${isCurrent ? '' : 'grayscale'}`}
+              className={`border rounded p-4 flex flex-col items-center ${isCurrent ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:border-blue-400' : 'bg-gray-100 dark:bg-gray-800 opacity-60'} ${isCurrent ? '' : 'grayscale'}`}
             >
-              <div className="text-lg font-bold mb-2">{planLabels[plan]}</div>
+              <div className="text-lg font-bold mb-2 text-foreground dark:text-white">{planLabels[plan]}</div>
               <ul className="mb-2 text-sm text-left w-full">
                 {planDescriptions.map((desc, i) => (
                   <li key={desc.key} className="flex items-center gap-2 mb-1">
                     <span className={`inline-block w-4 h-4 rounded-full border flex items-center justify-center text-xs font-bold ${planFeatureMatrix[plan][i] ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-400'}`}>{planFeatureMatrix[plan][i] ? '✓' : ''}</span>
-                    <span>{desc[lang]}</span>
+                    <span className="text-foreground dark:text-gray-200">{desc[lang]}</span>
                   </li>
                 ))}
                 <li className="flex items-center gap-2 mt-2">
                   <span className="inline-block w-4 h-4 rounded-full border flex items-center justify-center text-xs font-bold bg-blue-600 text-white">✓</span>
-                  <span>{planLimitLabel[lang]}: <b>{limits[plan]}</b></span>
+                  <span className="text-foreground dark:text-gray-200">{planLimitLabel[lang]}: <b>{limits[plan]}</b></span>
                 </li>
-                <li className="text-xs text-gray-500 mt-1">
+                <li className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {lang === 'ja' && `このプランの1日あたりの実行上限回数は ${limits[plan]} 回です。`}
                   {lang === 'en' && `This plan's daily usage limit is ${limits[plan]} times.`}
                   {lang === 'th' && `ขีดจำกัดการใช้งานรายวันของแผนนี้คือ ${limits[plan]} ครั้ง`}
@@ -128,7 +128,7 @@ export default function UpgradePage() {
               {isCurrent ? (
                 <div className="px-3 py-1 bg-blue-600 text-white rounded text-xs">Current Plan</div>
               ) : (
-                <button className="px-3 py-1 bg-gray-400 text-white rounded text-xs cursor-not-allowed" disabled>
+                <button className="px-3 py-1 bg-gray-400 dark:bg-gray-600 text-white rounded text-xs cursor-not-allowed" disabled>
                   Not available
                 </button>
               )}

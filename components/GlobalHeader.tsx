@@ -55,24 +55,30 @@ function HeaderContent() {
           badgeLabel = 'Free'; badgeColor = 'bg-gray-400 text-white'; break;
       }
       return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           {userAny.image && (
-            <img src={userAny.image} alt="avatar" className="w-8 h-8 rounded-full border" />
+            <img src={userAny.image} alt="avatar" className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border" />
           )}
-          <span className="text-sm font-medium text-foreground max-w-[120px] truncate">{userAny.name}</span>
-          <span className={`text-xs px-2 py-1 rounded ${badgeColor}`}>{badgeLabel}</span>
-          <span className="ml-2 text-xs text-gray-400">
+          <span className="hidden sm:inline text-sm font-medium text-foreground max-w-[80px] sm:max-w-[120px] truncate">{userAny.name}</span>
+          <span className={`text-xs px-1 sm:px-2 py-1 rounded ${badgeColor}`}>{badgeLabel}</span>
+          <span className="hidden md:inline ml-2 text-xs text-gray-400">
             {badgeLabel === 'Admin' || badgeLabel === 'Special'
               ? `${usageCount} / ∞`
               : `${usageCount} / ${usageLimit}`}
           </span>
-          <Button size="sm" variant="outline" onClick={() => signOut()}>Sign out</Button>
+          <Button size="sm" variant="outline" onClick={() => signOut()} className="text-xs px-2 py-1 h-auto">
+            <span className="hidden sm:inline">Sign out</span>
+            <span className="sm:hidden">Out</span>
+          </Button>
         </div>
       );
     }
     return (
-      <div className="flex gap-2">
-        <Button size="sm" onClick={() => signIn('google')}>Sign in with Google</Button>
+      <div className="flex gap-1 sm:gap-2">
+        <Button size="sm" onClick={() => signIn('google')} className="text-xs sm:text-sm px-2 sm:px-3 py-1 h-auto">
+          <span className="hidden sm:inline">Sign in with Google</span>
+          <span className="sm:hidden">Sign in</span>
+        </Button>
       </div>
     );
   };
@@ -96,27 +102,29 @@ function HeaderContent() {
 
   return (
     <header className="sticky top-0 z-50 bg-card border-b w-full">
-      <div className="flex justify-between items-center px-4 py-2 border-t">
-        <div className="flex-1 flex items-center gap-8 min-w-0">
-          <a href="/" className="flex items-center text-xl md:text-2xl font-bold text-black dark:text-white whitespace-nowrap mr-2">
-            <Image src="/logo.png" alt="Logo" width={36} height={36} className="mr-2 rounded-full" />
-            Multi Translator GGMTS
+      <div className="flex justify-between items-center px-2 sm:px-4 py-2 border-t min-h-[60px] overflow-hidden">
+        <div className="flex items-center min-w-0 flex-shrink">
+          <a href="/" className="flex items-center text-base sm:text-xl md:text-2xl font-bold text-black dark:text-white">
+            <Image src="/logo.png" alt="Logo" width={24} height={24} className="sm:w-9 sm:h-9 mr-1 sm:mr-2 rounded-full flex-shrink-0" />
+            <span className="hidden sm:inline">Multi Translator GGMTS</span>
+            <span className="sm:hidden">GGMTS</span>
           </a>
-          <nav className="flex gap-6 text-sm font-medium flex-nowrap items-center ml-6 whitespace-nowrap">
-            <a href="/about" className="hover:underline whitespace-nowrap">About</a>
-            <a href="/contact" className="hover:underline whitespace-nowrap">Contact</a>
+          <nav className="hidden md:flex gap-4 lg:gap-6 text-sm font-medium items-center ml-4 lg:ml-6">
+            <a href="/about" className="hover:underline">About</a>
+            <a href="/contact" className="hover:underline">Contact</a>
             <a href="/release-notes" className="hover:underline whitespace-nowrap">Release Notes</a>
           </nav>
         </div>
-        <div className="flex-1 flex justify-end items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <ThemeToggle />
           <a
             href="/upgrade"
-            className="px-3 py-1 bg-yellow-500 text-white rounded text-sm font-bold flex items-center gap-1 disabled:opacity-50"
+            className="px-2 sm:px-3 py-1 bg-yellow-500 text-white rounded text-xs sm:text-sm font-bold flex items-center gap-1"
             style={{ textDecoration: 'none' }}
           >
-            <ShoppingCart size={16} />
-            Upgrade
+            <ShoppingCart size={14} className="sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">Upgrade</span>
+            <span className="xs:hidden">Up</span>
           </a>
           <AuthButton />
         </div>

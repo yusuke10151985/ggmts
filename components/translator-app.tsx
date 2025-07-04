@@ -337,6 +337,12 @@ export const TranslatorApp: React.FC = () => {
         }
       }
     });
+    
+    // Add GGMTS URL for SNS generate mode
+    if (mode === 'generate') {
+      textToCopy += '\nhttps://www.ggmts.com/';
+    }
+    
     navigator.clipboard.writeText(textToCopy.trim()).then(() => {
       setCopyButtonText('Copied!');
       setTimeout(() => setCopyButtonText('Copy Selected'), 2000);
@@ -709,7 +715,7 @@ export const TranslatorApp: React.FC = () => {
                                             <Button
                                               size="sm"
                                               onClick={() => {
-                                                const content = `${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}`
+                                                const content = `${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}\n\nhttps://www.ggmts.com/`
                                                 navigator.clipboard.writeText(content)
                                               }}
                                               className="flex items-center gap-1"
@@ -722,7 +728,7 @@ export const TranslatorApp: React.FC = () => {
                                                 size="sm"
                                                 variant="outline"
                                                 onClick={() => {
-                                                  const content = `${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}`
+                                                  const content = `${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}\n\nhttps://www.ggmts.com/`
                                                   let shareUrl = ''
                                                   
                                                   switch (sns.platform) {
