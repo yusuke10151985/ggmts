@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       console.warn(`❌ Text exceeds character limit: ${textLength} > ${currentLimit}`);
       return NextResponse.json(
         { 
-          error: `文字数制限を超えています。${translationMode === 'translate' ? '翻訳' : '要約'}モードの上限は${currentLimit.toLocaleString()}文字です。現在の文字数: ${textLength.toLocaleString()}文字`,
+          error: `制限を超えています。${translationMode === 'translate' ? '翻訳' : translationMode === 'summarize' ? '要約' : '生成'}モードの上限は${currentLimit.toLocaleString()}です。現在: ${textLength.toLocaleString()}`,
           characterLimit: currentLimit,
           currentLength: textLength,
           exceeded: textLength - currentLimit

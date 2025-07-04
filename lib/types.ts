@@ -14,7 +14,7 @@ export interface TranslationResult {
   translations: Translation[];
 }
 
-export type TranslationMode = 'translate' | 'summarize';
+export type TranslationMode = 'translate' | 'summarize' | 'generate';
 
 export interface HistoryItem {
   id: string;

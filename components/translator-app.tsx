@@ -119,10 +119,13 @@ export const TranslatorApp: React.FC = () => {
 
   useEffect(() => {
     const root = document.documentElement
+    // Remove all mode classes
+    root.classList.remove('summarize-mode', 'generate-mode')
+    // Add current mode class
     if (mode === 'summarize') {
       root.classList.add('summarize-mode')
-    } else {
-      root.classList.remove('summarize-mode')
+    } else if (mode === 'generate') {
+      root.classList.add('generate-mode')
     }
   }, [mode])
 
@@ -158,15 +161,27 @@ export const TranslatorApp: React.FC = () => {
     handleResetSelections()
 
     try {
-      const requestBody = {
-        text,
-        sourceLang: source,
-        targetLangs: targets,
-        mode,
-        apiProvider,
-      }
+      let requestBody: any
+      let apiEndpoint: string
       
-      console.log('Sending translation request:', requestBody)
+      if (mode === 'generate') {
+        requestBody = {
+          keyword: text,
+          targetLanguages: targets,
+        }
+        apiEndpoint = '/api/generate'
+        console.log('Sending generation request:', requestBody)
+      } else {
+        requestBody = {
+          text,
+          sourceLang: source,
+          targetLangs: targets,
+          mode,
+          apiProvider,
+        }
+        apiEndpoint = '/api/translate'
+        console.log('Sending translation request:', requestBody)
+      }
       
       const fetchOptions: RequestInit = {
         method: 'POST',
@@ -176,7 +191,7 @@ export const TranslatorApp: React.FC = () => {
       if (abortControllerRef.current && abortControllerRef.current.signal) {
         fetchOptions.signal = abortControllerRef.current.signal;
       }
-      const response = await fetch('/api/translate', fetchOptions);
+      const response = await fetch(apiEndpoint, fetchOptions);
 
       if (abortControllerRef.current && abortControllerRef.current.signal && abortControllerRef.current.signal.aborted) {
         return
@@ -382,11 +397,11 @@ export const TranslatorApp: React.FC = () => {
     }
     
     // Character limit validation
-    const characterLimits = { translate: 8000, summarize: 12000 };
+    const characterLimits = { translate: 8000, summarize: 12000, generate: 5000 };
     const currentLimit = characterLimits[mode];
     if (inputText.length > currentLimit) {
       console.log('❌ Text exceeds character limit:', inputText.length, '>', currentLimit);
-      setError(`文字数制限を超えています。${mode === 'translate' ? '翻訳' : '要約'}モードの上限は${currentLimit.toLocaleString()}文字です。現在の文字数: ${inputText.length.toLocaleString()}文字`);
+      setError(`制限を超えています。${mode === 'translate' ? '翻訳' : mode === 'summarize' ? '要約' : '生成'}モードの上限は${currentLimit.toLocaleString()}です。現在: ${inputText.length.toLocaleString()}`);
       return;
     }
     
@@ -394,32 +409,53 @@ export const TranslatorApp: React.FC = () => {
     executeTranslation(inputText, sourceLang, targetLangs);
   };
 
-  // --- トグルスイッチUI ---
+  // --- 3つのトグルスイッチUI ---
   const ModeToggle = () => (
-    <div className="flex items-center gap-4 my-4">
-      <span className={`font-bold text-lg ${mode === 'translate' ? 'text-blue-600' : 'text-gray-400'}`}>Translate</span>
+    <div className="flex items-center gap-4 my-4 flex-wrap">
+      <div className="flex items-center gap-2">
+        <button
+          className={`px-4 py-2 rounded-lg font-bold transition-all ${
+            mode === 'translate' 
+              ? 'bg-blue-500 text-white shadow-lg' 
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+          onClick={() => setMode('translate')}
+        >
+          翻訳
+        </button>
+        <button
+          className={`px-4 py-2 rounded-lg font-bold transition-all ${
+            mode === 'summarize' 
+              ? 'bg-green-500 text-white shadow-lg' 
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+          onClick={() => setMode('summarize')}
+        >
+          要約
+        </button>
+        <button
+          className={`px-4 py-2 rounded-lg font-bold transition-all ${
+            mode === 'generate' 
+              ? 'bg-purple-500 text-white shadow-lg' 
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+          }`}
+          onClick={() => setMode('generate')}
+        >
+          生成
+        </button>
+      </div>
       <button
-        className={`relative w-16 h-8 rounded-full transition-colors duration-300 focus:outline-none ${mode === 'summarize' ? 'bg-green-500' : 'bg-blue-500'}`}
-        onClick={() => setMode(mode === 'translate' ? 'summarize' : 'translate')}
-        aria-label="Toggle mode"
-      >
-        <span
-          className={`absolute left-1 top-1 w-6 h-6 rounded-full bg-white shadow transition-transform duration-300 ${mode === 'summarize' ? 'translate-x-8' : ''}`}
-        />
-      </button>
-      <span className={`font-bold text-lg ${mode === 'summarize' ? 'text-green-600' : 'text-gray-400'}`}>Summarize</span>
-      <button
-        className="ml-6 w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-primary text-3xl hover:bg-blue-100 dark:hover:bg-blue-900 transition"
+        className="ml-auto w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-primary hover:bg-blue-100 dark:hover:bg-blue-900 transition"
         onClick={() => setIsHistoryVisible(v => !v)}
         aria-label="Show translation history"
       >
         <History className="w-8 h-8" />
       </button>
-            </div>
+    </div>
   );
 
   return (
-    <div className={`relative w-full min-h-screen ${mode === 'summarize' ? 'bg-green-50' : 'bg-blue-50'}`}>
+    <div className={`relative w-full min-h-screen ${mode === 'summarize' ? 'bg-green-50' : mode === 'generate' ? 'bg-purple-50' : 'bg-blue-50'}`}>
       <div className="flex-grow w-full">
         <div className="w-full px-0 md:px-2">
           <div className="flex flex-col xl:flex-row gap-4 w-full">
@@ -430,7 +466,7 @@ export const TranslatorApp: React.FC = () => {
                 <textarea
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                    placeholder={mode === 'translate' ? "Enter text to translate..." : "Enter text to summarize..."}
+                    placeholder={mode === 'translate' ? "Enter text to translate..." : mode === 'summarize' ? "Enter text to summarize..." : "Enter keywords or topic for SNS content generation..."}
                   className="w-full p-3 border border-input bg-transparent rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring resize-none transition-shadow"
                   rows={5}
                 />
@@ -439,7 +475,7 @@ export const TranslatorApp: React.FC = () => {
                 <div className="flex justify-between items-center mt-2 mb-2">
                   <div className="text-xs text-muted-foreground">
                     {(() => {
-                      const characterLimits = { translate: 8000, summarize: 12000 };
+                      const characterLimits = { translate: 8000, summarize: 12000, generate: 5000 };
                       const currentLimit = characterLimits[mode];
                       const textLength = inputText.length;
                       const percentage = (textLength / currentLimit) * 100;
@@ -454,10 +490,10 @@ export const TranslatorApp: React.FC = () => {
                               ? 'text-yellow-600 dark:text-yellow-400' 
                               : 'text-muted-foreground'
                         }`}>
-                          {textLength.toLocaleString()}/{currentLimit.toLocaleString()} 文字
+                          {textLength.toLocaleString()}/{currentLimit.toLocaleString()}
                           {isOverLimit && (
                             <span className="ml-2 text-red-600 dark:text-red-400 font-bold">
-                              ({(textLength - currentLimit).toLocaleString()}文字超過)
+                              ({(textLength - currentLimit).toLocaleString()}超過)
                             </span>
                           )}
                           {isNearLimit && !isOverLimit && (
@@ -469,9 +505,9 @@ export const TranslatorApp: React.FC = () => {
                       );
                     })()}
                   </div>
-                  {inputText.length > (mode === 'translate' ? 8000 : 12000) && (
+                  {inputText.length > (mode === 'translate' ? 8000 : mode === 'summarize' ? 12000 : 5000) && (
                     <div className="text-xs text-red-600 dark:text-red-400 font-medium">
-                      ⚠️ 文字数制限を超えています
+                      ⚠️ 制限を超えています
                     </div>
                   )}
                 </div>
@@ -520,15 +556,15 @@ export const TranslatorApp: React.FC = () => {
                                 inputTextLength: inputText.length,
                                 inputTextTrimmed: inputText.trim().length,
                                 targetLangsLength: targetLangs.length,
-                                disabled: isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading' || inputText.length > (mode === 'translate' ? 8000 : 12000)
+                                disabled: isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading' || inputText.length > (mode === 'translate' ? 8000 : mode === 'summarize' ? 12000 : 5000)
                               });
                               handleExecute();
                             }}
-                            className={`w-1/2 min-w-0 px-4 py-1.5 text-sm font-bold ${mode === 'summarize' ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
-                            disabled={isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading' || inputText.length > (mode === 'translate' ? 8000 : 12000)}
+                            className={`w-1/2 min-w-0 px-4 py-1.5 text-sm font-bold ${mode === 'summarize' ? 'bg-green-500 hover:bg-green-600' : mode === 'generate' ? 'bg-purple-500 hover:bg-purple-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
+                            disabled={isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading' || inputText.length > (mode === 'translate' ? 8000 : mode === 'summarize' ? 12000 : 5000)}
                             title={`Debug: isLoading=${isLoading}, hasText=${!!inputText.trim()}, targetLangs=${targetLangs.length}, status=${status}, charLimit=${inputText.length}/${mode === 'translate' ? 8000 : 12000}`}
                           >
-                            {isLoading ? (mode === 'summarize' ? 'Summarizing...' : 'Translating...') : (mode === 'summarize' ? 'Summarize' : 'Translate')}
+                            {isLoading ? (mode === 'summarize' ? 'Summarizing...' : mode === 'generate' ? 'Generating...' : 'Translating...') : (mode === 'summarize' ? 'Summarize' : mode === 'generate' ? 'Generate' : 'Translate')}
                           </Button>
                         </div>
                       </div>
