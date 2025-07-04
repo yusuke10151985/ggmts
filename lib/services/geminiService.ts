@@ -237,13 +237,27 @@ export const getTranslations = async (
       console.log('🔧 Original text length:', cleanText.length);
       console.log('🔧 Fixed text length:', fixedText.length);
       
-      // Show the problematic area around position 3911 if we can locate it
-      const errorPos = 3911;
+      // Extract error position from error message and show problematic area
+      const errorMessage = (parseError as any).message;
+      const positionMatch = errorMessage.match(/position (\d+)/);
+      const errorPos = positionMatch ? parseInt(positionMatch[1]) : 3915;
+      
+      console.log('🔧 Detected error position:', errorPos);
+      
       if (cleanText.length > errorPos) {
-        const start = Math.max(0, errorPos - 100);
-        const end = Math.min(cleanText.length, errorPos + 100);
+        const start = Math.max(0, errorPos - 150);
+        const end = Math.min(cleanText.length, errorPos + 150);
         console.log('🔧 Problem area (original):', cleanText.substring(start, end));
         console.log('🔧 Problem area (fixed):', fixedText.substring(start, end));
+        
+        // Show character-by-character analysis around error position
+        const problemChar = cleanText.charAt(errorPos);
+        const prevChar = cleanText.charAt(errorPos - 1);
+        const nextChar = cleanText.charAt(errorPos + 1);
+        console.log('🔧 Character analysis:');
+        console.log(`  Position ${errorPos - 1}: "${prevChar}" (${prevChar.charCodeAt(0)})`);
+        console.log(`  Position ${errorPos}: "${problemChar}" (${problemChar.charCodeAt(0)})`);
+        console.log(`  Position ${errorPos + 1}: "${nextChar}" (${nextChar.charCodeAt(0)})`);
       }
       
       console.log('🔧 Fixed last 200 chars:', fixedText.substring(Math.max(0, fixedText.length - 200)));
@@ -254,21 +268,52 @@ export const getTranslations = async (
       } catch (secondError) {
         console.error('❌ JSON fix attempt failed:', secondError);
         
-        // Final fallback: use more aggressive JSON repair
+        // Final fallback: use position-specific JSON repair
         try {
-          console.log('🔧 Attempting aggressive JSON repair...');
+          console.log('🔧 Attempting position-specific JSON repair...');
           
-          // Try to find and fix the specific error pattern
           let aggressiveFixed = fixedText;
           
+          // Position-specific repair around the error location
+          if (errorPos && errorPos < aggressiveFixed.length) {
+            const start = Math.max(0, errorPos - 10);
+            const end = Math.min(aggressiveFixed.length, errorPos + 10);
+            const problemArea = aggressiveFixed.substring(start, end);
+            
+            console.log('🔧 Examining problem area:', problemArea);
+            
+            // Check if we need to insert a comma at the specific position
+            if (errorPos > 0) {
+              const charAtError = aggressiveFixed.charAt(errorPos);
+              const charBefore = aggressiveFixed.charAt(errorPos - 1);
+              
+              // Pattern: "text" followed by " (quote) without comma
+              if (charBefore === '"' && charAtError === ' ') {
+                const nextQuotePos = aggressiveFixed.indexOf('"', errorPos);
+                if (nextQuotePos !== -1) {
+                  console.log('🔧 Inserting comma at position', errorPos);
+                  aggressiveFixed = aggressiveFixed.substring(0, errorPos) + ',' + aggressiveFixed.substring(errorPos);
+                }
+              }
+              // Pattern: "text" followed directly by "text" (no space, no comma)
+              else if (charBefore === '"' && charAtError === '"') {
+                console.log('🔧 Inserting comma between quotes at position', errorPos);
+                aggressiveFixed = aggressiveFixed.substring(0, errorPos) + ',' + aggressiveFixed.substring(errorPos);
+              }
+            }
+          }
+          
+          // Additional aggressive patterns
           // Pattern: find arrays with missing commas between elements
-          // Look for "text" followed by whitespace followed by "text" (no comma)
           aggressiveFixed = aggressiveFixed.replace(/("[\s\S]*?")(\s+)(?="[\s\S]*?")/g, '$1,$2');
           
           // Pattern: fix array elements that are on separate lines without commas
           aggressiveFixed = aggressiveFixed.replace(/("])\s*\n\s*(?=")/g, '$1,\n');
           
-          // Try to parse again
+          // Pattern: fix specific array element endings
+          aggressiveFixed = aggressiveFixed.replace(/("\s*)\s+(")/g, '$1,$2');
+          
+          console.log('🔧 Aggressive fix complete, attempting parse...');
           parsedData = JSON.parse(aggressiveFixed);
           console.log('✅ Parsed with aggressive repair');
         } catch (aggressiveError) {
