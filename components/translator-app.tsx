@@ -327,10 +327,36 @@ export const TranslatorApp: React.FC = () => {
 
   // 実行ボタンのハンドラ
   const handleExecute = () => {
+    console.log('🔘 Execute button clicked');
+    console.log('🔍 Current state:', {
+      session: !!session,
+      inputText: inputText.substring(0, 50) + (inputText.length > 50 ? '...' : ''),
+      inputTextLength: inputText.length,
+      inputTextTrimmed: inputText.trim().length,
+      sourceLang,
+      targetLangs,
+      targetLangsLength: targetLangs.length,
+      mode,
+      isLoading
+    });
+    
     if (!session) {
+      console.log('🔐 No session, redirecting to sign in');
       signIn('google');
       return;
     }
+    
+    if (!inputText.trim()) {
+      console.log('❌ No input text');
+      return;
+    }
+    
+    if (targetLangs.length === 0) {
+      console.log('❌ No target languages selected');
+      return;
+    }
+    
+    console.log('✅ Starting translation execution');
     executeTranslation(inputText, sourceLang, targetLangs);
   };
 
@@ -414,6 +440,7 @@ export const TranslatorApp: React.FC = () => {
                             onClick={handleExecute}
                             className={`w-1/2 min-w-0 px-4 py-1.5 text-sm font-bold ${mode === 'summarize' ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
                             disabled={isLoading || !inputText.trim() || targetLangs.length === 0}
+                            title={`Debug: isLoading=${isLoading}, hasText=${!!inputText.trim()}, targetLangs=${targetLangs.length}`}
                           >
                             {isLoading ? (mode === 'summarize' ? 'Summarizing...' : 'Translating...') : (mode === 'summarize' ? 'Summarize' : 'Translate')}
                           </Button>
