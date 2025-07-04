@@ -130,7 +130,7 @@ export const getTranslations = async (
             temperature: 0.3,
             topK: 40,
             topP: 0.95,
-            maxOutputTokens: 2048,
+            maxOutputTokens: 4096,
           }
         })
       });
@@ -156,7 +156,7 @@ export const getTranslations = async (
             temperature: 0.3,
             topK: 40,
             topP: 0.95,
-            maxOutputTokens: 2048,
+            maxOutputTokens: 4096,
           }
         })
       });
@@ -194,7 +194,7 @@ export const getTranslations = async (
           temperature: 0.3,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 4096,
         }
       })
     });
