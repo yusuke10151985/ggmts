@@ -21,26 +21,12 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
 
   const targetLanguagesString = targetLangs.join(', ');
 
-  // タイ語の特別指示（GPTと同じ）
-  let specialInstructions = '';
-  if (targetLangs.includes('th')) {
-    specialInstructions = `
-SPECIAL INSTRUCTIONS FOR THAI:
-For the Thai translation, where gender affects pronouns (like 'ผม'/'ฉัน') and politeness particles ('ครับ'/'ค่ะ'), you MUST merge them with a slash.
-Example: 'ผม/ฉัน ไปโรงเรียน ครับ/ค่ะ'.
-Do NOT create two separate full sentences for male and female speakers. Only merge the specific words that differ.
-This rule applies to both full translations and summaries.
-`;
-  }
-
   if (mode === 'translate') {
     return `${sourceLanguageInstruction}
 
 Please translate the following text to ${targetLanguagesString}:
 
 Text: "${text}"
-
-${specialInstructions}
 
 Please respond with a JSON object in this exact format:
 {
@@ -56,44 +42,7 @@ Please respond with a JSON object in this exact format:
 Use only Arabic numerals (1, 2, 3, ...) for all numbers and numbering. Do NOT use any language-specific digits. Use only English units (m, kg, etc.) for all measurements. Do NOT use any language-specific units.
 Ensure the response is valid JSON and includes all requested target languages.`;
   } else {
-    const basePrompt = `You are an expert summarizer. Carefully analyze the following text and create a multi-level numbered summary as a JSON array.
-
-Instructions:
-- Divide the text into items based on topics and contents.
-- Create a multi-level numbered structure, using format like:
-  1.
-    1.1
-      1.1.1
-  2.
-    2.1
-      2.1.1
-- Use only Arabic numerals (1, 2, 3, ...) for all numbers and numbering. Do NOT use any language-specific digits.
-- Use only English units (m, kg, etc.) for all measurements. Do NOT use any language-specific units.
-- Do NOT include any greetings, closings, or irrelevant sentences.
-- Each item must be short and focused.
-- If you cannot create a multi-level numbered summary, respond with an error message in the summary array.
-
-${specialInstructions}
-
-Respond ONLY with a JSON object in this format:
-{
-  "sourceLanguage": "${sourceLang}",
-  "translations": [
-    {
-      "lang": "${targetLangs[0]}",
-      "text": "...",
-      "summary": [
-        "1. ...",
-        "1.1 ...",
-        "2. ..."
-      ]
-    }
-  ]
-}
-
-Do NOT include any text or explanation outside the JSON object. The summary array MUST be present and contain a multi-level numbered list.`;
-
-    return basePrompt;
+    return `You are an expert summarizer. Carefully analyze the following text and create a multi-level numbered summary as a JSON array.\n\nInstructions:\n- Divide the text into items based on topics and contents.\n- Create a multi-level numbered structure, using format like:\n  1.\n    1.1\n      1.1.1\n  2.\n    2.1\n      2.1.1\n- Use only Arabic numerals (1, 2, 3, ...) for all numbers and numbering. Do NOT use any language-specific digits.\n- Use only English units (m, kg, etc.) for all measurements. Do NOT use any language-specific units.\n- Do NOT include any greetings, closings, or irrelevant sentences.\n- Each item must be short and focused.\n- If you cannot create a multi-level numbered summary, respond with an error message in the summary array.\n\nRespond ONLY with a JSON object in this format:\n{\n  "sourceLanguage": "${sourceLang}",\n  "translations": [\n    {\n      "lang": "${targetLangs[0]}",\n      "text": "...",\n      "summary": [\n        "1. ...",\n        "1.1 ...",\n        "2. ..."\n      ]\n    }\n  ]\n}\n\nDo NOT include any text or explanation outside the JSON object. The summary array MUST be present and contain a multi-level numbered list.`;
   }
 };
 
@@ -130,7 +79,7 @@ export const getTranslations = async (
             temperature: 0.3,
             topK: 40,
             topP: 0.95,
-            maxOutputTokens: 4096,
+            maxOutputTokens: 2048,
           }
         })
       });
@@ -156,7 +105,7 @@ export const getTranslations = async (
             temperature: 0.3,
             topK: 40,
             topP: 0.95,
-            maxOutputTokens: 4096,
+            maxOutputTokens: 2048,
           }
         })
       });
@@ -194,7 +143,7 @@ export const getTranslations = async (
           temperature: 0.3,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 4096,
+          maxOutputTokens: 2048,
         }
       })
     });
