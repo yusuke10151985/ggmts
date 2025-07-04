@@ -98,6 +98,9 @@ const preprocessJsonResponse = (responseText: string): string => {
   // Step 3: Real-time comma insertion based on context
   processed = insertMissingCommas(processed);
   
+  // Step 4: Universal array comma insertion
+  processed = universalArrayCommaInsertion(processed);
+  
   console.log('🔧 Preprocessing complete');
   return processed;
 };
@@ -189,6 +192,47 @@ const insertMissingCommas = (text: string): string => {
   return result;
 };
 
+// Universal array comma insertion for all arrays
+const universalArrayCommaInsertion = (text: string): string => {
+  console.log('🔧 Applying universal array comma insertion...');
+  
+  let result = text;
+  let changesMade = 0;
+  
+  // Find all array sections and fix them individually
+  const arrayPattern = /\[[^\[\]]*\]/g;
+  
+  result = result.replace(arrayPattern, (arrayMatch) => {
+    let fixedArray = arrayMatch;
+    const originalArray = arrayMatch;
+    
+    // Pattern 1: Fix quote-space-quote within arrays
+    fixedArray = fixedArray.replace(/("(?:[^"\\]|\\.)*")\s+("(?:[^"\\]|\\.)*")/g, '$1, $2');
+    
+    // Pattern 2: Fix quote-newline-quote within arrays
+    fixedArray = fixedArray.replace(/("(?:[^"\\]|\\.)*")\n\s*("(?:[^"\\]|\\.)*")/g, '$1,\n$2');
+    
+    // Pattern 3: Fix quote-tab-quote within arrays
+    fixedArray = fixedArray.replace(/("(?:[^"\\]|\\.)*")\t+("(?:[^"\\]|\\.)*")/g, '$1, $2');
+    
+    // Pattern 4: Fix multiple spaces
+    fixedArray = fixedArray.replace(/("(?:[^"\\]|\\.)*")\s{2,}("(?:[^"\\]|\\.)*")/g, '$1, $2');
+    
+    if (fixedArray !== originalArray) {
+      changesMade++;
+      console.log(`🔧 Fixed array ${changesMade}:`, originalArray.substring(0, 100) + '...');
+    }
+    
+    return fixedArray;
+  });
+  
+  if (changesMade > 0) {
+    console.log(`🔧 Universal array comma insertion: fixed ${changesMade} arrays`);
+  }
+  
+  return result;
+};
+
 // Fix specific line 12 array element issues
 const fixLine12ArrayElements = (text: string): string => {
   const lines = text.split('\n');
@@ -199,8 +243,8 @@ const fixLine12ArrayElements = (text: string): string => {
     const lineNum = i + 1;
     
     // Check if this line contains array elements without proper commas
-    // Target lines 9-16 to cover common error locations
-    if (line.includes('"') && (line.includes('summary') || lineNum >= 9 && lineNum <= 16)) {
+    // Expanded range to cover more error locations including line 49
+    if (line.includes('"') && (line.includes('summary') || lineNum >= 9 && lineNum <= 60)) {
       console.log(`🔧 Processing line ${lineNum}:`, line);
       
       let fixedLine = line;
@@ -331,38 +375,61 @@ const fixSpecificPosition = (text: string, errorPos: number): string => {
   return result;
 };
 
-// Special fix for positions 3300-3400 (common error range)
-const fixPosition3300Range = (text: string, errorPos: number): string => {
-  console.log('🔧 Applying specialized 3300-3400 range fix');
+// Universal fix for common error ranges (3200-3700)
+const fixCommonErrorRange = (text: string, errorPos: number): string => {
+  console.log('🔧 Applying universal error range fix for position:', errorPos);
   
   // Get a larger context around the error
-  const start = Math.max(0, errorPos - 200);
-  const end = Math.min(text.length, errorPos + 200);
+  const start = Math.max(0, errorPos - 300);
+  const end = Math.min(text.length, errorPos + 300);
   const before = text.substring(0, start);
   const context = text.substring(start, end);
   const after = text.substring(end);
   
   let fixedContext = context;
+  const originalLength = fixedContext.length;
   
-  // Pattern 1: Fix summary arrays specifically around this position
+  // Pattern 1: Fix summary arrays with missing commas
   fixedContext = fixedContext.replace(/"summary":\s*\[\s*(".*?")\s+(".*?")/g, '"summary": [$1, $2');
   
-  // Pattern 2: Fix missing commas in numbered list items
+  // Pattern 2: Fix numbered list items (very common in summarization)
   fixedContext = fixedContext.replace(/("(?:\d+\.?\s*[^"]*)")\s+("(?:\d+\.?\s*[^"]*)")/g, '$1, $2');
   
-  // Pattern 3: Fix any quote-space-quote pattern in this range
+  // Pattern 3: Fix general quote-space-quote patterns
+  fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*")\s{2,}("(?:[^"\\]|\\.)*")/g, '$1, $2');
+  
+  // Pattern 4: Fix single space between quotes (most common)
   fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*")\s+("(?:[^"\\]|\\.)*")/g, '$1, $2');
   
-  // Pattern 4: Fix line-break separated array elements
+  // Pattern 5: Fix line-break separated array elements
   fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*")\s*\n\s*("(?:[^"\\]|\\.)*")/g, '$1,\n$2');
   
-  // Pattern 5: Fix specific Japanese text patterns that might be causing issues
-  fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*[。、]")\s+("(?:\d|[一二三四五六七八九十]))/g, '$1, $2');
+  // Pattern 6: Fix tab-separated elements
+  fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*")\t+("(?:[^"\\]|\\.)*")/g, '$1, $2');
+  
+  // Pattern 7: Fix Japanese/multilingual patterns
+  fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*[。、！？]")\s+("(?:[^"\\]|\\.)*")/g, '$1, $2');
+  
+  // Pattern 8: Fix array elements at end of lines
+  fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*")(\s*\n\s*)("(?:[^"\\]|\\.)*")/g, '$1,$2$3');
+  
+  // Pattern 9: Fix elements separated by multiple whitespace chars
+  fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*")(\s{3,})("(?:[^"\\]|\\.)*")/g, '$1,$2$3');
+  
+  // Pattern 10: Aggressive catch-all for remaining cases
+  fixedContext = fixedContext.replace(/("[^"]*")(\s+)("[^"]*")/g, (match, p1, p2, p3) => {
+    // Only add comma if not already present and not at array boundaries
+    if (!p2.includes(',') && !p1.endsWith(',') && !p3.startsWith(',')) {
+      return p1 + ',' + p2 + p3;
+    }
+    return match;
+  });
   
   const result = before + fixedContext + after;
   
   if (result !== text) {
-    console.log('🔧 Applied 3300-3400 range fix, length change:', text.length, '->', result.length);
+    console.log('🔧 Applied universal range fix, length change:', originalLength, '->', fixedContext.length);
+    console.log('🔧 Total patterns applied, position:', errorPos);
   }
   
   return result;
@@ -765,10 +832,10 @@ export const getTranslations = async (
             console.log('🔧 Applying comprehensive position-specific repair...');
             aggressiveFixed = fixSpecificPosition(aggressiveFixed, errorPos);
             
-            // Additional targeted fix for positions 3300-3400 range
-            if (errorPos >= 3300 && errorPos <= 3400) {
-              console.log('🔧 Applying special fix for position range 3300-3400');
-              aggressiveFixed = fixPosition3300Range(aggressiveFixed, errorPos);
+            // Additional targeted fix for common error position ranges
+            if (errorPos >= 3200 && errorPos <= 3700) {
+              console.log('🔧 Applying special fix for position range 3200-3700');
+              aggressiveFixed = fixCommonErrorRange(aggressiveFixed, errorPos);
             }
           }
           
