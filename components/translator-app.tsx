@@ -380,6 +380,16 @@ export const TranslatorApp: React.FC = () => {
       console.log('❌ No target languages selected');
       return;
     }
+    
+    // Character limit validation
+    const characterLimits = { translate: 8000, summarize: 12000 };
+    const currentLimit = characterLimits[mode];
+    if (inputText.length > currentLimit) {
+      console.log('❌ Text exceeds character limit:', inputText.length, '>', currentLimit);
+      setError(`文字数制限を超えています。${mode === 'translate' ? '翻訳' : '要約'}モードの上限は${currentLimit.toLocaleString()}文字です。現在の文字数: ${inputText.length.toLocaleString()}文字`);
+      return;
+    }
+    
     console.log('✅ Starting translation execution');
     executeTranslation(inputText, sourceLang, targetLangs);
   };
@@ -424,6 +434,48 @@ export const TranslatorApp: React.FC = () => {
                   className="w-full p-3 border border-input bg-transparent rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring resize-none transition-shadow"
                   rows={5}
                 />
+                
+                {/* Character count and limit warning */}
+                <div className="flex justify-between items-center mt-2 mb-2">
+                  <div className="text-xs text-muted-foreground">
+                    {(() => {
+                      const characterLimits = { translate: 8000, summarize: 12000 };
+                      const currentLimit = characterLimits[mode];
+                      const textLength = inputText.length;
+                      const percentage = (textLength / currentLimit) * 100;
+                      const isOverLimit = textLength > currentLimit;
+                      const isNearLimit = percentage > 90;
+                      
+                      return (
+                        <span className={`font-medium ${
+                          isOverLimit 
+                            ? 'text-red-600 dark:text-red-400' 
+                            : isNearLimit 
+                              ? 'text-yellow-600 dark:text-yellow-400' 
+                              : 'text-muted-foreground'
+                        }`}>
+                          {textLength.toLocaleString()}/{currentLimit.toLocaleString()} 文字
+                          {isOverLimit && (
+                            <span className="ml-2 text-red-600 dark:text-red-400 font-bold">
+                              ({(textLength - currentLimit).toLocaleString()}文字超過)
+                            </span>
+                          )}
+                          {isNearLimit && !isOverLimit && (
+                            <span className="ml-2 text-yellow-600 dark:text-yellow-400">
+                              (上限接近 {Math.round(percentage)}%)
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  {inputText.length > (mode === 'translate' ? 8000 : 12000) && (
+                    <div className="text-xs text-red-600 dark:text-red-400 font-medium">
+                      ⚠️ 文字数制限を超えています
+                    </div>
+                  )}
+                </div>
+                
                 <div className="flex items-center mt-2">
                     {selectionOrder.includes('source') && selectedForCopy['source'] && (
                       <span className="text-3xl font-extrabold text-primary mr-2">{selectionOrder.indexOf('source') + 1}</span>
@@ -468,13 +520,13 @@ export const TranslatorApp: React.FC = () => {
                                 inputTextLength: inputText.length,
                                 inputTextTrimmed: inputText.trim().length,
                                 targetLangsLength: targetLangs.length,
-                                disabled: isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading'
+                                disabled: isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading' || inputText.length > (mode === 'translate' ? 8000 : 12000)
                               });
                               handleExecute();
                             }}
                             className={`w-1/2 min-w-0 px-4 py-1.5 text-sm font-bold ${mode === 'summarize' ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
-                            disabled={isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading'}
-                            title={`Debug: isLoading=${isLoading}, hasText=${!!inputText.trim()}, targetLangs=${targetLangs.length}, status=${status}`}
+                            disabled={isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading' || inputText.length > (mode === 'translate' ? 8000 : 12000)}
+                            title={`Debug: isLoading=${isLoading}, hasText=${!!inputText.trim()}, targetLangs=${targetLangs.length}, status=${status}, charLimit=${inputText.length}/${mode === 'translate' ? 8000 : 12000}`}
                           >
                             {isLoading ? (mode === 'summarize' ? 'Summarizing...' : 'Translating...') : (mode === 'summarize' ? 'Summarize' : 'Translate')}
                           </Button>

@@ -67,6 +67,36 @@ export async function POST(request: NextRequest) {
 
     const translationMode: TranslationMode = mode || 'translate'
     
+    // Character limit validation
+    const characterLimits = {
+      translate: 8000,
+      summarize: 12000
+    };
+    
+    const currentLimit = characterLimits[translationMode];
+    const textLength = text.length;
+    
+    console.log(`📏 Character count: ${textLength}/${currentLimit} (${translationMode} mode)`);
+    
+    if (textLength > currentLimit) {
+      console.warn(`❌ Text exceeds character limit: ${textLength} > ${currentLimit}`);
+      return NextResponse.json(
+        { 
+          error: `文字数制限を超えています。${translationMode === 'translate' ? '翻訳' : '要約'}モードの上限は${currentLimit.toLocaleString()}文字です。現在の文字数: ${textLength.toLocaleString()}文字`,
+          characterLimit: currentLimit,
+          currentLength: textLength,
+          exceeded: textLength - currentLimit
+        },
+        { status: 400 }
+      )
+    }
+    
+    // Warning for near-limit text
+    const warningThreshold = currentLimit * 0.9; // 90% of limit
+    if (textLength > warningThreshold) {
+      console.warn(`⚠️ Text approaching character limit: ${textLength}/${currentLimit} (${Math.round((textLength/currentLimit)*100)}%)`);
+    }
+    
     console.log('Translation request:', {
       text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
       sourceLang,

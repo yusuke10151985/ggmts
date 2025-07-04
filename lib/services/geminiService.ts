@@ -193,13 +193,14 @@ const insertMissingCommas = (text: string): string => {
 const fixLine12ArrayElements = (text: string): string => {
   const lines = text.split('\n');
   
-  // Focus on line 12 (index 11) and surrounding lines
+  // Focus on lines 10-15 where JSON errors commonly occur
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const lineNum = i + 1;
     
     // Check if this line contains array elements without proper commas
-    if (line.includes('"') && (line.includes('summary') || lineNum >= 10 && lineNum <= 15)) {
+    // Target lines 9-16 to cover common error locations
+    if (line.includes('"') && (line.includes('summary') || lineNum >= 9 && lineNum <= 16)) {
       console.log(`🔧 Processing line ${lineNum}:`, line);
       
       let fixedLine = line;
