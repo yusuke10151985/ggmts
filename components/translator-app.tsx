@@ -632,7 +632,7 @@ export const TranslatorApp: React.FC = () => {
                       <div className="flex flex-col items-center">
                         <div className="animate-spin mb-4 h-12 w-12 text-primary border-4 border-primary border-t-transparent rounded-full"></div>
                         <p className="text-lg font-semibold text-primary-foreground drop-shadow-md">
-                          {mode === 'summarize' ? 'Summarizing...' : 'Translating...'}
+                          {mode === 'summarize' ? 'Summarizing...' : mode === 'generate' ? 'Generating...' : 'Translating...'}
                         </p>
                       </div>
                     </div>
@@ -681,10 +681,98 @@ export const TranslatorApp: React.FC = () => {
                                 <span className="text-xs text-muted-foreground">{NOTICE_TEXTS[translation.lang] || NOTICE_TEXTS.default}</span>
                         </label>
                               {/* 個別コピーボタン */}
-                              <CopyButtonWithFeedback text={translation.text} />
+                              <CopyButtonWithFeedback 
+                                text={mode === 'generate' && (translation as any).snsContents 
+                                  ? (translation as any).snsContents.map((sns: any) => 
+                                      `${sns.platform.toUpperCase()}\n${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}`
+                                    ).join('\n\n---\n\n')
+                                  : translation.text
+                                } 
+                              />
                       </div>
                       <div className="p-4 min-h-[120px]">
-                              {mode === 'summarize' ? (
+                              {mode === 'generate' ? (
+                                // SNS Content Generation Display
+                                (translation as any).snsContents ? (
+                                  <div className="space-y-6">
+                                    {(translation as any).snsContents.map((sns: any, index: number) => (
+                                      <div key={sns.platform} className="border rounded-lg p-4 bg-background">
+                                        <div className="flex items-center justify-between mb-3">
+                                          <h4 className="font-bold text-lg capitalize flex items-center gap-2">
+                                            {sns.platform === 'youtube' && '📺'}
+                                            {sns.platform === 'x' && '🐦'}
+                                            {sns.platform === 'facebook' && '📘'}
+                                            {sns.platform === 'tiktok' && '🎵'}
+                                            {sns.platform.toUpperCase()}
+                                          </h4>
+                                          <div className="flex items-center gap-2">
+                                            <Button
+                                              size="sm"
+                                              onClick={() => {
+                                                const content = `${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}`
+                                                navigator.clipboard.writeText(content)
+                                              }}
+                                              className="flex items-center gap-1"
+                                            >
+                                              <Copy className="w-4 h-4" />
+                                              Copy
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => {
+                                                const content = encodeURIComponent(`${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}`)
+                                                const url = encodeURIComponent(window.location.origin)
+                                                let shareUrl = ''
+                                                
+                                                switch (sns.platform) {
+                                                  case 'x':
+                                                    shareUrl = `https://twitter.com/intent/tweet?text=${content}&url=${url}`
+                                                    break
+                                                  case 'facebook':
+                                                    shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${content}`
+                                                    break
+                                                  case 'youtube':
+                                                    // YouTube doesn't have direct sharing for content, copy to clipboard instead
+                                                    navigator.clipboard.writeText(`${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}`)
+                                                    return
+                                                  case 'tiktok':
+                                                    // TikTok doesn't have web sharing API, copy to clipboard
+                                                    navigator.clipboard.writeText(`${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}`)
+                                                    return
+                                                }
+                                                
+                                                if (shareUrl) {
+                                                  window.open(shareUrl, '_blank', 'width=600,height=400')
+                                                }
+                                              }}
+                                              className="flex items-center gap-1"
+                                            >
+                                              📤 Share
+                                            </Button>
+                                          </div>
+                                        </div>
+                                        <div className="space-y-3">
+                                          <div>
+                                            <p className="text-sm font-medium text-muted-foreground mb-1">Title:</p>
+                                            <p className="text-base">{sns.title}</p>
+                                          </div>
+                                          <div>
+                                            <p className="text-sm font-medium text-muted-foreground mb-1">Content:</p>
+                                            <p className="text-base whitespace-pre-wrap">{sns.content}</p>
+                                          </div>
+                                          <div>
+                                            <p className="text-sm font-medium text-muted-foreground mb-1">Hashtags:</p>
+                                            <p className="text-base text-blue-600">{sns.hashtags.join(' ')}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="text-gray-400 italic">No SNS content available.</div>
+                                )
+                              ) : mode === 'summarize' ? (
                                 Array.isArray((translation as any).summary) && (translation as any).summary.length > 0 ? (
                                   typeof (translation as any).summary[0] === 'string' ? (
                                     <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
