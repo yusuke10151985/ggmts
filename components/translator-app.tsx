@@ -421,7 +421,7 @@ export const TranslatorApp: React.FC = () => {
           }`}
           onClick={() => setMode('translate')}
         >
-          翻訳
+          Translate
         </button>
         <button
           className={`px-4 py-2 rounded-lg font-bold transition-all ${
@@ -431,7 +431,7 @@ export const TranslatorApp: React.FC = () => {
           }`}
           onClick={() => setMode('summarize')}
         >
-          要約
+          Summarize
         </button>
         <button
           className={`px-4 py-2 rounded-lg font-bold transition-all ${
@@ -441,7 +441,7 @@ export const TranslatorApp: React.FC = () => {
           }`}
           onClick={() => setMode('generate')}
         >
-          生成
+          Generate
         </button>
       </div>
       <button
@@ -463,6 +463,45 @@ export const TranslatorApp: React.FC = () => {
               <Card className="w-full">
                 <CardContent className="p-2 md:p-4 w-full">
                   <ModeToggle />
+                {mode === 'generate' && (
+                  <div className="flex gap-2 mb-3 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setInputText('YouTube video: ')}
+                      className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                    >
+                      📺 YouTube
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInputText('X/Twitter post: ')}
+                      className="px-3 py-1 text-sm bg-blue-400 text-white rounded hover:bg-blue-500 transition-colors"
+                    >
+                      🐦 X/Twitter
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInputText('Facebook post: ')}
+                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    >
+                      📘 Facebook
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInputText('TikTok video: ')}
+                      className="px-3 py-1 text-sm bg-black text-white rounded hover:bg-gray-800 transition-colors"
+                    >
+                      🎵 TikTok
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInputText('All platforms: ')}
+                      className="px-3 py-1 text-sm bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
+                    >
+                      ✨ All Platforms
+                    </button>
+                  </div>
+                )}
                 <textarea
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}

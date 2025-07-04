@@ -99,12 +99,12 @@ JSONレスポンス形式:
     let result
     try {
       // Try Gemini first
-      result = await geminiTranslate(generatePrompt, 'auto', targetLanguages || ['ja', 'en'], 'translate', 'gemini')
+      result = await geminiTranslate(generatePrompt, 'auto', targetLanguages || ['ja', 'en'], 'translate', 'gemini-1.5-flash')
       console.log('✅ Gemini generation completed successfully')
     } catch (geminiError) {
       console.warn('⚠️ Gemini generation failed, trying GPT:', geminiError)
       try {
-        result = await gptTranslate(generatePrompt, 'auto', targetLanguages || ['ja', 'en'], 'translate', 'gpt')
+        result = await gptTranslate(generatePrompt, 'auto', targetLanguages || ['ja', 'en'], 'translate', 'gpt-4o-mini')
         console.log('✅ GPT generation completed successfully')
       } catch (gptError) {
         console.error('❌ Both services failed:', { geminiError, gptError })
