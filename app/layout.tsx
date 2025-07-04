@@ -6,6 +6,7 @@ import SessionProviderWrapper from './session-provider'
 import FooterWithAdmin from '@/components/FooterWithAdmin';
 import GlobalHeader from '@/components/GlobalHeader';
 import BlockGuard from '@/components/BlockGuard';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -55,6 +56,9 @@ export default function RootLayout({
         <link rel="icon" href="/logo.png" type="image/png" />
       </head>
       <body className={inter.className}>
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <GoogleAnalytics GA_MEASUREMENT_ID={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        )}
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
