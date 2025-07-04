@@ -94,6 +94,29 @@ export const TranslatorApp: React.FC = () => {
   const { data: session, status } = useSession();
   const [selectionOrder, setSelectionOrder] = useState<string[]>([]);
 
+  // デバッグ用：コンポーネント初期化ログ
+  useEffect(() => {
+    console.log('🚀 TranslatorApp initialized');
+    console.log('📊 Initial state:', {
+      inputText: inputText.substring(0, 20) + (inputText.length > 20 ? '...' : ''),
+      sourceLang,
+      targetLangs,
+      mode,
+      session: !!session,
+      status
+    });
+  }, []);
+
+  // デバッグ用：重要なstate変更のログ
+  useEffect(() => {
+    console.log('🔄 State changed:', {
+      inputTextLength: inputText.length,
+      targetLangs,
+      isLoading,
+      session: !!session
+    });
+  }, [inputText, targetLangs, isLoading, session]);
+
   useEffect(() => {
     const root = document.documentElement
     if (mode === 'summarize') {
@@ -437,7 +460,17 @@ export const TranslatorApp: React.FC = () => {
                       ))}
                     </select>
                           <Button
-                            onClick={handleExecute}
+                            onClick={(e) => {
+                              console.log('🔘 Button clicked!', e);
+                              console.log('🔍 Button state:', {
+                                isLoading,
+                                inputTextLength: inputText.length,
+                                inputTextTrimmed: inputText.trim().length,
+                                targetLangsLength: targetLangs.length,
+                                disabled: isLoading || !inputText.trim() || targetLangs.length === 0
+                              });
+                              handleExecute();
+                            }}
                             className={`w-1/2 min-w-0 px-4 py-1.5 text-sm font-bold ${mode === 'summarize' ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
                             disabled={isLoading || !inputText.trim() || targetLangs.length === 0}
                             title={`Debug: isLoading=${isLoading}, hasText=${!!inputText.trim()}, targetLangs=${targetLangs.length}`}
