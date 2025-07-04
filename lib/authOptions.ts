@@ -1,5 +1,4 @@
 import GoogleProvider from 'next-auth/providers/google';
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { SessionStrategy } from 'next-auth';
 import prisma from './prisma';
 import nodemailer from 'nodemailer';
@@ -17,15 +16,21 @@ export const authOptions = {
   callbacks: {
     async session({ session, token }: { session: any; token: any }) {
       if (session.user) {
-        const userAny = session.user as any;
-        userAny.id = token.sub;
-        const user = await prisma.user.findUnique({ where: { email: userAny.email ?? undefined } });
-        userAny.role = user?.role || 'free';
+        try {
+          const userAny = session.user as any;
+          userAny.id = token.sub;
+          const user = await prisma.user.findUnique({ where: { email: userAny.email ?? undefined } });
+          userAny.role = user?.role || 'free';
+        } catch (error) {
+          console.error('Error fetching user role:', error);
+          // セッションを維持し、デフォルトロールを設定
+          (session.user as any).role = 'free';
+        }
       }
       return session;
     },
   },
-  adapter: PrismaAdapter(prisma),
+  debug: false,
   events: {
     async createUser({ user }: { user: any }) {
       // 新規サインイン時のみ管理者へメール送信

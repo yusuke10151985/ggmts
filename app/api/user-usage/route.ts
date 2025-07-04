@@ -6,7 +6,7 @@ import prisma from '@/lib/prisma';
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
-  let role = session?.user?.role || 'free';
+  let role = session?.user?.role ?? 'free';
   // デフォルト上限
   let usageLimit = 20;
   // Settingsから上限取得

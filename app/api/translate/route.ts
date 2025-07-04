@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     })
     
     const session = await getServerSession(authOptions);
-    const userRole = session?.user?.role || 'free';
+    const userRole = session?.user?.role ?? "free";
     // SettingsからAPIモデル設定を取得
     const settings = await prisma.settings.findMany();
     const getSetting = (key: string) => settings.find(s => s.key === key)?.value;

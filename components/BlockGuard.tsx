@@ -6,9 +6,10 @@ import { usePathname } from 'next/navigation';
 export default function BlockGuard({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const userRole = session?.user?.role ?? "free";
   console.log('BlockGuard session:', session, status);
   if (status === "loading") return null;
-  if (session?.user?.role === "block") {
+  if (userRole === "block") {
     if (pathname === "/contact") {
       return <>{children}</>;
     }
