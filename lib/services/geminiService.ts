@@ -200,20 +200,42 @@ const fixLine12ArrayElements = (text: string): string => {
     
     // Check if this line contains array elements without proper commas
     if (line.includes('"') && (line.includes('summary') || lineNum >= 10 && lineNum <= 15)) {
-      // Fix pattern: "text" followed by space and "text" on same line
-      lines[i] = line.replace(/(")(\s+)(")/g, '$1,$2$3');
+      console.log(`🔧 Processing line ${lineNum}:`, line);
       
-      // Fix pattern: "text"space"text" (no comma)
-      lines[i] = lines[i].replace(/(")(\s*)(")/g, (match, q1, space, q2) => {
-        // Only add comma if there's content between quotes and it's not already properly formatted
+      let fixedLine = line;
+      
+      // Pattern 1: "text" followed by space and "text" on same line
+      fixedLine = fixedLine.replace(/(")(\s+)(")/g, '$1,$2$3');
+      
+      // Pattern 2: "text"space"text" (no comma)
+      fixedLine = fixedLine.replace(/(")(\s*)(")/g, (match, q1, space, q2) => {
         if (space.length > 0 && !match.includes(',')) {
           return q1 + ',' + space + q2;
         }
         return match;
       });
       
-      // Fix array elements that are concatenated
-      lines[i] = lines[i].replace(/("\s*[^",\[\]]*?\s*")(\s+)(")/g, '$1,$2$3');
+      // Pattern 3: Array elements that are concatenated
+      fixedLine = fixedLine.replace(/("\s*[^",\[\]]*?\s*")(\s+)(")/g, '$1,$2$3');
+      
+      // Pattern 4: More aggressive - any quote followed by whitespace and quote
+      fixedLine = fixedLine.replace(/(\"[^\"]*\")(\s{1,})(\"[^\"]*\")/g, '$1,$2$3');
+      
+      // Pattern 5: Direct quote-quote with any content
+      fixedLine = fixedLine.replace(/(\"[^\"]*\")(\"[^\"]*\")/g, '$1,$2');
+      
+      // Pattern 6: Handle numbered list items specifically
+      fixedLine = fixedLine.replace(/(\"[0-9]+\.?\s*[^\"]*\")(\s+)(\"[0-9]+\.?\s*[^\"]*\")/g, '$1,$2$3');
+      
+      // Pattern 7: Summary array specific patterns
+      if (fixedLine.includes('summary')) {
+        fixedLine = fixedLine.replace(/(\"[^\"]*\")(\s*\n?\s*)(\"[^\"]*\")/g, '$1,$2$3');
+      }
+      
+      if (fixedLine !== line) {
+        console.log(`🔧 Fixed line ${lineNum}:`, fixedLine);
+        lines[i] = fixedLine;
+      }
     }
   }
   

@@ -21,11 +21,16 @@ export const authOptions = {
           const userAny = session.user as any;
           userAny.id = token.sub;
           
-          // ユーザーが存在するかチェック
-          let user = await prisma.user.findUnique({ where: { email: userAny.email ?? undefined } });
+          // 先にIDでユーザーを検索（より確実）
+          let user = await prisma.user.findUnique({ where: { id: token.sub } });
+          
+          // IDで見つからない場合はメールで検索
+          if (!user && userAny.email) {
+            user = await prisma.user.findUnique({ where: { email: userAny.email } });
+          }
           
           // ユーザーが存在しない場合は作成
-          if (!user && userAny.email) {
+          if (!user && userAny.email && token.sub) {
             console.log('Creating new user:', userAny.email, 'with ID:', token.sub);
             try {
               user = await prisma.user.create({
@@ -40,18 +45,45 @@ export const authOptions = {
               console.log('User created successfully:', user.id);
             } catch (createError) {
               console.error('Failed to create user:', createError);
+              console.error('Create error details:', createError);
+              
               // ユーザー作成に失敗した場合、再度検索を試行（同時作成のケース）
               try {
-                user = await prisma.user.findUnique({ where: { email: userAny.email } });
+                // IDとメール両方で再検索
+                user = await prisma.user.findUnique({ where: { id: token.sub } });
+                if (!user) {
+                  user = await prisma.user.findUnique({ where: { email: userAny.email } });
+                }
+                
                 if (user) {
                   console.log('User found after creation failure:', user.id);
                 } else {
-                  console.error('User still not found after creation failure');
+                  console.error('User still not found after creation failure for ID:', token.sub);
+                  // 強制的にユーザーを作成する最後の試行
+                  try {
+                    user = await prisma.user.create({
+                      data: {
+                        id: token.sub,
+                        email: userAny.email,
+                        name: userAny.name || `User_${token.sub.slice(-8)}`,
+                        image: userAny.image || null,
+                        role: 'free'
+                      }
+                    });
+                    console.log('Force created user:', user.id);
+                  } catch (forceError) {
+                    console.error('Force create also failed:', forceError);
+                  }
                 }
               } catch (retryError) {
                 console.error('Retry search also failed:', retryError);
               }
             }
+          }
+          
+          // ユーザーが見つからない場合の最終確認
+          if (!user && token.sub) {
+            console.warn('No user found or created for ID:', token.sub, 'Email:', userAny.email);
           }
           
           userAny.role = user?.role || 'free';

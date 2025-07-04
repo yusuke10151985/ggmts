@@ -151,9 +151,9 @@ export async function POST(request: NextRequest) {
       // ユーザーIDがある場合のみ記録（外部キー制約を満たすため）
       if (userId) {
         // ユーザーが存在するか確認
-        const userExists = await prisma.user.findUnique({
+        let userExists = await prisma.user.findUnique({
           where: { id: userId },
-          select: { id: true }
+          select: { id: true, email: true }
         });
         
         if (userExists) {
@@ -169,8 +169,42 @@ export async function POST(request: NextRequest) {
               result: JSON.stringify(result).substring(0, 1000),
             }
           });
+          console.log('✅ API usage logged for user:', userId);
         } else {
           console.warn('ユーザーが存在しないため履歴記録をスキップ:', userId);
+          
+          // セッションからユーザー情報を取得して作成を試行
+          if (session?.user?.email) {
+            try {
+              console.log('Attempting to create missing user for logging:', userId, session.user.email);
+              const newUser = await prisma.user.create({
+                data: {
+                  id: userId,
+                  email: session.user.email,
+                  name: session.user.name || `User_${userId.slice(-8)}`,
+                  image: session.user.image || null,
+                  role: 'free'
+                }
+              });
+              
+              // ユーザー作成後、再度ログ記録を試行
+              await prisma.apiUsageLog.create({
+                data: {
+                  userId,
+                  apiType: translationMode,
+                  provider,
+                  model,
+                  tokens,
+                  cost,
+                  inputText: text.substring(0, 500),
+                  result: JSON.stringify(result).substring(0, 1000),
+                }
+              });
+              console.log('✅ Created user and logged API usage:', newUser.id);
+            } catch (createError) {
+              console.error('Failed to create user for logging:', createError);
+            }
+          }
         }
       } else {
         console.warn('未認証ユーザーのため履歴記録をスキップ');
