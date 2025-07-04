@@ -21,29 +21,50 @@ const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode
 
   const targetLanguagesString = targetLangs.join(', ');
 
-  if (mode === 'translate') {
-    return `${sourceLanguageInstruction}
+  const modeInstruction = mode === 'summarize'
+    ? `Summarize the following text as a multi-level numbered list.\n\nInstructions:\n- Divide the text into items based on topics and contents.\n- Use a multi-level numbered structure (1., 1.1, 1.1.1, 2., 2.1, etc).\n- Use only Arabic numerals (1, 2, 3, ...) for all numbers and numbering. Do NOT use any language-specific digits.\n- Use only English units (m, kg, etc.) for all measurements. Do NOT use any language-specific units.\n- Do NOT include any greetings, closings, or irrelevant sentences.\n- Each item must be short and focused.\n\nRespond ONLY with a JSON object in this format:\n{\n  "sourceLanguage": "...",\n  "translations": [\n    {\n      "lang": "...",\n      "text": "...",\n      "summary": [\n        "1. ...",\n        "1.1 ...",\n        "2. ..."\n      ]\n    }\n  ]\n}\n\nThe summary array MUST be present and contain a multi-level numbered list. Do NOT include any text or explanation outside the JSON object.`
+    : 'Your task is to translate the given text into several specified languages. Use only Arabic numerals (1, 2, 3, ...) for all numbers and numbering. Use only English units (m, kg, etc.) for all measurements. Do NOT use any language-specific digits or units.';
 
-Please translate the following text to ${targetLanguagesString}:
+  let specialInstructions = '';
+  if (targetLangs.includes('th')) {
+    specialInstructions = `
+SPECIAL INSTRUCTIONS FOR THAI:
+For the Thai translation, where gender affects pronouns (like 'ผม'/'ฉัน') and politeness particles ('ครับ'/'ค่ะ'), you MUST merge them with a slash.
+Example: 'ผม/ฉัน ไปโรงเรียน ครับ/ค่ะ'.
+Do NOT create two separate full sentences for male and female speakers. Only merge the specific words that differ.
+This rule applies to both full translations and summaries.
+`;
+  }
 
-Text: "${text}"
+  return `
+You are an expert multilingual translator and summarizer.
+${modeInstruction}
+${sourceLanguageInstruction}
+${specialInstructions}
+The target languages for processing are: ${targetLanguagesString}.
 
-Please respond with a JSON object in this exact format:
+The text to process is:
+---
+${text}
+---
+
+Provide the response as a single, valid JSON object. Do not use markdown formatting like \`\`\`json.
+The JSON object must follow this exact structure:
 {
-  "sourceLanguage": "detected_or_specified_lang_code",
+  "sourceLanguage": "The auto-detected BCP-47 language code (e.g., 'en', 'es')",
   "translations": [
     {
-      "lang": "target_lang_code",
-      "text": "translated_text"
+      "lang": "target_language_code_1",
+      "text": "translated_text_1",
+      "summary": [ ...outline array as above, only for summarize mode... ]
     }
   ]
 }
 
-Use only Arabic numerals (1, 2, 3, ...) for all numbers and numbering. Do NOT use any language-specific digits. Use only English units (m, kg, etc.) for all measurements. Do NOT use any language-specific units.
-Ensure the response is valid JSON and includes all requested target languages.`;
-  } else {
-    return `You are an expert summarizer. Carefully analyze the following text and create a multi-level numbered summary as a JSON array.\n\nInstructions:\n- Divide the text into items based on topics and contents.\n- Create a multi-level numbered structure, using format like:\n  1.\n    1.1\n      1.1.1\n  2.\n    2.1\n      2.1.1\n- Use only Arabic numerals (1, 2, 3, ...) for all numbers and numbering. Do NOT use any language-specific digits.\n- Use only English units (m, kg, etc.) for all measurements. Do NOT use any language-specific units.\n- Do NOT include any greetings, closings, or irrelevant sentences.\n- Each item must be short and focused.\n- If you cannot create a multi-level numbered summary, respond with an error message in the summary array.\n\nRespond ONLY with a JSON object in this format:\n{\n  "sourceLanguage": "${sourceLang}",\n  "translations": [\n    {\n      "lang": "${targetLangs[0]}",\n      "text": "...",\n      "summary": [\n        "1. ...",\n        "1.1 ...",\n        "2. ..."\n      ]\n    }\n  ]\n}\n\nDo NOT include any text or explanation outside the JSON object. The summary array MUST be present and contain a multi-level numbered list.`;
-  }
+The "translations" array must contain one object for each target language requested: ${targetLanguagesString}.
+The "lang" value in each translation object must exactly match one of the requested BCP-47 target language codes.
+Ensure the entire output is a single raw JSON object without any additional text or formatting before or after it.
+`;
 };
 
 export const getTranslations = async (
@@ -53,9 +74,22 @@ export const getTranslations = async (
   mode: TranslationMode,
   model?: string
 ): Promise<TranslationResult> => {
+  if (!text.trim()) {
+    return { sourceLanguage: 'auto', translations: [] };
+  }
+  
+  console.log('🔍 Gemini service called with:', {
+    text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
+    sourceLang,
+    targetLangs,
+    mode,
+    model
+  });
+
   try {
     const modelName = model || 'gemini-1.5-flash';
-    console.log('Making Gemini API request...');
+    console.log('🚀 Making Gemini API request with model:', modelName);
+    console.log('🔑 API Key (first 10 chars):', GEMINI_API_KEY.substring(0, 10) + '...');
     
     // Gemini workaround: If only one of ['th', 'ms', 'vi', 'my'] is requested, add 'en' to the request
     const problematicLangs = ['th', 'ms', 'vi', 'my'];
@@ -65,66 +99,6 @@ export const getTranslations = async (
       actualTargetLangs = [targetLangs[0], 'en'];
       console.log('Gemini workaround: Adding en to targetLangs for', targetLangs[0]);
     }
-
-    // --- Pivot要約: summarize in English first, then translate summary ---
-    if (mode === 'summarize' && sourceLang !== 'en' && !targetLangs.includes('en')) {
-      // 1. Summarize in English
-      const englishPrompt = getPrompt(text, sourceLang, ['en'], 'summarize');
-      const englishResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: englishPrompt }] }],
-          generationConfig: {
-            temperature: 0.3,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 2048,
-          }
-        })
-      });
-      if (!englishResponse.ok) {
-        const errorData = await englishResponse.json();
-        throw new Error(`Gemini API (pivot English) failed: ${englishResponse.status} ${englishResponse.statusText} ${JSON.stringify(errorData)}`);
-      }
-      const englishData = await englishResponse.json();
-      let englishText = englishData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-      if (englishText.startsWith('```')) {
-        englishText = englishText.replace(/^```[a-zA-Z]*\n?/, '').replace(/```$/, '').trim();
-      }
-      const englishSummary = JSON.parse(englishText);
-      const englishSummaryText = englishSummary.translations?.[0]?.text || '';
-      // 2. Translate English summary to each target language
-      const translatePrompt = `Translate the following summary into these languages: ${targetLangs.join(', ')}\n\nSummary:\n${englishSummaryText}\n\nRespond in this JSON format:\n{\n  "translations": [\n    { "lang": "target_lang_code", "text": "translated_summary" }\n  ]\n}`;
-      const translateResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: translatePrompt }] }],
-          generationConfig: {
-            temperature: 0.3,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 2048,
-          }
-        })
-      });
-      if (!translateResponse.ok) {
-        const errorData = await translateResponse.json();
-        throw new Error(`Gemini API (pivot translate) failed: ${translateResponse.status} ${translateResponse.statusText} ${JSON.stringify(errorData)}`);
-      }
-      const translateData = await translateResponse.json();
-      let translateText = translateData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-      if (translateText.startsWith('```')) {
-        translateText = translateText.replace(/^```[a-zA-Z]*\n?/, '').replace(/```$/, '').trim();
-      }
-      const translated = JSON.parse(translateText);
-      return {
-        sourceLanguage: englishSummary.sourceLanguage || 'en',
-        translations: translated.translations.filter((t: any) => targetLangs.includes(t.lang)),
-      };
-    }
-    // --- End Pivot要約 ---
 
     const prompt = getPrompt(text, sourceLang, actualTargetLangs, mode);
     
@@ -140,46 +114,59 @@ export const getTranslations = async (
           }]
         }],
         generationConfig: {
-          temperature: 0.3,
+          temperature: 0.2,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 2000,
         }
       })
     });
 
-    console.log('Gemini API response received');
+    console.log('📊 Gemini API response status:', response.status, response.statusText);
     
     if (!response.ok) {
-      const errorData = await response.json();
-      console.log('Gemini API error response:', JSON.stringify(errorData, null, 2));
-      throw new Error(`Gemini API request failed: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('❌ Gemini API error response:', errorText);
+      
+      if (response.status === 401) {
+        throw new Error(`Gemini API authentication failed. Please check your API key. Status: ${response.status}`);
+      }
+      
+      throw new Error(`Gemini API request failed: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('Gemini API success response:', JSON.stringify(data, null, 2));
+    console.log('📋 Gemini API response data:', JSON.stringify(data, null, 2));
+    console.log('📋 Gemini API response data structure:', {
+      hasCandidates: !!data.candidates,
+      candidatesLength: data.candidates?.length || 0,
+      hasContent: !!data.candidates?.[0]?.content
+    });
 
     if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
       throw new Error('Invalid response format from Gemini API');
     }
 
     const responseText = data.candidates[0].content.parts[0].text;
-    console.log('Gemini API response text:', responseText);
+    console.log('📝 Gemini raw response text:', responseText);
 
-    // Strip code block markers if present
-    let cleanText = responseText.trim();
-    if (cleanText.startsWith('```')) {
-      // Remove opening ```json or ``` and closing ```
-      cleanText = cleanText.replace(/^```[a-zA-Z]*\n?/, '').replace(/```$/, '').trim();
+    // Clean potential markdown fences
+    const fenceRegex = /^```(?:json)?\s*\n?(.*?)\n?\s*```$/;
+    const match = responseText.match(fenceRegex);
+    const jsonText = match && match[1] ? match[1].trim() : responseText.trim();
+    console.log('🧹 Cleaned JSON text:', jsonText);
+    const parsedData = JSON.parse(jsonText);
+    console.log('✅ Parsed Gemini data:', parsedData);
+
+    // summary_markdownがあればsummary配列に変換
+    if (parsedData && parsedData.summary_markdown && (!parsedData.summary || parsedData.summary.length === 0)) {
+      parsedData.summary = parsedData.summary_markdown.split(/\r?\n/).filter((line: string) => line.trim());
     }
-    console.log('Cleaned text for JSON parsing:', cleanText);
-    const parsedResponse = JSON.parse(cleanText);
-    console.log('Parsed JSON response:', JSON.stringify(parsedResponse, null, 2));
 
     // summary配列の自動補完: summaryが空/未定義ならtextを行分割してsummary配列に
-    if (parsedResponse && Array.isArray(parsedResponse.translations)) {
-      parsedResponse.translations = parsedResponse.translations.map((t: any) => {
-        if (!t.summary || t.summary.length === 0) {
+    if (parsedData && Array.isArray(parsedData.translations)) {
+      parsedData.translations = parsedData.translations.map((t: any) => {
+        if (mode === 'summarize' && (!t.summary || t.summary.length === 0)) {
           const lines = (t.text || '').split(/\r?\n/).map((line: string) => line.trim()).filter(Boolean);
           // 番号付きリスト形式の行のみ抽出（なければ全行）
           const numbered = lines.filter((line: string) => /^[0-9]+(\.[0-9]+)*[\.、．] /.test(line) || /^[0-9]+(\.[0-9]+)*[\.、．]/.test(line));
@@ -190,18 +177,30 @@ export const getTranslations = async (
     }
 
     // Gemini workaround: Only return the originally requested language(s)
-    let filteredTranslations = parsedResponse.translations;
+    let filteredTranslations = parsedData.translations;
     if (actualTargetLangs.length !== filterTo.length) {
-      filteredTranslations = parsedResponse.translations.filter((t: any) => filterTo.includes(t.lang));
+      filteredTranslations = parsedData.translations.filter((t: any) => filterTo.includes(t.lang));
     }
 
-    return {
-      sourceLanguage: parsedResponse.sourceLanguage,
-      translations: filteredTranslations
-    };
-
+    if (parsedData && Array.isArray(filteredTranslations)) {
+      return { 
+        ...parsedData, 
+        translations: filteredTranslations,
+        resultRawContent: responseText 
+      };
+    } else {
+      throw new Error("Invalid JSON structure received from API.");
+    }
   } catch (error) {
-    console.error('Error fetching or parsing translations:', error);
-    throw new Error(`Failed to get translations from Gemini API. ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error("❌ Error fetching or parsing translations from Gemini:", error);
+    let errorMessage = "Failed to get translations from Gemini API. ";
+    if (error instanceof SyntaxError) {
+      errorMessage += "The response was not valid JSON. Please try again.";
+    } else if (error instanceof Error) {
+      errorMessage += error.message;
+    } else {
+      errorMessage += "An unknown error occurred."
+    }
+    throw new Error(errorMessage);
   }
-}; 
+};
