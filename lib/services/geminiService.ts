@@ -180,11 +180,72 @@ export const getTranslations = async (
       .replace(/}[^}]*$/, '}')  // Remove anything after last }
       .trim();
     
-    console.log('🧹 Cleaned JSON text:', cleanText);
-    console.log('🧹 First 100 chars:', cleanText.substring(0, 100));
-    console.log('🧹 Last 100 chars:', cleanText.substring(Math.max(0, cleanText.length - 100)));
+    console.log('🧹 Cleaned JSON text length:', cleanText.length);
+    console.log('🧹 First 200 chars:', cleanText.substring(0, 200));
+    console.log('🧹 Last 200 chars:', cleanText.substring(Math.max(0, cleanText.length - 200)));
     
-    const parsedData = JSON.parse(cleanText);
+    // Enhanced JSON parsing with validation and recovery
+    let parsedData;
+    try {
+      parsedData = JSON.parse(cleanText);
+    } catch (parseError) {
+      console.error('❌ JSON parsing failed:', parseError);
+      console.error('❌ Error position:', (parseError as any).message);
+      
+      // Try to fix common JSON issues
+      let fixedText = cleanText;
+      
+      // 1. Fix missing commas in arrays
+      fixedText = fixedText.replace(/("[\s\S]*?")\s*\n\s*("[\s\S]*?")/g, '$1,\n$2');
+      
+      // 2. Fix trailing commas
+      fixedText = fixedText.replace(/,(\s*[}\]])/g, '$1');
+      
+      // 3. Fix incomplete arrays by closing them
+      const openBrackets = (fixedText.match(/\[/g) || []).length;
+      const closeBrackets = (fixedText.match(/\]/g) || []).length;
+      if (openBrackets > closeBrackets) {
+        for (let i = 0; i < openBrackets - closeBrackets; i++) {
+          fixedText += ']';
+        }
+      }
+      
+      // 4. Fix incomplete objects by closing them
+      const openBraces = (fixedText.match(/\{/g) || []).length;
+      const closeBraces = (fixedText.match(/\}/g) || []).length;
+      if (openBraces > closeBraces) {
+        for (let i = 0; i < openBraces - closeBraces; i++) {
+          fixedText += '}';
+        }
+      }
+      
+      console.log('🔧 Attempting to fix JSON...');
+      console.log('🔧 Fixed text length:', fixedText.length);
+      console.log('🔧 Fixed last 200 chars:', fixedText.substring(Math.max(0, fixedText.length - 200)));
+      
+      try {
+        parsedData = JSON.parse(fixedText);
+        console.log('✅ JSON fixed and parsed successfully');
+      } catch (secondError) {
+        console.error('❌ JSON fix attempt failed:', secondError);
+        
+        // Final fallback: extract only valid JSON portion
+        try {
+          const jsonStart = cleanText.indexOf('{');
+          const jsonEnd = cleanText.lastIndexOf('}');
+          if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+            const truncatedJson = cleanText.substring(jsonStart, jsonEnd + 1);
+            parsedData = JSON.parse(truncatedJson);
+            console.log('✅ Parsed truncated JSON successfully');
+          } else {
+            throw new Error('Could not extract valid JSON structure');
+          }
+        } catch (finalError) {
+          console.error('❌ All JSON parsing attempts failed');
+          throw new Error(`Failed to parse JSON response from Gemini API. Original error: ${(parseError as any).message}`);
+        }
+      }
+    }
     console.log('✅ Parsed Gemini data:', parsedData);
 
     // summary_markdownがあればsummary配列に変換
