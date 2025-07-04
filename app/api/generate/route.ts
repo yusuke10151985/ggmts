@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/authOptions'
-import { geminiService } from '@/lib/services/geminiService'
-import { gptService } from '@/lib/services/gptService'
+import { getTranslations as geminiTranslate } from '@/lib/services/geminiService'
+import { getTranslations as gptTranslate } from '@/lib/services/gptService'
 
 interface SNSContent {
   platform: 'youtube' | 'x' | 'facebook' | 'tiktok'
@@ -99,12 +99,12 @@ JSONレスポンス形式:
     let result
     try {
       // Try Gemini first
-      result = await geminiService.translate(generatePrompt, 'auto', targetLanguages || ['ja', 'en'])
+      result = await geminiTranslate(generatePrompt, 'auto', targetLanguages || ['ja', 'en'], 'translate', 'gemini')
       console.log('✅ Gemini generation completed successfully')
     } catch (geminiError) {
       console.warn('⚠️ Gemini generation failed, trying GPT:', geminiError)
       try {
-        result = await gptService.translate(generatePrompt, 'auto', targetLanguages || ['ja', 'en'])
+        result = await gptTranslate(generatePrompt, 'auto', targetLanguages || ['ja', 'en'], 'translate', 'gpt')
         console.log('✅ GPT generation completed successfully')
       } catch (gptError) {
         console.error('❌ Both services failed:', { geminiError, gptError })
