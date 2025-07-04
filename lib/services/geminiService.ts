@@ -331,6 +331,43 @@ const fixSpecificPosition = (text: string, errorPos: number): string => {
   return result;
 };
 
+// Special fix for positions 3300-3400 (common error range)
+const fixPosition3300Range = (text: string, errorPos: number): string => {
+  console.log('🔧 Applying specialized 3300-3400 range fix');
+  
+  // Get a larger context around the error
+  const start = Math.max(0, errorPos - 200);
+  const end = Math.min(text.length, errorPos + 200);
+  const before = text.substring(0, start);
+  const context = text.substring(start, end);
+  const after = text.substring(end);
+  
+  let fixedContext = context;
+  
+  // Pattern 1: Fix summary arrays specifically around this position
+  fixedContext = fixedContext.replace(/"summary":\s*\[\s*(".*?")\s+(".*?")/g, '"summary": [$1, $2');
+  
+  // Pattern 2: Fix missing commas in numbered list items
+  fixedContext = fixedContext.replace(/("(?:\d+\.?\s*[^"]*)")\s+("(?:\d+\.?\s*[^"]*)")/g, '$1, $2');
+  
+  // Pattern 3: Fix any quote-space-quote pattern in this range
+  fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*")\s+("(?:[^"\\]|\\.)*")/g, '$1, $2');
+  
+  // Pattern 4: Fix line-break separated array elements
+  fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*")\s*\n\s*("(?:[^"\\]|\\.)*")/g, '$1,\n$2');
+  
+  // Pattern 5: Fix specific Japanese text patterns that might be causing issues
+  fixedContext = fixedContext.replace(/("(?:[^"\\]|\\.)*[。、]")\s+("(?:\d|[一二三四五六七八九十]))/g, '$1, $2');
+  
+  const result = before + fixedContext + after;
+  
+  if (result !== text) {
+    console.log('🔧 Applied 3300-3400 range fix, length change:', text.length, '->', result.length);
+  }
+  
+  return result;
+};
+
 // Advanced JSON builder for stubborn cases
 const buildJsonFromFragments = (text: string, sourceLang: string, targetLangs: string[], mode: TranslationMode): any => {
   console.log('🔧 Building JSON from fragments using advanced extraction...');
@@ -464,7 +501,7 @@ This rule applies to both full translations and summaries.
 `;
   }
 
-  return `
+  const finalPrompt = `
 You are an expert multilingual translator and summarizer.
 ${modeInstruction}
 ${sourceLanguageInstruction}
@@ -493,6 +530,11 @@ The "translations" array must contain one object for each target language reques
 The "lang" value in each translation object must exactly match one of the requested BCP-47 target language codes.
 Ensure the entire output is a single raw JSON object without any additional text or formatting before or after it.
 `;
+
+  console.log('🔧 Generated prompt for target languages:', targetLangs);
+  console.log('🔧 Prompt language instruction:', `Target languages: ${targetLanguagesString}`);
+  
+  return finalPrompt;
 };
 
 export const getTranslations = async (
@@ -722,6 +764,12 @@ export const getTranslations = async (
           if (errorPos && errorPos < aggressiveFixed.length) {
             console.log('🔧 Applying comprehensive position-specific repair...');
             aggressiveFixed = fixSpecificPosition(aggressiveFixed, errorPos);
+            
+            // Additional targeted fix for positions 3300-3400 range
+            if (errorPos >= 3300 && errorPos <= 3400) {
+              console.log('🔧 Applying special fix for position range 3300-3400');
+              aggressiveFixed = fixPosition3300Range(aggressiveFixed, errorPos);
+            }
           }
           
           // Additional aggressive patterns with iterative fixing
@@ -870,14 +918,31 @@ export const getTranslations = async (
     // Gemini workaround: Only return the originally requested language(s)
     let filteredTranslations = parsedData.translations;
     
+    // Debug: Log all translations before filtering
+    console.log('🔧 All translations before filtering:', parsedData.translations.map((t: any) => ({ lang: t.lang, textPreview: t.text?.substring(0, 50) + '...' })));
+    
     // Only filter if we added extra languages (like 'en' for problematic langs)
     if (actualTargetLangs.length !== filterTo.length) {
       console.log('🔧 Filtering translations from', actualTargetLangs, 'to', filterTo);
       filteredTranslations = parsedData.translations.filter((t: any) => filterTo.includes(t.lang));
       console.log('🔧 Filtered translations count:', filteredTranslations.length);
+      console.log('🔧 Filtered translations languages:', filteredTranslations.map((t: any) => t.lang));
     } else {
       // No filtering needed - return all translations
       console.log('🔧 Returning all translations, count:', filteredTranslations.length);
+      console.log('🔧 All translation languages:', filteredTranslations.map((t: any) => t.lang));
+    }
+    
+    // Additional check: Ensure we have the requested languages
+    const missingLangs = filterTo.filter(lang => !filteredTranslations.some((t: any) => t.lang === lang));
+    if (missingLangs.length > 0) {
+      console.warn('⚠️ Missing requested languages:', missingLangs);
+      // Try to find them in the full translation set
+      const foundMissing = parsedData.translations.filter((t: any) => missingLangs.includes(t.lang));
+      if (foundMissing.length > 0) {
+        console.log('✅ Found missing languages in full set, adding them back:', foundMissing.map((t: any) => t.lang));
+        filteredTranslations = [...filteredTranslations, ...foundMissing];
+      }
     }
 
     if (parsedData && Array.isArray(filteredTranslations)) {
