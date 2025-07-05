@@ -856,15 +856,6 @@ Time / 時期・時間:`;
                                             </>
                                           )}
                                           
-                                          {/* Combined content for other platforms */}
-                                          {sns.platform !== 'youtube' && (
-                                            <div>
-                                              <p className="text-sm font-medium text-muted-foreground mb-1">Content:</p>
-                                              <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                                                <p>{sns.content}</p>
-                                              </div>
-                                            </div>
-                                          )}
                                           
                                           {/* YouTube tags */}
                                           {sns.platform === 'youtube' && sns.tags && Array.isArray(sns.tags) && (

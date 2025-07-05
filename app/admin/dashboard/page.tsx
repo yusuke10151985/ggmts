@@ -525,7 +525,7 @@ export default function AdminDashboardPage() {
       <form className="space-y-4">
         {[{ key: "translate_api_model", label: "翻訳APIモデル", options: ["gpt-4o-mini", "gpt-4.1-nano", "gemini-1.5-flash", "gemini-1.5-pro"] },
           { key: "summarize_api_model", label: "要約APIモデル", options: ["gpt-4o-mini", "gpt-4.1-nano", "gemini-1.5-flash", "gemini-1.5-pro"] },
-          { key: "generate_api_model", label: "生成APIモデル", options: ["gpt-4o-mini", "gpt-4.1-nano", "gemini-1.5-flash", "gemini-1.5-pro"] }].map(({ key, label, options }) => {
+          { key: "generate_api_model", label: "Generate for SNS APIモデル", options: ["gpt-4o-mini", "gpt-4.1-nano", "gemini-1.5-flash", "gemini-1.5-pro"] }].map(({ key, label, options }) => {
           const setting = settings.find((s) => s.key === key);
           if (!setting) return null;
           return (
