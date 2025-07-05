@@ -457,33 +457,19 @@ export const TranslatorApp: React.FC = () => {
             
             // Set template text when generate mode is selected
             if (!inputText.trim()) {
-              const template = `【Place / 場所】
-e.g. Ishigaki Island, Okinawa
-例：沖縄 石垣島
+              const template = `Place / 場所:
 
-【What to do / 何をする？】
-e.g. Snorkeling with colorful fish
-例：カラフルな魚たちとシュノーケリング
+What to do / 何をする？:
 
-【Feeling / 感じたこと・雰囲気】
-e.g. Like another world – so peaceful and healing
-例：まるで別世界みたいで、とても癒されました
+Feeling / 感じたこと・雰囲気:
 
-【With who / 誰と？】
-e.g. With my best friend
-例：大切な友人と一緒に
+With who / 誰と？:
 
-【Special / 特別なこと】
-e.g. Spotted a rare blue starfish for the first time!
-例：初めて珍しい青いヒトデを見つけました！
+Special / 特別なこと:
 
-【Tips / おすすめポイント・コツ】
-e.g. Morning is best for clear water and calm waves.
-例：朝のほうが海が穏やかで透明度が高くおすすめです
+Tips / おすすめポイント・コツ:
 
-【Time / 時期・時間】
-e.g. Visited in October – perfect weather!
-例：10月に訪れました、最高の天気でした！`;
+Time / 時期・時間:`;
               setInputText(template);
             }
           }}
@@ -513,7 +499,15 @@ e.g. Visited in October – perfect weather!
                 <textarea
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                    placeholder={mode === 'translate' ? "Enter text to translate..." : mode === 'summarize' ? "Enter text to summarize..." : "Enter keywords or topic for SNS content generation..."}
+                    placeholder={mode === 'translate' ? "Enter text to translate..." : mode === 'summarize' ? "Enter text to summarize..." : `Fill in each section with your content:
+
+Place / 場所: e.g. Ishigaki Island, Okinawa / 例：沖縄 石垣島
+What to do / 何をする？: e.g. Snorkeling with colorful fish / 例：カラフルな魚たちとシュノーケリング
+Feeling / 感じたこと・雰囲気: e.g. Like another world – so peaceful and healing / 例：まるで別世界みたいで、とても癒されました
+With who / 誰と？: e.g. With my best friend / 例：大切な友人と一緒に
+Special / 特別なこと: e.g. Spotted a rare blue starfish for the first time! / 例：初めて珍しい青いヒトデを見つけました！
+Tips / おすすめポイント・コツ: e.g. Morning is best for clear water and calm waves / 例：朝のほうが海が穏やかで透明度が高くおすすめです
+Time / 時期・時間: e.g. Visited in October – perfect weather! / 例：10月に訪れました、最高の天気でした！`}
                   className="w-full p-3 border border-input bg-transparent rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring resize-none transition-shadow"
                   rows={5}
                 />
