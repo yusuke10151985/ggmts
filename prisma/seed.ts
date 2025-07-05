@@ -11,6 +11,16 @@ async function main() {
       description: '無料会員の1日あたりAPI実行上限（回数）',
     },
   });
+
+  await prisma.settings.upsert({
+    where: { key: 'generate_api_model' },
+    update: {},
+    create: {
+      key: 'generate_api_model',
+      value: 'gemini-1.5-flash',
+      description: 'SNS生成で使用するAPIモデル',
+    },
+  });
 }
 
 main()
