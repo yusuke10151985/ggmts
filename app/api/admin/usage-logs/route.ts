@@ -94,4 +94,45 @@ export async function GET(req: NextRequest) {
     total, 
     dailyStats 
   });
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    // POSTは認証済みユーザーなら誰でも使用可能（自分の使用状況を記録するため）
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { userId, apiType, model, inputText, result, tokens, cost } = body;
+
+    // ユーザーIDが一致することを確認（管理者は他のユーザーのログも記録可能）
+    if (session.user.role !== 'admin' && userId !== session.user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // API使用ログを作成
+    const log = await prisma.apiUsageLog.create({
+      data: {
+        userId,
+        apiType: apiType || 'generate',
+        provider: model?.includes('gpt') ? 'openai' : 'google',
+        model: model || 'gemini-1.5-flash',
+        tokens: tokens || 0,
+        cost: cost || 0,
+        inputText: inputText?.substring(0, 500) || '',
+        result: result ? JSON.stringify(result).substring(0, 1000) : '',
+      },
+    });
+
+    return NextResponse.json({ success: true, logId: log.id });
+  } catch (error) {
+    console.error('Error creating usage log:', error);
+    return NextResponse.json(
+      { error: 'Failed to create usage log' },
+      { status: 500 }
+    );
+  }
 } 
