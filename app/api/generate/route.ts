@@ -5,10 +5,12 @@ import { getTranslations as geminiTranslate } from '@/lib/services/geminiService
 import { getTranslations as gptTranslate } from '@/lib/services/gptService'
 
 interface SNSContent {
-  platform: 'youtube' | 'x' | 'facebook' | 'tiktok'
+  platform: 'youtube' | 'x' | 'instagram' | 'tiktok'
   title: string
   content: string
   hashtags: string[]
+  tags?: string[] // for YouTube tags
+  description?: string // for YouTube description
 }
 
 interface GenerateResponse {
@@ -53,10 +55,18 @@ export async function POST(request: NextRequest) {
 以下の4つのSNSプラットフォーム向けのコンテンツを各言語で生成してください。
 
 プラットフォーム別要件:
-1. YouTube: タイトル(60文字以内)、説明文(200文字以内)、ハッシュタグ5個
-2. X(Twitter): タイトル(50文字以内)、ツイート文(140文字以内)、ハッシュタグ3個
-3. Facebook: タイトル(80文字以内)、投稿文(300文字以内)、ハッシュタグ4個
-4. TikTok: タイトル(100文字以内)、キャプション(150文字以内)、ハッシュタグ5個
+
+1. **YouTube**
+a. **タイトル**: 先頭にシンプルでインパクトのあるワードを28文字以内。｜で区切ってサブタイトル。場所の情報がある場合は、先頭に国旗を入れる。最大半角100文字
+b. **説明**: 不明確な嘘情報は記載しない。国旗のみを含む5つの翻訳：🇯🇵 🇹🇭 🇷🇺 🇲🇲 🇨🇳。最大半角5,000文字（全角2,500文字）
+c. **ハッシュタグ**: タイトルに関係のある検索数の多いものを3つ。#Shortsは必ず含める。最大30個まで
+d. **タグ**: 1行のカンマ区切りリスト。# 記号は使用不可
+
+2. **Twitter (X)**: YouTubeのタイトルと内容は同じ。最大全角140文字、半角280文字
+
+3. **Instagram**: YouTubeのタイトルと内容は同じ。冒頭の30文字でインパクトを与える。ハッシュタグは最大30個まで。全角・半角を問わず、最大2,200文字まで
+
+4. **TikTok**: タイトル(100文字以内)、キャプション(150文字以内)、ハッシュタグ5個
 
 各プラットフォームの特性を考慮して、エンゲージメントが高くなるような内容にしてください。
 
@@ -69,8 +79,9 @@ JSONレスポンス形式:
         {
           "platform": "youtube",
           "title": "YouTubeタイトル",
-          "content": "YouTube説明文",
-          "hashtags": ["#ハッシュタグ1", "#ハッシュタグ2"]
+          "description": "YouTube説明文",
+          "hashtags": ["#Shorts", "#ハッシュタグ1", "#ハッシュタグ2"],
+          "tags": ["タグ1", "タグ2", "タグ3"]
         },
         {
           "platform": "x",
@@ -79,9 +90,9 @@ JSONレスポンス形式:
           "hashtags": ["#ハッシュタグ1", "#ハッシュタグ2"]
         },
         {
-          "platform": "facebook",
-          "title": "Facebookタイトル",
-          "content": "Facebook投稿文",
+          "platform": "instagram",
+          "title": "Instagramタイトル",
+          "content": "Instagram投稿文",
           "hashtags": ["#ハッシュタグ1", "#ハッシュタグ2"]
         },
         {

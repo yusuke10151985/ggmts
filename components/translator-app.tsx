@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HistoryItem, Language, TranslationResult, TranslationMode } from '@/lib/types'
-import { FROM_LANGUAGES, PRIORITY_LANGUAGES, OTHER_LANGUAGES, getLanguageByCode } from '@/lib/constants'
+import { FROM_LANGUAGES, OTHER_LANGUAGES, getLanguageByCode } from '@/lib/constants'
 import { useLocalStorage } from '@/lib/hooks/useLocalStorage'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -18,7 +18,7 @@ import {
   Languages,
   FileText
 } from 'lucide-react'
-import { useSession, signIn, signOut } from 'next-auth/react'
+import { useSession, signIn } from 'next-auth/react'
 
 type ApiProvider = 'gemini' | 'gpt'
 
@@ -86,13 +86,29 @@ export const TranslatorApp: React.FC = () => {
   const [copyButtonText, setCopyButtonText] = useState('Copy Selected')
   const [showMoreLangs, setShowMoreLangs] = useState(false)
   const [mode, setMode] = useState<TranslationMode>('translate')
+  // Removed unused placeholderText state
   const apiProvider: ApiProvider = 'gpt'
-  const [isModeDropdownOpen, setIsModeDropdownOpen] = useState(false)
-  const modeDropdownRef = useRef<HTMLDivElement>(null)
+  // Removed unused isModeDropdownOpen state
+  // Removed unused modeDropdownRef
   const abortControllerRef = useRef<AbortController | null>(null)
   const executeTranslationRef = useRef<((text: string, source: string, targets: string[]) => Promise<void>) | null>(null)
   const { data: session, status } = useSession();
   const [selectionOrder, setSelectionOrder] = useState<string[]>([]);
+  const [userPreferredLanguages, setUserPreferredLanguages] = useState<string[]>(['en', 'ja', 'th']);
+
+  // ユーザーの言語使用履歴を取得
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetch('/api/user-preferred-languages')
+        .then(res => res.json())
+        .then(data => {
+          if (data.preferredLanguages && data.preferredLanguages.length > 0) {
+            setUserPreferredLanguages(data.preferredLanguages.slice(0, 3));
+          }
+        })
+        .catch(err => console.log('Failed to fetch preferred languages:', err));
+    }
+  }, [session?.user?.id]);
 
   // デバッグ用：コンポーネント初期化ログ
   useEffect(() => {
@@ -129,17 +145,7 @@ export const TranslatorApp: React.FC = () => {
     }
   }, [mode])
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modeDropdownRef.current && !modeDropdownRef.current.contains(event.target as Node)) {
-        setIsModeDropdownOpen(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
+  // Removed unused useEffect for dropdown
 
   const handleResetSelections = useCallback(() => {
     setSelectedForCopy({})
@@ -318,7 +324,7 @@ export const TranslatorApp: React.FC = () => {
   const handleMasterCopy = () => {
     let textToCopy = '';
     const sourceLanguageName = result?.sourceLanguage ? getLanguageName(result.sourceLanguage) : 'Source Text'
-    selectionOrder.forEach((key, idx) => {
+    selectionOrder.forEach((key) => {
       if (key === 'source' && inputText) {
         textToCopy += `--- ${sourceLanguageName} (Original language) ---\n${inputText}\n\n`;
       } else {
@@ -349,25 +355,7 @@ export const TranslatorApp: React.FC = () => {
     });
   }
 
-  // --- Auth UI ---
-  const AuthButton = () => {
-    if (session?.user) {
-  return (
-        <div className="flex items-center gap-2">
-          {session.user.image && (
-            <img src={session.user.image} alt="avatar" className="w-8 h-8 rounded-full border" />
-          )}
-          <span className="text-sm font-medium text-foreground max-w-[120px] truncate">{session.user.name}</span>
-          <Button size="sm" variant="outline" onClick={() => signOut()}>Sign out</Button>
-        </div>
-      );
-    }
-    return (
-      <div className="flex gap-2">
-        <Button size="sm" onClick={() => signIn('google')}>Sign in with Google</Button>
-      </div>
-    );
-  };
+  // Auth UI moved to GlobalHeader component
 
   // 実行ボタンのハンドラ
   const handleExecute = () => {
@@ -425,7 +413,14 @@ export const TranslatorApp: React.FC = () => {
               ? 'bg-blue-500 text-white shadow-md' 
               : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
           }`}
-          onClick={() => setMode('translate')}
+          onClick={() => {
+            setMode('translate');
+            setResult(null);
+            setError(null);
+            setTargetLangs([]);
+            setSelectedForCopy({});
+            setSelectionOrder([]);
+          }}
         >
           Translate
         </button>
@@ -435,7 +430,14 @@ export const TranslatorApp: React.FC = () => {
               ? 'bg-green-500 text-white shadow-md' 
               : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
           }`}
-          onClick={() => setMode('summarize')}
+          onClick={() => {
+            setMode('summarize');
+            setResult(null);
+            setError(null);
+            setTargetLangs([]);
+            setSelectedForCopy({});
+            setSelectionOrder([]);
+          }}
         >
           Summarize
         </button>
@@ -445,7 +447,14 @@ export const TranslatorApp: React.FC = () => {
               ? 'bg-purple-500 text-white shadow-md' 
               : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
           }`}
-          onClick={() => setMode('generate')}
+          onClick={() => {
+            setMode('generate');
+            setResult(null);
+            setError(null);
+            setTargetLangs([]);
+            setSelectedForCopy({});
+            setSelectionOrder([]);
+          }}
         >
           Generate for SNS
         </button>
@@ -578,16 +587,19 @@ export const TranslatorApp: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium text-muted-foreground">To</label>
                     <div className="mt-1 flex flex-wrap gap-2">
-                      {PRIORITY_LANGUAGES.map(lang => (
-                        <Button
-                          key={lang.code}
-                          variant={targetLangs.includes(lang.code) ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => handleTargetLangClick(lang.code)}
-                        >
-                          {lang.name}
-                        </Button>
-                      ))}
+                      {userPreferredLanguages.map(langCode => {
+                        const lang = getLanguageByCode(langCode);
+                        return lang ? (
+                          <Button
+                            key={lang.code}
+                            variant={targetLangs.includes(lang.code) ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => handleTargetLangClick(lang.code)}
+                          >
+                            {lang.name}
+                          </Button>
+                        ) : null;
+                      })}
                     </div>
                     <div className="mt-2">
                       <Button
@@ -701,13 +713,13 @@ export const TranslatorApp: React.FC = () => {
                                 // SNS Content Generation Display
                                 (translation as any).snsContents ? (
                                   <div className="space-y-6">
-                                    {(translation as any).snsContents.map((sns: any, index: number) => (
+                                    {(translation as any).snsContents.map((sns: any) => (
                                       <div key={sns.platform} className="border rounded-lg p-4 bg-background">
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
                                           <h4 className="font-bold text-lg capitalize flex items-center gap-2">
                                             {sns.platform === 'youtube' && '📺'}
                                             {sns.platform === 'x' && '🐦'}
-                                            {sns.platform === 'facebook' && '📘'}
+                                            {sns.platform === 'instagram' && '📷'}
                                             {sns.platform === 'tiktok' && '🎵'}
                                             {sns.platform.toUpperCase()}
                                           </h4>
@@ -715,7 +727,12 @@ export const TranslatorApp: React.FC = () => {
                                             <Button
                                               size="sm"
                                               onClick={() => {
-                                                const content = `${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}\n\nhttps://www.ggmts.com/`
+                                                let content = '';
+                                                if (sns.platform === 'youtube') {
+                                                  content = `タイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n多言語翻訳:\n🇯🇵 ${sns.description || sns.content}\n🇹🇭 ${sns.description || sns.content}\n🇷🇺 ${sns.description || sns.content}\n🇲🇲 ${sns.description || sns.content}\n🇨🇳 ${sns.description || sns.content}\n\nハッシュタグ: ${sns.hashtags.join(' ')}\n\nタグ: ${sns.tags ? sns.tags.join(', ') : ''}`;
+                                                } else {
+                                                  content = `${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}\n\nhttps://www.ggmts.com/`;
+                                                }
                                                 navigator.clipboard.writeText(content)
                                               }}
                                               className="flex items-center gap-1"
@@ -723,22 +740,27 @@ export const TranslatorApp: React.FC = () => {
                                               <Copy className="w-4 h-4" />
                                               Copy
                                             </Button>
-                                            {(sns.platform === 'x' || sns.platform === 'facebook' || sns.platform === 'youtube' || sns.platform === 'tiktok') && (
+                                            {(sns.platform === 'x' || sns.platform === 'instagram' || sns.platform === 'youtube' || sns.platform === 'tiktok') && (
                                               <Button
                                                 size="sm"
                                                 variant="outline"
                                                 onClick={() => {
-                                                  const content = `${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}\n\nhttps://www.ggmts.com/`
+                                                  let content = '';
+                                                  if (sns.platform === 'youtube') {
+                                                    content = `タイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n多言語翻訳:\n🇯🇵 ${sns.description || sns.content}\n🇹🇭 ${sns.description || sns.content}\n🇷🇺 ${sns.description || sns.content}\n🇲🇲 ${sns.description || sns.content}\n🇨🇳 ${sns.description || sns.content}\n\nハッシュタグ: ${sns.hashtags.join(' ')}\n\nタグ: ${sns.tags ? sns.tags.join(', ') : ''}`;
+                                                  } else {
+                                                    content = `${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}\n\nhttps://www.ggmts.com/`;
+                                                  }
                                                   let shareUrl = ''
                                                   
                                                   switch (sns.platform) {
                                                     case 'x':
                                                       shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(content)}`
                                                       break
-                                                    case 'facebook':
-                                                      // Copy content to clipboard and open Facebook
+                                                    case 'instagram':
+                                                      // Copy content to clipboard and open Instagram
                                                       navigator.clipboard.writeText(content)
-                                                      shareUrl = 'https://www.facebook.com/'
+                                                      shareUrl = 'https://www.instagram.com/'
                                                       break
                                                     case 'youtube':
                                                       // Copy content to clipboard and open YouTube Studio
@@ -768,14 +790,45 @@ export const TranslatorApp: React.FC = () => {
                                             <p className="text-sm font-medium text-muted-foreground mb-1">Title:</p>
                                             <p className="text-base">{sns.title}</p>
                                           </div>
-                                          <div>
-                                            <p className="text-sm font-medium text-muted-foreground mb-1">Content:</p>
-                                            <p className="text-base whitespace-pre-wrap">{sns.content}</p>
-                                          </div>
+                                          
+                                          {/* YouTube specific content */}
+                                          {sns.platform === 'youtube' && sns.description && (
+                                            <div>
+                                              <p className="text-sm font-medium text-muted-foreground mb-1">Description:</p>
+                                              <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
+                                                <p className="text-xs text-gray-500 mb-2">この記事はhttps://www.ggmts.comで生成しました</p>
+                                                <p>{sns.description}</p>
+                                                <div className="mt-3 space-y-1">
+                                                  <p className="text-sm font-medium">🇯🇵 {sns.description}</p>
+                                                  <p className="text-sm">🇹🇭 {sns.description}</p>
+                                                  <p className="text-sm">🇷🇺 {sns.description}</p>
+                                                  <p className="text-sm">🇲🇲 {sns.description}</p>
+                                                  <p className="text-sm">🇨🇳 {sns.description}</p>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          )}
+                                          
+                                          {/* Regular content for other platforms */}
+                                          {sns.platform !== 'youtube' && sns.content && (
+                                            <div>
+                                              <p className="text-sm font-medium text-muted-foreground mb-1">Content:</p>
+                                              <p className="text-base whitespace-pre-wrap">{sns.content}</p>
+                                            </div>
+                                          )}
+                                          
                                           <div>
                                             <p className="text-sm font-medium text-muted-foreground mb-1">Hashtags:</p>
                                             <p className="text-base text-blue-600">{sns.hashtags.join(' ')}</p>
                                           </div>
+                                          
+                                          {/* YouTube tags */}
+                                          {sns.platform === 'youtube' && sns.tags && (
+                                            <div>
+                                              <p className="text-sm font-medium text-muted-foreground mb-1">Tags:</p>
+                                              <p className="text-base text-green-600">{sns.tags.join(', ')}</p>
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                     ))}
@@ -890,19 +943,4 @@ function CopyButtonWithFeedback({ text }: { text: string }) {
   );
 }
 
-// 再帰的にsummaryを表示するコンポーネント
-function SummaryList({ items }: { items: any[] }) {
-  if (!Array.isArray(items) || items.length === 0) return null;
-  return (
-    <ol className="list-decimal list-inside space-y-1">
-      {items.map((item, idx) => (
-        <li key={item.id || idx}>
-          {item.title}
-          {Array.isArray(item.children) && item.children.length > 0 && (
-            <SummaryList items={item.children} />
-          )}
-        </li>
-      ))}
-    </ol>
-  );
-} 
+// Removed unused SummaryList component 
