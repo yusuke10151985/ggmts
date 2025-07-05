@@ -728,11 +728,9 @@ Time / 時期・時間:
                                 text={mode === 'generate' && (translation as any).snsContents 
                                   ? (translation as any).snsContents.map((sns: any) => {
                                       if (sns.platform === 'youtube') {
-                                        return `${sns.platform.toUpperCase()}\nタイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
-                                      } else if (sns.platform === 'x') {
-                                        return `${sns.platform.toUpperCase()}\n${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}\n\nhttps://www.ggmts.com/`;
+                                        return `${sns.platform.toUpperCase()}\nタイトル: ${sns.title}\n\n説明: ${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
                                       } else {
-                                        return `${sns.platform.toUpperCase()}\nこの記事はhttps://www.ggmts.comで生成しました\n\n${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`;
+                                        return `${sns.platform.toUpperCase()}\n${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`;
                                       }
                                     }).join('\n\n---\n\n')
                                   : translation.text
@@ -761,13 +759,10 @@ Time / 時期・時間:
                                               onClick={() => {
                                                 let content = '';
                                                 if (sns.platform === 'youtube') {
-                                                  content = `タイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
-                                                } else if (sns.platform === 'x') {
-                                                  content = `${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}\n\nhttps://www.ggmts.com/`;
+                                                  content = `タイトル: ${sns.title}\n\n説明: ${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
                                                 } else {
-                                                  // Instagram, Facebook, TikTok: combine title + content with GGMTS prefix
-                                                  const combinedContent = `${sns.title}\n\n${sns.content}`;
-                                                  content = `この記事はhttps://www.ggmts.comで生成しました\n\n${combinedContent}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`;
+                                                  // All other platforms: combine title + content as displayed
+                                                  content = `${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`;
                                                 }
                                                 navigator.clipboard.writeText(content)
                                               }}
@@ -783,13 +778,10 @@ Time / 時期・時間:
                                                 onClick={() => {
                                                   let content = '';
                                                   if (sns.platform === 'youtube') {
-                                                    content = `タイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
-                                                  } else if (sns.platform === 'x') {
-                                                    content = `${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}\n\nhttps://www.ggmts.com/`;
+                                                    content = `タイトル: ${sns.title}\n\n説明: ${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
                                                   } else {
-                                                    // Instagram, Facebook, TikTok: combine title + content with GGMTS prefix
-                                                    const combinedContent = `${sns.title}\n\n${sns.content}`;
-                                                    content = `この記事はhttps://www.ggmts.comで生成しました\n\n${combinedContent}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`;
+                                                    // All other platforms: combine title + content as displayed
+                                                    content = `${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`;
                                                   }
                                                   let shareUrl = ''
                                                   
@@ -841,7 +833,6 @@ Time / 時期・時間:
                                             <div>
                                               <p className="text-sm font-medium text-muted-foreground mb-1">Description:</p>
                                               <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                                                <p className="text-xs text-gray-500 mb-2">この記事はhttps://www.ggmts.comで生成しました (コピー時に追加)</p>
                                                 <p>{sns.description}</p>
                                                 {sns.descriptionHashtags && Array.isArray(sns.descriptionHashtags) && (
                                                   <div className="mt-3">
@@ -858,9 +849,6 @@ Time / 時期・時間:
                                             <div>
                                               <p className="text-sm font-medium text-muted-foreground mb-1">Content:</p>
                                               <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                                                {sns.platform !== 'x' && (
-                                                  <p className="text-xs text-gray-500 mb-2">この記事はhttps://www.ggmts.comで生成しました (コピー時に追加)</p>
-                                                )}
                                                 <p>{sns.title}</p>
                                                 <br />
                                                 <p>{sns.content}</p>
