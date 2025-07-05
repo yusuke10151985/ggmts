@@ -458,18 +458,25 @@ export const TranslatorApp: React.FC = () => {
             // Set template text when generate mode is selected
             if (!inputText.trim()) {
               const template = `Place / 場所:
+/* e.g. Ishigaki Island, Okinawa / 例：沖縄 石垣島 */
 
 What to do / 何をする？:
+/* e.g. Snorkeling with colorful fish / 例：カラフルな魚たちとシュノーケリング */
 
 Feeling / 感じたこと・雰囲気:
+/* e.g. Like another world – so peaceful and healing / 例：まるで別世界みたいで、とても癒されました */
 
 With who / 誰と？:
+/* e.g. With my best friend / 例：大切な友人と一緒に */
 
 Special / 特別なこと:
+/* e.g. Spotted a rare blue starfish for the first time! / 例：初めて珍しい青いヒトデを見つけました！ */
 
 Tips / おすすめポイント・コツ:
+/* e.g. Morning is best for clear water and calm waves / 例：朝のほうが海が穏やかで透明度が高くおすすめです */
 
-Time / 時期・時間:`;
+Time / 時期・時間:
+/* e.g. Visited in October – perfect weather! / 例：10月に訪れました、最高の天気でした！ */`;
               setInputText(template);
             }
           }}
@@ -499,15 +506,7 @@ Time / 時期・時間:`;
                 <textarea
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                    placeholder={mode === 'translate' ? "Enter text to translate..." : mode === 'summarize' ? "Enter text to summarize..." : `Fill in each section with your content:
-
-Place / 場所: e.g. Ishigaki Island, Okinawa / 例：沖縄 石垣島
-What to do / 何をする？: e.g. Snorkeling with colorful fish / 例：カラフルな魚たちとシュノーケリング
-Feeling / 感じたこと・雰囲気: e.g. Like another world – so peaceful and healing / 例：まるで別世界みたいで、とても癒されました
-With who / 誰と？: e.g. With my best friend / 例：大切な友人と一緒に
-Special / 特別なこと: e.g. Spotted a rare blue starfish for the first time! / 例：初めて珍しい青いヒトデを見つけました！
-Tips / おすすめポイント・コツ: e.g. Morning is best for clear water and calm waves / 例：朝のほうが海が穏やかで透明度が高くおすすめです
-Time / 時期・時間: e.g. Visited in October – perfect weather! / 例：10月に訪れました、最高の天気でした！`}
+                    placeholder={mode === 'translate' ? "Enter text to translate..." : mode === 'summarize' ? "Enter text to summarize..." : "Click 'Generate for SNS' to load template, then fill in each section with your content..."}
                   className="w-full p-3 border border-input bg-transparent rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring resize-none transition-shadow"
                   rows={5}
                 />
@@ -727,9 +726,15 @@ Time / 時期・時間: e.g. Visited in October – perfect weather! / 例：10�
                               {/* 個別コピーボタン */}
                               <CopyButtonWithFeedback 
                                 text={mode === 'generate' && (translation as any).snsContents 
-                                  ? (translation as any).snsContents.map((sns: any) => 
-                                      `${sns.platform.toUpperCase()}\n${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`
-                                    ).join('\n\n---\n\n')
+                                  ? (translation as any).snsContents.map((sns: any) => {
+                                      if (sns.platform === 'youtube') {
+                                        return `${sns.platform.toUpperCase()}\nタイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
+                                      } else if (sns.platform === 'x') {
+                                        return `${sns.platform.toUpperCase()}\n${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}\n\nhttps://www.ggmts.com/`;
+                                      } else {
+                                        return `${sns.platform.toUpperCase()}\nこの記事はhttps://www.ggmts.comで生成しました\n\n${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`;
+                                      }
+                                    }).join('\n\n---\n\n')
                                   : translation.text
                                 } 
                               />
@@ -756,9 +761,13 @@ Time / 時期・時間: e.g. Visited in October – perfect weather! / 例：10�
                                               onClick={() => {
                                                 let content = '';
                                                 if (sns.platform === 'youtube') {
-                                                  content = `タイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n多言語翻訳:\n🇯🇵 ${sns.description || sns.content}\n🇹🇭 ${sns.description || sns.content}\n🇷🇺 ${sns.description || sns.content}\n🇲🇲 ${sns.description || sns.content}\n🇨🇳 ${sns.description || sns.content}\n\nハッシュタグ: ${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
-                                                } else {
+                                                  content = `タイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
+                                                } else if (sns.platform === 'x') {
                                                   content = `${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}\n\nhttps://www.ggmts.com/`;
+                                                } else {
+                                                  // Instagram, Facebook, TikTok: combine title + content with GGMTS prefix
+                                                  const combinedContent = `${sns.title}\n\n${sns.content}`;
+                                                  content = `この記事はhttps://www.ggmts.comで生成しました\n\n${combinedContent}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`;
                                                 }
                                                 navigator.clipboard.writeText(content)
                                               }}
@@ -774,9 +783,13 @@ Time / 時期・時間: e.g. Visited in October – perfect weather! / 例：10�
                                                 onClick={() => {
                                                   let content = '';
                                                   if (sns.platform === 'youtube') {
-                                                    content = `タイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n多言語翻訳:\n🇯🇵 ${sns.description || sns.content}\n🇹🇭 ${sns.description || sns.content}\n🇷🇺 ${sns.description || sns.content}\n🇲🇲 ${sns.description || sns.content}\n🇨🇳 ${sns.description || sns.content}\n\nハッシュタグ: ${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
+                                                    content = `タイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
+                                                  } else if (sns.platform === 'x') {
+                                                    content = `${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}\n\nhttps://www.ggmts.com/`;
                                                   } else {
-                                                    content = `${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}\n\nhttps://www.ggmts.com/`;
+                                                    // Instagram, Facebook, TikTok: combine title + content with GGMTS prefix
+                                                    const combinedContent = `${sns.title}\n\n${sns.content}`;
+                                                    content = `この記事はhttps://www.ggmts.comで生成しました\n\n${combinedContent}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`;
                                                   }
                                                   let shareUrl = ''
                                                   
@@ -840,16 +853,22 @@ Time / 時期・時間: e.g. Visited in October – perfect weather! / 例：10�
                                             </div>
                                           )}
                                           
-                                          {/* Regular content for other platforms */}
-                                          {sns.platform !== 'youtube' && sns.content && (
+                                          {/* Combined content for other platforms */}
+                                          {sns.platform !== 'youtube' && (
                                             <div>
                                               <p className="text-sm font-medium text-muted-foreground mb-1">Content:</p>
-                                              <p className="text-base whitespace-pre-wrap">{sns.content}</p>
+                                              <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
+                                                {sns.platform !== 'x' && (
+                                                  <p className="text-xs text-gray-500 mb-2">この記事はhttps://www.ggmts.comで生成しました (コピー時に追加)</p>
+                                                )}
+                                                <p>{sns.title}</p>
+                                                <br />
+                                                <p>{sns.content}</p>
+                                              </div>
                                             </div>
                                           )}
                                           
                                           <div>
-                                            <p className="text-sm font-medium text-muted-foreground mb-1">Hashtags:</p>
                                             <p className="text-base text-blue-600">{Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}</p>
                                           </div>
                                           
