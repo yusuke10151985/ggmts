@@ -832,13 +832,14 @@ Time / 時期・時間:`;
                                           </div>
                                         </div>
                                         <div className="space-y-3">
-                                          <div>
-                                            <p className="text-sm font-medium text-muted-foreground mb-1">Title:</p>
-                                            <p className="text-base">{sns.title}</p>
-                                          </div>
-                                          
                                           {/* YouTube specific content */}
-                                          {sns.platform === 'youtube' && sns.description && (
+                                          {sns.platform === 'youtube' && (
+                                            <>
+                                              <div>
+                                                <p className="text-sm font-medium text-muted-foreground mb-1">Title:</p>
+                                                <p className="text-base">{sns.title}</p>
+                                              </div>
+                                              {sns.description && (
                                             <div>
                                               <p className="text-sm font-medium text-muted-foreground mb-1">Description:</p>
                                               <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
@@ -851,6 +852,8 @@ Time / 時期・時間:`;
                                                 )}
                                               </div>
                                             </div>
+                                              )}
+                                            </>
                                           )}
                                           
                                           {/* Combined content for other platforms */}
@@ -858,16 +861,10 @@ Time / 時期・時間:`;
                                             <div>
                                               <p className="text-sm font-medium text-muted-foreground mb-1">Content:</p>
                                               <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                                                <p>{sns.title}</p>
-                                                <br />
                                                 <p>{sns.content}</p>
                                               </div>
                                             </div>
                                           )}
-                                          
-                                          <div>
-                                            <p className="text-base text-blue-600">{Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}</p>
-                                          </div>
                                           
                                           {/* YouTube tags */}
                                           {sns.platform === 'youtube' && sns.tags && Array.isArray(sns.tags) && (
