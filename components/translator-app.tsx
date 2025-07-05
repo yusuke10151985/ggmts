@@ -702,7 +702,7 @@ export const TranslatorApp: React.FC = () => {
                               <CopyButtonWithFeedback 
                                 text={mode === 'generate' && (translation as any).snsContents 
                                   ? (translation as any).snsContents.map((sns: any) => 
-                                      `${sns.platform.toUpperCase()}\n${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}`
+                                      `${sns.platform.toUpperCase()}\n${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`
                                     ).join('\n\n---\n\n')
                                   : translation.text
                                 } 
@@ -729,9 +729,9 @@ export const TranslatorApp: React.FC = () => {
                                               onClick={() => {
                                                 let content = '';
                                                 if (sns.platform === 'youtube') {
-                                                  content = `タイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n多言語翻訳:\n🇯🇵 ${sns.description || sns.content}\n🇹🇭 ${sns.description || sns.content}\n🇷🇺 ${sns.description || sns.content}\n🇲🇲 ${sns.description || sns.content}\n🇨🇳 ${sns.description || sns.content}\n\nハッシュタグ: ${sns.hashtags.join(' ')}\n\nタグ: ${sns.tags ? sns.tags.join(', ') : ''}`;
+                                                  content = `タイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n多言語翻訳:\n🇯🇵 ${sns.description || sns.content}\n🇹🇭 ${sns.description || sns.content}\n🇷🇺 ${sns.description || sns.content}\n🇲🇲 ${sns.description || sns.content}\n🇨🇳 ${sns.description || sns.content}\n\nハッシュタグ: ${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
                                                 } else {
-                                                  content = `${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}\n\nhttps://www.ggmts.com/`;
+                                                  content = `${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}\n\nhttps://www.ggmts.com/`;
                                                 }
                                                 navigator.clipboard.writeText(content)
                                               }}
@@ -747,7 +747,7 @@ export const TranslatorApp: React.FC = () => {
                                                 onClick={() => {
                                                   let content = '';
                                                   if (sns.platform === 'youtube') {
-                                                    content = `タイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n多言語翻訳:\n🇯🇵 ${sns.description || sns.content}\n🇹🇭 ${sns.description || sns.content}\n🇷🇺 ${sns.description || sns.content}\n🇲🇲 ${sns.description || sns.content}\n🇨🇳 ${sns.description || sns.content}\n\nハッシュタグ: ${sns.hashtags.join(' ')}\n\nタグ: ${sns.tags ? sns.tags.join(', ') : ''}`;
+                                                    content = `タイトル: ${sns.title}\n\n説明: この記事はhttps://www.ggmts.comで生成しました\n${sns.description || sns.content}\n\n多言語翻訳:\n🇯🇵 ${sns.description || sns.content}\n🇹🇭 ${sns.description || sns.content}\n🇷🇺 ${sns.description || sns.content}\n🇲🇲 ${sns.description || sns.content}\n🇨🇳 ${sns.description || sns.content}\n\nハッシュタグ: ${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
                                                   } else {
                                                     content = `${sns.title}\n\n${sns.content}\n\n${sns.hashtags.join(' ')}\n\nhttps://www.ggmts.com/`;
                                                   }
@@ -819,11 +819,11 @@ export const TranslatorApp: React.FC = () => {
                                           
                                           <div>
                                             <p className="text-sm font-medium text-muted-foreground mb-1">Hashtags:</p>
-                                            <p className="text-base text-blue-600">{sns.hashtags.join(' ')}</p>
+                                            <p className="text-base text-blue-600">{Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}</p>
                                           </div>
                                           
                                           {/* YouTube tags */}
-                                          {sns.platform === 'youtube' && sns.tags && (
+                                          {sns.platform === 'youtube' && sns.tags && Array.isArray(sns.tags) && (
                                             <div>
                                               <p className="text-sm font-medium text-muted-foreground mb-1">Tags:</p>
                                               <p className="text-base text-green-600">{sns.tags.join(', ')}</p>
