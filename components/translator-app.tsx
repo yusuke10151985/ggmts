@@ -458,25 +458,18 @@ export const TranslatorApp: React.FC = () => {
             // Set template text when generate mode is selected
             if (!inputText.trim()) {
               const template = `Place / 場所:
-/* e.g. Ishigaki Island, Okinawa / 例：沖縄 石垣島 */
 
 What to do / 何をする？:
-/* e.g. Snorkeling with colorful fish / 例：カラフルな魚たちとシュノーケリング */
 
 Feeling / 感じたこと・雰囲気:
-/* e.g. Like another world – so peaceful and healing / 例：まるで別世界みたいで、とても癒されました */
 
 With who / 誰と？:
-/* e.g. With my best friend / 例：大切な友人と一緒に */
 
 Special / 特別なこと:
-/* e.g. Spotted a rare blue starfish for the first time! / 例：初めて珍しい青いヒトデを見つけました！ */
 
 Tips / おすすめポイント・コツ:
-/* e.g. Morning is best for clear water and calm waves / 例：朝のほうが海が穏やかで透明度が高くおすすめです */
 
-Time / 時期・時間:
-/* e.g. Visited in October – perfect weather! / 例：10月に訪れました、最高の天気でした！ */`;
+Time / 時期・時間:`;
               setInputText(template);
             }
           }}
@@ -510,6 +503,22 @@ Time / 時期・時間:
                   className="w-full p-3 border border-input bg-transparent rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring resize-none transition-shadow"
                   rows={5}
                 />
+                
+                {/* SNS generation mode example guide */}
+                {mode === 'generate' && (
+                  <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">入力例 / Examples:</p>
+                    <div className="space-y-1 text-xs text-gray-500 dark:text-gray-500">
+                      <p><span className="font-medium">Place / 場所:</span> <span className="italic">e.g. Ishigaki Island, Okinawa / 例：沖縄 石垣島</span></p>
+                      <p><span className="font-medium">What to do / 何をする？:</span> <span className="italic">e.g. Snorkeling with colorful fish / 例：カラフルな魚たちとシュノーケリング</span></p>
+                      <p><span className="font-medium">Feeling / 感じたこと・雰囲気:</span> <span className="italic">e.g. Like another world – so peaceful and healing / 例：まるで別世界みたいで、とても癒されました</span></p>
+                      <p><span className="font-medium">With who / 誰と？:</span> <span className="italic">e.g. With my best friend / 例：大切な友人と一緒に</span></p>
+                      <p><span className="font-medium">Special / 特別なこと:</span> <span className="italic">e.g. Spotted a rare blue starfish for the first time! / 例：初めて珍しい青いヒトデを見つけました！</span></p>
+                      <p><span className="font-medium">Tips / おすすめポイント・コツ:</span> <span className="italic">e.g. Morning is best for clear water and calm waves / 例：朝のほうが海が穏やかで透明度が高くおすすめです</span></p>
+                      <p><span className="font-medium">Time / 時期・時間:</span> <span className="italic">e.g. Visited in October – perfect weather! / 例：10月に訪れました、最高の天気でした！</span></p>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Character count and limit warning */}
                 <div className="flex justify-between items-center mt-2 mb-2">
