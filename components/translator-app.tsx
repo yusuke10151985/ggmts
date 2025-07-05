@@ -454,6 +454,38 @@ export const TranslatorApp: React.FC = () => {
             setTargetLangs([]);
             setSelectedForCopy({});
             setSelectionOrder([]);
+            
+            // Set template text when generate mode is selected
+            if (!inputText.trim()) {
+              const template = `【Place / 場所】
+e.g. Ishigaki Island, Okinawa
+例：沖縄 石垣島
+
+【What to do / 何をする？】
+e.g. Snorkeling with colorful fish
+例：カラフルな魚たちとシュノーケリング
+
+【Feeling / 感じたこと・雰囲気】
+e.g. Like another world – so peaceful and healing
+例：まるで別世界みたいで、とても癒されました
+
+【With who / 誰と？】
+e.g. With my best friend
+例：大切な友人と一緒に
+
+【Special / 特別なこと】
+e.g. Spotted a rare blue starfish for the first time!
+例：初めて珍しい青いヒトデを見つけました！
+
+【Tips / おすすめポイント・コツ】
+e.g. Morning is best for clear water and calm waves.
+例：朝のほうが海が穏やかで透明度が高くおすすめです
+
+【Time / 時期・時間】
+e.g. Visited in October – perfect weather!
+例：10月に訪れました、最高の天気でした！`;
+              setInputText(template);
+            }
           }}
         >
           Generate for SNS
@@ -720,6 +752,7 @@ export const TranslatorApp: React.FC = () => {
                                             {sns.platform === 'youtube' && '📺'}
                                             {sns.platform === 'x' && '🐦'}
                                             {sns.platform === 'instagram' && '📷'}
+                                            {sns.platform === 'facebook' && '📘'}
                                             {sns.platform === 'tiktok' && '🎵'}
                                             {sns.platform.toUpperCase()}
                                           </h4>
@@ -740,7 +773,7 @@ export const TranslatorApp: React.FC = () => {
                                               <Copy className="w-4 h-4" />
                                               Copy
                                             </Button>
-                                            {(sns.platform === 'x' || sns.platform === 'instagram' || sns.platform === 'youtube' || sns.platform === 'tiktok') && (
+                                            {(sns.platform === 'x' || sns.platform === 'instagram' || sns.platform === 'facebook' || sns.platform === 'youtube' || sns.platform === 'tiktok') && (
                                               <Button
                                                 size="sm"
                                                 variant="outline"
@@ -761,6 +794,11 @@ export const TranslatorApp: React.FC = () => {
                                                       // Copy content to clipboard and open Instagram
                                                       navigator.clipboard.writeText(content)
                                                       shareUrl = 'https://www.instagram.com/'
+                                                      break
+                                                    case 'facebook':
+                                                      // Copy content to clipboard and open Facebook
+                                                      navigator.clipboard.writeText(content)
+                                                      shareUrl = 'https://www.facebook.com/'
                                                       break
                                                     case 'youtube':
                                                       // Copy content to clipboard and open YouTube Studio
@@ -796,15 +834,14 @@ export const TranslatorApp: React.FC = () => {
                                             <div>
                                               <p className="text-sm font-medium text-muted-foreground mb-1">Description:</p>
                                               <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                                                <p className="text-xs text-gray-500 mb-2">この記事はhttps://www.ggmts.comで生成しました</p>
+                                                <p className="text-xs text-gray-500 mb-2">この記事はhttps://www.ggmts.comで生成しました (コピー時に追加)</p>
                                                 <p>{sns.description}</p>
-                                                <div className="mt-3 space-y-1">
-                                                  <p className="text-sm font-medium">🇯🇵 {sns.description}</p>
-                                                  <p className="text-sm">🇹🇭 {sns.description}</p>
-                                                  <p className="text-sm">🇷🇺 {sns.description}</p>
-                                                  <p className="text-sm">🇲🇲 {sns.description}</p>
-                                                  <p className="text-sm">🇨🇳 {sns.description}</p>
-                                                </div>
+                                                {sns.descriptionHashtags && Array.isArray(sns.descriptionHashtags) && (
+                                                  <div className="mt-3">
+                                                    <p className="text-sm font-medium text-muted-foreground mb-1">Description Hashtags:</p>
+                                                    <p className="text-sm text-blue-600">{sns.descriptionHashtags.join(' ')}</p>
+                                                  </div>
+                                                )}
                                               </div>
                                             </div>
                                           )}

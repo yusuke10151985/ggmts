@@ -3,9 +3,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/authOptions'
 import { getTranslations as geminiTranslate } from '@/lib/services/geminiService'
 import { getTranslations as gptTranslate } from '@/lib/services/gptService'
+import prisma from '@/lib/prisma'
 
 interface SNSContent {
-  platform: 'youtube' | 'x' | 'instagram' | 'tiktok'
+  platform: 'youtube' | 'x' | 'instagram' | 'facebook' | 'tiktok'
   title: string
   content: string
   hashtags: string[]
@@ -52,21 +53,24 @@ export async function POST(request: NextRequest) {
     const generatePrompt = `
 キーワード: "${keyword}"
 
-以下の4つのSNSプラットフォーム向けのコンテンツを各言語で生成してください。
+以下の5つのSNSプラットフォーム向けのコンテンツを各言語で生成してください。
+
+重要：文字数はあくまで最大数です。入力情報から自然に生成し、無理やり文字数を増やさないでください。
 
 プラットフォーム別要件:
 
 1. **YouTube**
-a. **タイトル**: 先頭にシンプルでインパクトのあるワードを28文字以内。｜で区切ってサブタイトル。場所の情報がある場合は、先頭に国旗を入れる。最大半角100文字
-b. **説明**: 不明確な嘘情報は記載しない。国旗のみを含む5つの翻訳：🇯🇵 🇹🇭 🇷🇺 🇲🇲 🇨🇳。最大半角5,000文字（全角2,500文字）
-c. **ハッシュタグ**: タイトルに関係のある検索数の多いものを3つ。#Shortsは必ず含める。最大30個まで
-d. **タグ**: 1行のカンマ区切りリスト。# 記号は使用不可
+a. **タイトル**: 先頭にシンプルでインパクトのあるワードを28文字以内。｜で区切ってサブタイトル。場所の情報がある場合は、先頭に国旗を入れる。ハッシュタグはタイトルに関係のある検索数の多いものを3つ。#Shortsは必ず入れる。最大半角100文字
+b. **説明**: 先頭に「この記事はhttps://www.ggmts.comで生成しました」を記載。この内容は出力には表示されずコピー貼り付けの際に記載される。不明確な嘘情報は記載しない。Toで指定した言語のみで出力する。ハッシュタグは説明に関係のある検索数の多いものを30個まで。タイトルと異なるハッシュタグとする。最大半角5,000文字（全角2,500文字）
+c. **タグ**: 1行のカンマ区切りリスト。# 記号は使用不可
 
-2. **Twitter (X)**: YouTubeのタイトルと内容は同じ。最大全角140文字、半角280文字
+2. **Twitter (X)**: YouTubeのタイトルと内容は同じ。文字数は以下仕様の通り（説明項目は不要）。最後にhttps://www.ggmts.comを記載（一律23文字でカウントされます）この内容は出力には表示されずコピー貼り付けの際に記載される。最大全角140文字、半角280文字
 
-3. **Instagram**: YouTubeのタイトルと内容は同じ。冒頭の30文字でインパクトを与える。ハッシュタグは最大30個まで。全角・半角を問わず、最大2,200文字まで
+3. **Instagram**: YouTubeのタイトルと内容は同じ。文字数は以下仕様の通り。冒頭の30文字でインパクトを与える。（説明項目は不要）ハッシュタグは最大30個まで。全角・半角を問わず、最大2,200文字まで
 
-4. **TikTok**: タイトル(100文字以内)、キャプション(150文字以内)、ハッシュタグ5個
+4. **Facebook**: Instagramと同じ
+
+5. **TikTok**: YouTubeのタイトルと内容は同じ。文字数は以下仕様の通り。冒頭の70文字でインパクトを与える。（説明項目は不要）ハッシュタグは制限がないので多めに。全角最大150文字まで
 
 各プラットフォームの特性を考慮して、エンゲージメントが高くなるような内容にしてください。
 
@@ -81,6 +85,7 @@ JSONレスポンス形式:
           "title": "YouTubeタイトル",
           "description": "YouTube説明文",
           "hashtags": ["#Shorts", "#ハッシュタグ1", "#ハッシュタグ2"],
+          "descriptionHashtags": ["#説明用ハッシュタグ1", "#説明用ハッシュタグ2"],
           "tags": ["タグ1", "タグ2", "タグ3"]
         },
         {
@@ -96,6 +101,12 @@ JSONレスポンス形式:
           "hashtags": ["#ハッシュタグ1", "#ハッシュタグ2"]
         },
         {
+          "platform": "facebook",
+          "title": "Facebookタイトル",
+          "content": "Facebook投稿文",
+          "hashtags": ["#ハッシュタグ1", "#ハッシュタグ2"]
+        },
+        {
           "platform": "tiktok",
           "title": "TikTokタイトル",
           "content": "TikTokキャプション",
@@ -107,20 +118,40 @@ JSONレスポンス形式:
 }
 `
 
+    // 管理画面設定からAPIモデル設定を取得
+    const settings = await prisma.settings.findMany();
+    const getSetting = (key: string) => settings.find(s => s.key === key)?.value;
+    
+    // 生成モード用のモデル設定を取得
+    let model = getSetting('generate_api_model') || 'gemini-1.5-flash';
+    let provider = '';
+    let unitCost = 0.00001;
+    
+    // モデル名からプロバイダ判定
+    if (model.startsWith('gpt')) {
+      provider = 'openai';
+      unitCost = model === 'gpt-4o-mini' ? 0.001 / 1000 : 0.002 / 1000;
+    } else if (model.startsWith('gemini')) {
+      provider = 'google';
+      unitCost = model === 'gemini-1.5-flash' ? 0.0004 / 1000 : 0.0008 / 1000;
+    }
+    
+    console.log('🎨 Using model for generation:', { provider, model });
+    
     let result
     try {
-      // Try Gemini first
-      result = await geminiTranslate(generatePrompt, 'auto', targetLanguages || ['ja', 'en'], 'translate', 'gemini-1.5-flash')
-      console.log('✅ Gemini generation completed successfully')
-    } catch (geminiError) {
-      console.warn('⚠️ Gemini generation failed, trying GPT:', geminiError)
-      try {
-        result = await gptTranslate(generatePrompt, 'auto', targetLanguages || ['ja', 'en'], 'translate', 'gpt-4o-mini')
-        console.log('✅ GPT generation completed successfully')
-      } catch (gptError) {
-        console.error('❌ Both services failed:', { geminiError, gptError })
-        throw new Error('SNSコンテンツ生成に失敗しました')
+      if (provider === 'openai') {
+        console.log('Using OpenAI/GPT service for generation');
+        result = await gptTranslate(generatePrompt, 'auto', targetLanguages || ['ja', 'en'], 'translate', model);
+        console.log('✅ GPT generation completed successfully');
+      } else {
+        console.log('Using Google/Gemini service for generation');
+        result = await geminiTranslate(generatePrompt, 'auto', targetLanguages || ['ja', 'en'], 'translate', model);
+        console.log('✅ Gemini generation completed successfully');
       }
+    } catch (error) {
+      console.error('❌ Generation service failed:', error);
+      throw new Error('SNSコンテンツ生成に失敗しました');
     }
 
     // Log API usage for analytics
