@@ -247,6 +247,7 @@ export default function AdminDashboardPage() {
               <option value="">全種別</option>
               <option value="translate">translate</option>
               <option value="summarize">summarize</option>
+              <option value="generate">generate</option>
             </select>
           </div>
           <button type="submit" className="px-3 py-1 bg-blue-600 text-white rounded">絞り込み</button>
@@ -417,6 +418,27 @@ export default function AdminDashboardPage() {
                         {(() => {
                           try {
                             const parsed = typeof log.result === 'string' ? JSON.parse(log.result) : log.result;
+                            
+                            // Handle generate API response format
+                            if (log.apiType === 'generate' && parsed && parsed.translations && Array.isArray(parsed.translations)) {
+                              return parsed.translations.map((t: any, idx: number) => (
+                                <div key={idx} className="mb-1">
+                                  <div className="font-bold text-xs">{t.lang}</div>
+                                  {t.snsContents && Array.isArray(t.snsContents) ? (
+                                    <div className="text-xs">
+                                      {t.snsContents.slice(0, 2).map((sns: any, snsIdx: number) => (
+                                        <div key={snsIdx}>
+                                          <span className="font-semibold">{sns.platform}:</span> {sns.title || sns.content?.substring(0, 50)}...
+                                        </div>
+                                      ))}
+                                      {t.snsContents.length > 2 && <span className="text-gray-400">+{t.snsContents.length - 2} more</span>}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ));
+                            }
+                            
+                            // Handle translate/summarize API response format
                             if (parsed && parsed.translations && Array.isArray(parsed.translations)) {
                               return parsed.translations.map((t: any, idx: number) => (
                                 <div key={idx} className="mb-1">

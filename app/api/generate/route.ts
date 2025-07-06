@@ -157,25 +157,37 @@ JSONレスポンス形式:
     // Log API usage for analytics
     if (session?.user?.id) {
       try {
-        const tokens = JSON.stringify(result).length
-        const cost = tokens * 0.0001 // Estimated cost
+        const tokens = keyword.length + JSON.stringify(result).length
+        const cost = tokens * unitCost
         
-        await fetch(`${process.env.NEXTAUTH_URL}/api/admin/usage-logs`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: session.user.id,
-            apiType: 'generate',
-            model: 'gemini-1.5-flash',
-            inputText: keyword,
-            result: JSON.stringify(result),
-            tokens,
-            cost
-          })
-        })
+        // Check if user exists
+        const userExists = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { id: true }
+        });
+        
+        if (userExists) {
+          await prisma.apiUsageLog.create({
+            data: {
+              userId: session.user.id,
+              apiType: 'generate',
+              provider,
+              model,
+              tokens,
+              cost,
+              inputText: keyword.substring(0, 500),
+              result: JSON.stringify(result).substring(0, 1000),
+            }
+          });
+          console.log('✅ API usage logged for user:', session.user.id);
+        } else {
+          console.warn('User not found, skipping usage log:', session.user.id);
+        }
       } catch (logError) {
         console.warn('Failed to log API usage:', logError)
       }
+    } else {
+      console.warn('No authenticated user, skipping usage log');
     }
 
     return NextResponse.json(result)
