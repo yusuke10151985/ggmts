@@ -770,15 +770,17 @@ Time / 時期・時間:`;
                                                 if (sns.platform === 'youtube') {
                                                   content = `タイトル: ${sns.title}\n\n説明: ${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
                                                 } else {
-                                                  // All other platforms: combine title + content as displayed
-                                                  content = `${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`;
+                                                  // All other platforms: just content
+                                                  content = sns.content;
                                                 }
                                                 navigator.clipboard.writeText(content)
+                                                setCopyButtonText('✓ Copied')
+                                                setTimeout(() => setCopyButtonText('Copy'), 2000)
                                               }}
                                               className="flex items-center gap-1"
                                             >
                                               <Copy className="w-4 h-4" />
-                                              Copy
+                                              {copyButtonText}
                                             </Button>
                                             {(sns.platform === 'x' || sns.platform === 'instagram' || sns.platform === 'facebook' || sns.platform === 'youtube' || sns.platform === 'tiktok') && (
                                               <Button
@@ -789,8 +791,8 @@ Time / 時期・時間:`;
                                                   if (sns.platform === 'youtube') {
                                                     content = `タイトル: ${sns.title}\n\n説明: ${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
                                                   } else {
-                                                    // All other platforms: combine title + content as displayed
-                                                    content = `${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`;
+                                                    // All other platforms: just content
+                                                    content = sns.content;
                                                   }
                                                   let shareUrl = ''
                                                   
