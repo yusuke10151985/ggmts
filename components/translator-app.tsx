@@ -84,6 +84,7 @@ export const TranslatorApp: React.FC = () => {
   const [isHistoryVisible, setIsHistoryVisible] = useState(false)
   const [selectedForCopy, setSelectedForCopy] = useState<Record<string, boolean>>({})
   const [copyButtonText, setCopyButtonText] = useState('Copy Selected')
+  const [snsButtonStates, setSnsButtonStates] = useState<Record<string, string>>({})
   const [showMoreLangs, setShowMoreLangs] = useState(false)
   const [mode, setMode] = useState<TranslationMode>('translate')
   // Removed unused placeholderText state
@@ -778,13 +779,15 @@ Time / 時期・時間:`;
                                                   }
                                                 }
                                                 navigator.clipboard.writeText(content)
-                                                setCopyButtonText('✓ Copied')
-                                                setTimeout(() => setCopyButtonText('Copy'), 2000)
+                                                setSnsButtonStates(prev => ({ ...prev, [`${translation.lang}-${sns.platform}`]: '✓ Copied' }))
+                                                setTimeout(() => {
+                                                  setSnsButtonStates(prev => ({ ...prev, [`${translation.lang}-${sns.platform}`]: 'Copy' }))
+                                                }, 2000)
                                               }}
                                               className="flex items-center gap-1"
                                             >
                                               <Copy className="w-4 h-4" />
-                                              {copyButtonText}
+                                              {snsButtonStates[`${translation.lang}-${sns.platform}`] || 'Copy'}
                                             </Button>
                                             {(sns.platform === 'x' || sns.platform === 'instagram' || sns.platform === 'facebook' || sns.platform === 'youtube' || sns.platform === 'tiktok') && (
                                               <Button
