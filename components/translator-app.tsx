@@ -838,24 +838,31 @@ Time / 時期・時間:`;
                                               <div>
                                                 <p className="text-sm font-medium text-muted-foreground mb-1">Title:</p>
                                                 <p className="text-base">{sns.title}</p>
+                                                {sns.hashtags && Array.isArray(sns.hashtags) && (
+                                                  <p className="text-base text-blue-600 mt-1">{sns.hashtags.join(' ')}</p>
+                                                )}
                                               </div>
                                               {sns.description && (
                                             <div>
                                               <p className="text-sm font-medium text-muted-foreground mb-1">Description:</p>
                                               <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
                                                 <p>{sns.description}</p>
-                                                {sns.descriptionHashtags && Array.isArray(sns.descriptionHashtags) && (
-                                                  <div className="mt-3">
-                                                    <p className="text-sm font-medium text-muted-foreground mb-1">Description Hashtags:</p>
-                                                    <p className="text-sm text-blue-600">{sns.descriptionHashtags.join(' ')}</p>
-                                                  </div>
-                                                )}
                                               </div>
                                             </div>
                                               )}
                                             </>
                                           )}
                                           
+                                          
+                                          {/* Content for non-YouTube platforms */}
+                                          {sns.platform !== 'youtube' && (
+                                            <div>
+                                              <p className="text-sm font-medium text-muted-foreground mb-1">Content:</p>
+                                              <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
+                                                <p>{sns.content}</p>
+                                              </div>
+                                            </div>
+                                          )}
                                           
                                           {/* YouTube tags */}
                                           {sns.platform === 'youtube' && sns.tags && Array.isArray(sns.tags) && (
