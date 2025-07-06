@@ -772,6 +772,10 @@ Time / 時期・時間:`;
                                                 } else {
                                                   // All other platforms: just content
                                                   content = sns.content;
+                                                  // Ensure X/Twitter has the URL
+                                                  if (sns.platform === 'x' && !content.includes('https://www.ggmts.com')) {
+                                                    content += '\n\nhttps://www.ggmts.com';
+                                                  }
                                                 }
                                                 navigator.clipboard.writeText(content)
                                                 setCopyButtonText('✓ Copied')
@@ -862,6 +866,9 @@ Time / 時期・時間:`;
                                               <p className="text-sm font-medium text-muted-foreground mb-1">Content:</p>
                                               <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
                                                 <p>{sns.content}</p>
+                                                {sns.platform === 'x' && !sns.content.includes('https://www.ggmts.com') && (
+                                                  <p className="mt-2 text-blue-600">https://www.ggmts.com</p>
+                                                )}
                                               </div>
                                             </div>
                                           )}
