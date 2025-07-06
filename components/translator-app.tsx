@@ -768,7 +768,7 @@ Time / 時期・時間:`;
                                               onClick={() => {
                                                 let content = '';
                                                 if (sns.platform === 'youtube') {
-                                                  content = `タイトル: ${sns.title}\n\n説明: ${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
+                                                  content = `タイトル: ${sns.title}${Array.isArray(sns.hashtags) ? ' ' + sns.hashtags.join(' ') : ''}\n\n説明: ${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
                                                 } else {
                                                   // All other platforms: just content
                                                   content = sns.content;
