@@ -13,6 +13,26 @@ async function main() {
   });
 
   await prisma.settings.upsert({
+    where: { key: 'translate_api_model' },
+    update: {},
+    create: {
+      key: 'translate_api_model',
+      value: 'gemini-1.5-flash',
+      description: '翻訳で使用するAPIモデル',
+    },
+  });
+
+  await prisma.settings.upsert({
+    where: { key: 'summarize_api_model' },
+    update: {},
+    create: {
+      key: 'summarize_api_model',
+      value: 'gemini-1.5-flash',
+      description: '要約で使用するAPIモデル',
+    },
+  });
+
+  await prisma.settings.upsert({
     where: { key: 'generate_api_model' },
     update: {},
     create: {
