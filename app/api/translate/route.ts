@@ -108,8 +108,16 @@ export async function POST(request: NextRequest) {
     
     const session = await getServerSession(authOptions);
     const userRole = session?.user?.role ?? "free";
-    // SettingsからAPIモデル設定を取得
-    const settings = await prisma.settings.findMany();
+    
+    // SettingsからAPIモデル設定を取得（エラーハンドリング追加）
+    let settings: any[] = [];
+    try {
+      settings = await prisma.settings.findMany();
+    } catch (dbError) {
+      console.error('Database error fetching settings:', dbError);
+      // デフォルト値を使用
+      settings = [];
+    }
     const getSetting = (key: string) => settings.find(s => s.key === key)?.value;
     // roleごとのモデル設定
     let model = '';
@@ -182,10 +190,15 @@ export async function POST(request: NextRequest) {
       // ユーザーIDがある場合のみ記録（外部キー制約を満たすため）
       if (userId) {
         // ユーザーが存在するか確認
-        let userExists = await prisma.user.findUnique({
-          where: { id: userId },
-          select: { id: true, email: true }
-        });
+        let userExists = null;
+        try {
+          userExists = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true, email: true }
+          });
+        } catch (userCheckError) {
+          console.error('Error checking user existence:', userCheckError);
+        }
         
         if (userExists) {
           await prisma.apiUsageLog.create({

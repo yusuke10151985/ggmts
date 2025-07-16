@@ -12,8 +12,6 @@ const getOpenAIKey = (): string => {
   throw new Error("OPENAI_API_KEY environment variable is not set");
 };
 
-const OPENAI_API_KEY = getOpenAIKey();
-
 const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode: TranslationMode): string => {
   const sourceLanguageInstruction = sourceLang === 'auto'
     ? 'First, automatically detect the language of the following text.'
@@ -91,13 +89,14 @@ export const getTranslations = async (
   try {
     const modelName = model || 'gpt-4o-mini';
     console.log('🚀 Making OpenAI API request with model:', modelName);
-    console.log('🔑 API Key (first 10 chars):', OPENAI_API_KEY.substring(0, 10) + '...');
+    const apiKey = getOpenAIKey();
+    console.log('🔑 API Key (first 10 chars):', apiKey.substring(0, 10) + '...');
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: modelName,

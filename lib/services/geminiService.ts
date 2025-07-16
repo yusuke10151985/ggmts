@@ -12,8 +12,6 @@ const getApiKey = (): string => {
   throw new Error("GEMINI_API_KEY environment variable is not set. Please set it in your .env.local file");
 };
 
-const GEMINI_API_KEY = getApiKey();
-
 // Advanced JSON structure analysis
 const analyzeJsonStructure = (jsonText: string) => {
   const analysis = {
@@ -704,7 +702,8 @@ export const getTranslations = async (
   try {
     const modelName = model || 'gemini-1.5-flash';
     console.log('🚀 Making Gemini API request with model:', modelName);
-    console.log('🔑 API Key (first 10 chars):', GEMINI_API_KEY.substring(0, 10) + '...');
+    const apiKey = getApiKey();
+    console.log('🔑 API Key (first 10 chars):', apiKey.substring(0, 10) + '...');
     
     // Gemini workaround: If only one of ['th', 'ms', 'vi', 'my'] is requested, add 'en' to the request
     const problematicLangs = ['th', 'ms', 'vi', 'my'];
@@ -724,7 +723,7 @@ export const getTranslations = async (
 
     const prompt = getPrompt(text, sourceLang, actualTargetLangs, mode);
     
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
