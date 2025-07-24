@@ -409,17 +409,9 @@ export const TranslatorApp: React.FC = () => {
   // Handle real-time mode change
   const handleRealTimeModeChange = useCallback((isRealTime: boolean) => {
     console.log('🔄 Real-time mode change:', isRealTime)
-    // Only clear results if we're actually changing the mode, not during initialization
-    if (isRealTimeMode !== isRealTime) {
-      setIsRealTimeMode(isRealTime)
-      // Clear results when switching modes
-      setResult(null)
-      setError(null)
-    } else {
-      // Just update the state without clearing results
-      setIsRealTimeMode(isRealTime)
-    }
-  }, [isRealTimeMode])
+    setIsRealTimeMode(isRealTime)
+    // Don't clear results when switching modes - users should keep their results
+  }, [])
 
   // Handle copy in real-time mode with sequential copy support
   const [copyStates, setCopyStates] = useState<Record<string, boolean>>({});
