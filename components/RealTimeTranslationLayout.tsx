@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Loader2, Copy, Check } from 'lucide-react'
-import { TranslationResult, Language } from '@/lib/types'
+import { TranslationResult, Language, TranslationMode } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { UI_TEXT } from '@/lib/constants/uiText'
 import { SelectableText } from '@/components/SelectableText'
@@ -10,6 +10,7 @@ import { useBulkCopy } from '@/lib/hooks/useBulkCopy'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { getLanguageByCode } from '@/lib/constants'
+import { cleanSummaryText, validateSummaryFormat, addHierarchicalNumbering, debugSummaryStructure } from '@/lib/utils/summaryFormatter'
 
 interface RealTimeTranslationLayoutProps {
   text: string
@@ -22,6 +23,7 @@ interface RealTimeTranslationLayoutProps {
   onCopy: (text: string, lang: string) => void
   copyStates?: Record<string, boolean>
   sourceLanguage?: string
+  mode?: TranslationMode
 }
 
 export function RealTimeTranslationLayout({
@@ -35,9 +37,10 @@ export function RealTimeTranslationLayout({
   onCopy,
   copyStates = {},
   sourceLanguage,
+  mode = 'translate',
 }: RealTimeTranslationLayoutProps) {
-  const [primaryTranslation, setPrimaryTranslation] = useState<{ lang: string; text: string } | null>(null)
-  const [secondaryTranslation, setSecondaryTranslation] = useState<{ lang: string; text: string } | null>(null)
+  const [primaryTranslation, setPrimaryTranslation] = useState<{ lang: string; text: string; summary?: string[] } | null>(null)
+  const [secondaryTranslation, setSecondaryTranslation] = useState<{ lang: string; text: string; summary?: string[] } | null>(null)
   const [localCopyStates, setLocalCopyStates] = useState<Record<string, boolean>>({})
   const [bulkCopyText, setBulkCopyText] = useState('')
   
@@ -71,6 +74,26 @@ export function RealTimeTranslationLayout({
     setBulkCopyText(UI_TEXT.labels.copied)
     setTimeout(() => setBulkCopyText(''), 2000)
   }
+
+  // Helper to get display text based on mode
+  const getDisplayText = (translation: { text: string; summary?: string[] } | null): string => {
+    if (!translation) return '';
+    
+    if (mode === 'summarize' && translation.summary && Array.isArray(translation.summary)) {
+      // Clean and format summary
+      let summaryText = cleanSummaryText(translation.summary);
+      
+      // Validate hierarchical format
+      if (!validateSummaryFormat(summaryText)) {
+        console.warn('⚠️ Summary lacks hierarchical format in real-time mode, applying fallback formatting');
+        summaryText = addHierarchicalNumbering(summaryText);
+      }
+      
+      return summaryText;
+    }
+    
+    return translation.text;
+  };
 
   return (
     <>
@@ -168,7 +191,7 @@ export function RealTimeTranslationLayout({
                 </span>
                 <button
                   onClick={() => {
-                    onCopy(primaryTranslation.text, primaryTranslation.lang);
+                    onCopy(getDisplayText(primaryTranslation), primaryTranslation.lang);
                     setLocalCopyStates(prev => ({ ...prev, [primaryTranslation.lang]: true }));
                     setTimeout(() => {
                       setLocalCopyStates(prev => ({ ...prev, [primaryTranslation.lang]: false }));
@@ -184,14 +207,14 @@ export function RealTimeTranslationLayout({
                 </button>
               </div>
               <SelectableText
-                text={primaryTranslation.text}
+                text={getDisplayText(primaryTranslation)}
                 type="output"
                 lang={primaryTranslation.lang}
                 isSelected={isSelected(`output-${primaryTranslation.lang}`)}
                 selectionOrder={getSelectionOrder(`output-${primaryTranslation.lang}`)}
                 onToggle={() => toggleSelection({
                   id: `output-${primaryTranslation.lang}`,
-                  text: primaryTranslation.text,
+                  text: getDisplayText(primaryTranslation),
                   type: 'output',
                   lang: primaryTranslation.lang
                 })}
@@ -226,7 +249,7 @@ export function RealTimeTranslationLayout({
                   </span>
                   <button
                     onClick={() => {
-                      onCopy(secondaryTranslation.text, secondaryTranslation.lang);
+                      onCopy(getDisplayText(secondaryTranslation), secondaryTranslation.lang);
                       setLocalCopyStates(prev => ({ ...prev, [secondaryTranslation.lang]: true }));
                       setTimeout(() => {
                         setLocalCopyStates(prev => ({ ...prev, [secondaryTranslation.lang]: false }));
@@ -242,14 +265,14 @@ export function RealTimeTranslationLayout({
                   </button>
                 </div>
                 <SelectableText
-                  text={secondaryTranslation.text}
+                  text={getDisplayText(secondaryTranslation)}
                   type="output"
                   lang={secondaryTranslation.lang}
                   isSelected={isSelected(`output-${secondaryTranslation.lang}`)}
                   selectionOrder={getSelectionOrder(`output-${secondaryTranslation.lang}`)}
                   onToggle={() => toggleSelection({
                     id: `output-${secondaryTranslation.lang}`,
-                    text: secondaryTranslation.text,
+                    text: getDisplayText(secondaryTranslation),
                     type: 'output',
                     lang: secondaryTranslation.lang
                   })}
@@ -279,7 +302,7 @@ export function RealTimeTranslationLayout({
                 </span>
                 <button
                   onClick={() => {
-                    onCopy(translation.text, translation.lang);
+                    onCopy(getDisplayText(translation), translation.lang);
                     setLocalCopyStates(prev => ({ ...prev, [translation.lang]: true }));
                     setTimeout(() => {
                       setLocalCopyStates(prev => ({ ...prev, [translation.lang]: false }));
@@ -295,14 +318,14 @@ export function RealTimeTranslationLayout({
                 </button>
               </div>
               <SelectableText
-                text={translation.text}
+                text={getDisplayText(translation)}
                 type="output"
                 lang={translation.lang}
                 isSelected={isSelected(`output-${translation.lang}`)}
                 selectionOrder={getSelectionOrder(`output-${translation.lang}`)}
                 onToggle={() => toggleSelection({
                   id: `output-${translation.lang}`,
-                  text: translation.text,
+                  text: getDisplayText(translation),
                   type: 'output',
                   lang: translation.lang
                 })}

@@ -12,6 +12,66 @@ const getOpenAIKey = (): string => {
   throw new Error("OPENAI_API_KEY environment variable is not set");
 };
 
+// Enforce hierarchical format for summary arrays
+const enforceHierarchicalFormat = (summaryArray: string[]): string[] => {
+  console.log('🔧 Enforcing hierarchical format on summary');
+  
+  if (!Array.isArray(summaryArray)) return [];
+  
+  let hasHierarchicalFormat = false;
+  
+  // Check if any line already has hierarchical numbering
+  for (const line of summaryArray) {
+    if (/^\d+\./.test(line.trim()) || /^\d+\.\d+/.test(line.trim())) {
+      hasHierarchicalFormat = true;
+      break;
+    }
+  }
+  
+  // If already has format, just ensure consistency
+  if (hasHierarchicalFormat) {
+    console.log('✅ Summary already has hierarchical format');
+    return summaryArray;
+  }
+  
+  console.log('⚠️ Summary lacks hierarchical format, applying...');
+  
+  // Apply hierarchical numbering
+  let mainIndex = 1;
+  let subIndex = 1;
+  const formattedSummary: string[] = [];
+  
+  for (let i = 0; i < summaryArray.length; i++) {
+    const line = summaryArray[i].trim();
+    if (!line) continue;
+    
+    // Heuristics to determine if it's a main topic or subtopic
+    const isMainTopic = 
+      line.length < 60 || // Short lines are often headings
+      line.endsWith(':') || // Lines ending with colon are usually main topics
+      /^[A-Z]/.test(line) && !/^[a-z]/.test(line.charAt(1)); // Starts with capital
+    
+    if (isMainTopic || (i === 0) || (i > 0 && formattedSummary[formattedSummary.length - 1].match(/^\d+\./))) {
+      // It's a main point
+      formattedSummary.push(`${mainIndex}. ${line}`);
+      mainIndex++;
+      subIndex = 1;
+    } else {
+      // It's a sub-point
+      if (mainIndex === 1) {
+        // If no main point yet, create one
+        formattedSummary.push(`${mainIndex}. Overview`);
+        mainIndex++;
+      }
+      formattedSummary.push(`${mainIndex - 1}.${subIndex} ${line}`);
+      subIndex++;
+    }
+  }
+  
+  console.log('✅ Applied hierarchical format to summary');
+  return formattedSummary;
+};
+
 const getPrompt = (text: string, sourceLang: string, targetLangs: string[], mode: TranslationMode): string => {
   const sourceLanguageInstruction = sourceLang === 'auto'
     ? 'First, automatically detect the language of the following text.'
@@ -153,6 +213,17 @@ export const getTranslations = async (
     // summary_markdownがあればsummary配列に変換
     if (parsedData && parsedData.summary_markdown && (!parsedData.summary || parsedData.summary.length === 0)) {
       parsedData.summary = parsedData.summary_markdown.split(/\r?\n/).filter((line: string) => line.trim());
+    }
+
+    // Format enforcement for summary mode
+    if (parsedData && Array.isArray(parsedData.translations)) {
+      parsedData.translations = parsedData.translations.map((t: any) => {
+        if (mode === 'summarize' && t.summary && Array.isArray(t.summary)) {
+          // Ensure each summary line has hierarchical numbering
+          t.summary = enforceHierarchicalFormat(t.summary);
+        }
+        return t;
+      });
     }
 
     if (parsedData && Array.isArray(parsedData.translations)) {

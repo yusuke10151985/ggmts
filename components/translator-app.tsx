@@ -671,6 +671,7 @@ ${UI_TEXT.template.time}:`;
                       onCopy={handleRealTimeCopy}
                       copyStates={copyStates}
                       sourceLanguage={sourceLang}
+                      mode={mode}
                     />
                   ) : (
                     // Normal mode layout

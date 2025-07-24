@@ -3,6 +3,44 @@
  */
 
 /**
+ * Clean and format summary text from array
+ */
+export const cleanSummaryText = (summaryArray: string[]): string => {
+  if (!Array.isArray(summaryArray)) return '';
+  
+  // Join the array and clean up any n/ artifacts
+  let text = summaryArray.join('\n');
+  
+  // Remove n/ artifacts
+  text = text.replace(/n\//g, '\n');
+  
+  // Process lines to ensure proper formatting and indentation
+  const lines = text.split('\n').map(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return '';
+    
+    // Check for hierarchical numbering patterns
+    // Main level: 1., 2., 3., etc.
+    if (/^\d+\.\s/.test(trimmed)) {
+      return trimmed;
+    }
+    // Sub level: 1.1, 1.2, 2.1, etc.
+    else if (/^\d+\.\d+\.?\s/.test(trimmed)) {
+      return '   ' + trimmed; // 3 spaces for sub-level
+    }
+    // Sub-sub level: 1.1.1, 1.1.2, etc.
+    else if (/^\d+\.\d+\.\d+\.?\s/.test(trimmed)) {
+      return '      ' + trimmed; // 6 spaces for sub-sub-level
+    }
+    
+    // If no numbering detected, return as-is
+    return trimmed;
+  });
+  
+  return lines.filter(line => line.trim()).join('\n');
+};
+
+/**
  * Format summary output with proper hierarchical indentation
  */
 export const formatSummaryOutput = (rawOutput: string): string => {

@@ -12,6 +12,69 @@ const getApiKey = (): string => {
   throw new Error("GEMINI_API_KEY environment variable is not set. Please set it in your .env.local file");
 };
 
+// Enforce hierarchical format for summary arrays
+const enforceHierarchicalFormat = (summaryArray: string[]): string[] => {
+  console.log('🔧 Enforcing hierarchical format on summary');
+  
+  if (!Array.isArray(summaryArray)) return [];
+  
+  let hasHierarchicalFormat = false;
+  
+  // Check if any line already has hierarchical numbering
+  for (const line of summaryArray) {
+    if (/^\d+\./.test(line.trim()) || /^\d+\.\d+/.test(line.trim())) {
+      hasHierarchicalFormat = true;
+      break;
+    }
+  }
+  
+  // If already has format, just ensure consistency
+  if (hasHierarchicalFormat) {
+    console.log('✅ Summary already has hierarchical format');
+    return summaryArray;
+  }
+  
+  console.log('⚠️ Summary lacks hierarchical format, applying...');
+  
+  // Apply hierarchical numbering
+  let mainIndex = 1;
+  let subIndex = 1;
+  const formattedSummary: string[] = [];
+  
+  for (let i = 0; i < summaryArray.length; i++) {
+    const line = summaryArray[i].trim();
+    if (!line) continue;
+    
+    // Heuristics to determine if it's a main topic or subtopic
+    const isMainTopic = 
+      line.length < 60 || // Short lines are often headings
+      line.endsWith(':') || // Lines ending with colon are usually main topics
+      /^[A-Z]/.test(line) && !/^[a-z]/.test(line.charAt(1)); // Starts with capital
+    
+    const nextLineIsRelated = i < summaryArray.length - 1 && 
+      summaryArray[i + 1].trim().length > line.length;
+    
+    if (isMainTopic || (i === 0) || (i > 0 && formattedSummary[formattedSummary.length - 1].match(/^\d+\./))) {
+      // It's a main point
+      formattedSummary.push(`${mainIndex}. ${line}`);
+      mainIndex++;
+      subIndex = 1;
+    } else {
+      // It's a sub-point
+      if (mainIndex === 1) {
+        // If no main point yet, create one
+        formattedSummary.push(`${mainIndex}. Overview`);
+        mainIndex++;
+      }
+      formattedSummary.push(`${mainIndex - 1}.${subIndex} ${line}`);
+      subIndex++;
+    }
+  }
+  
+  console.log('✅ Applied hierarchical format to summary');
+  return formattedSummary;
+};
+
 // Advanced JSON structure analysis
 const analyzeJsonStructure = (jsonText: string) => {
   const analysis = {
@@ -1061,6 +1124,13 @@ export const getTranslations = async (
           const numbered = lines.filter((line: string) => /^[0-9]+(\.[0-9]+)*[\.、．] /.test(line) || /^[0-9]+(\.[0-9]+)*[\.、．]/.test(line));
           return { ...t, summary: numbered.length > 0 ? numbered : lines };
         }
+        
+        // Format enforcement for summary mode
+        if (mode === 'summarize' && t.summary && Array.isArray(t.summary)) {
+          // Ensure each summary line has hierarchical numbering
+          t.summary = enforceHierarchicalFormat(t.summary);
+        }
+        
         return t;
       });
     }
