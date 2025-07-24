@@ -72,6 +72,23 @@ function flattenSummaryToText(items: any[], prefix = ''): string[] {
   return lines;
 }
 
+// Utility to clean and format summary text
+function cleanSummaryText(summaryArray: string[]): string {
+  if (!Array.isArray(summaryArray)) return '';
+  
+  // Join the array and clean up any n/ artifacts
+  let text = summaryArray.join('\n');
+  
+  // Remove n/ artifacts
+  text = text.replace(/n\//g, '\n');
+  
+  // Ensure proper formatting for numbered lists
+  // Fix lines that might have lost their structure
+  const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+  
+  return lines.join('\n');
+}
+
 // Multi-language notice text definitions
 const NOTICE_TEXTS: Record<string, string> = {
   ja: '【ご注意】本出力はAIによる機械翻訳・要約です。内容の正確性は保証されません。ご自身で必ずご確認ください。',
@@ -97,7 +114,6 @@ export const TranslatorApp: React.FC = () => {
   const [isRealTimeMode, setIsRealTimeMode] = useState(false)
   const apiProvider: ApiProvider = 'gpt'
   const abortControllerRef = useRef<AbortController | null>(null)
-  const executeTranslationRef = useRef<((text: string, source: string, targets: string[]) => Promise<void>) | null>(null)
   const { data: session, status } = useSession();
   const [selectionOrder, setSelectionOrder] = useState<string[]>([]);
 
@@ -158,7 +174,9 @@ export const TranslatorApp: React.FC = () => {
   }, [])
 
   const executeTranslation = useCallback(async (text: string, source: string, targets: string[]) => {
+    console.log('🚀 executeTranslation called with:', { text: text.substring(0, 50), source, targets })
     if (!text.trim()) {
+      console.log('❌ Empty text, returning')
       return
     }
 
@@ -243,6 +261,11 @@ export const TranslatorApp: React.FC = () => {
       setIsLoading(false)
       console.log('✅ Result state updated:', translationResult)
       
+      // Regression check: Ensure results are visible
+      if (!translationResult || translationResult.translations.length === 0) {
+        console.error('⚠️ REGRESSION WARNING: No translations in result!')
+      }
+      
       const newHistoryItem: HistoryItem = {
         id: new Date().toISOString(),
         inputText: text,
@@ -269,15 +292,25 @@ export const TranslatorApp: React.FC = () => {
     }
   }, [setHistory, handleResetSelections, apiProvider, mode])
 
-  useEffect(() => {
-    executeTranslationRef.current = executeTranslation
-  }, [executeTranslation])
-
-
   // Debug logging for result state
   useEffect(() => {
     console.log('🔄 Result state changed:', result)
-  }, [result])
+    console.log('🔄 isLoading:', isLoading)
+    console.log('🔄 isRealTimeMode:', isRealTimeMode)
+    console.log('🔄 Display condition met:', result && !isLoading && !isRealTimeMode)
+    
+    // Regression prevention: Warn if results exist but might not be displayed
+    if (result && result.translations && result.translations.length > 0 && !isLoading && !isRealTimeMode) {
+      // Check if results are actually visible in DOM
+      setTimeout(() => {
+        const resultsElement = document.querySelector('.bg-card.p-6.rounded-lg.border')
+        if (!resultsElement) {
+          console.error('🚨 CRITICAL: Results exist in state but not visible in DOM!')
+          console.error('🚨 This is a regression - results should be displayed!')
+        }
+      }, 100)
+    }
+  }, [result, isLoading, isRealTimeMode])
 
   const handleLoadHistory = (item: HistoryItem) => {
     setInputText(item.inputText)
@@ -368,7 +401,7 @@ export const TranslatorApp: React.FC = () => {
   }, [])
 
   // Execute button handler
-  const handleExecute = () => {
+  const handleExecute = useCallback(() => {
     console.log('🔘 Execute button clicked');
     console.log('🔍 Current state:', {
       session: !!session,
@@ -413,12 +446,9 @@ export const TranslatorApp: React.FC = () => {
     }
     
     console.log('✅ Starting translation execution');
-    if (executeTranslationRef.current) {
-      executeTranslationRef.current(inputText, sourceLang, targetLangs);
-    } else {
-      console.error('❌ executeTranslationRef.current is null');
-    }
-  };
+    // Call executeTranslation directly instead of using ref
+    executeTranslation(inputText, sourceLang, targetLangs);
+  }, [executeTranslation, inputText, sourceLang, targetLangs, mode, session, status]);
 
   // --- Mode toggle switch UI ---
   const ModeToggle = () => (
@@ -532,13 +562,16 @@ ${UI_TEXT.template.time}:`;
     <div className={`relative w-full min-h-screen ${mode === 'summarize' ? 'bg-green-50' : mode === 'generate' ? 'bg-purple-50' : 'bg-blue-50'}`}>
       <div className="flex-grow w-full pt-4 sm:pt-6 md:pt-8">
         <div className={cn(
-          "w-full px-2 sm:px-4 md:px-8 mx-auto",
-          showAds ? "max-w-7xl" : "max-w-full" // Wider layout when ads are hidden
+          "w-full px-2 sm:px-4 md:px-8",
+          showAds ? "max-w-7xl mx-auto" : "max-w-full" // Full width when ads are hidden
         )}>
-          <div className="flex flex-col xl:flex-row gap-4 w-full">
+          <div className={cn(
+            "flex gap-4 w-full",
+            showAds ? "flex-col xl:flex-row" : "flex-col" // Always vertical for full-width
+          )}>
             <main className={cn(
-              "flex-1 w-full",
-              !showAds && "xl:max-w-6xl xl:mx-auto" // Center content when no ads
+              "w-full",
+              showAds ? "flex-1" : "max-w-full" // Full width when no ads
             )}>
               <Card className="w-full">
                 <CardContent className="p-2 md:p-4 w-full">
@@ -557,6 +590,8 @@ ${UI_TEXT.template.time}:`;
                   <ModeToggle />
 
                   {/* Conditional rendering based on real-time mode */}
+                  {/* ⚠️ CRITICAL: DO NOT MODIFY WITHOUT TESTING NORMAL MODE! */}
+                  {/* Normal mode (when isRealTimeMode is false) MUST continue to work */}
                   {isRealTimeMode && (mode === 'translate' || mode === 'summarize') ? (
                     <RealTimeTranslationLayout
                       text={inputText}
@@ -577,8 +612,11 @@ ${UI_TEXT.template.time}:`;
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}
                         placeholder={mode === 'translate' ? UI_TEXT.placeholders.inputText : mode === 'summarize' ? UI_TEXT.placeholders.inputSummarize : UI_TEXT.placeholders.inputGenerate}
-                        className="w-full p-3 border border-input bg-transparent rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring resize-none transition-shadow"
-                        rows={5}
+                        className={cn(
+                          "w-full p-3 border border-input bg-transparent rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring resize-none transition-shadow",
+                          !showAds && "p-4" // Larger padding for admin/premier
+                        )}
+                        rows={showAds ? 5 : 8} // More rows for admin/premier
                       />
                       
                       {/* SNS generation mode example guide */}
@@ -705,6 +743,7 @@ ${UI_TEXT.template.time}:`;
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="bg-card p-6 rounded-lg border border-border shadow-sm mt-4"
+                      onAnimationStart={() => console.log('🎬 Result animation started')}
                     >
                       <div className="flex justify-between items-center mb-4">
                         <p className="text-sm text-muted-foreground">
@@ -903,12 +942,12 @@ ${UI_TEXT.template.time}:`;
                                   typeof (translation as any).summary[0] === 'string' ? (
                                     <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
                                       {(() => {
-                                        const summaryText = (translation as any).summary.join('\n');
+                                        const cleanedText = cleanSummaryText((translation as any).summary);
                                         // Debug log to check for n/ issue
-                                        if (summaryText.includes('n/')) {
-                                          console.warn('⚠️ Found n/ in summary:', summaryText);
+                                        if (cleanedText.includes('n/')) {
+                                          console.warn('⚠️ Found n/ in summary after cleaning:', cleanedText);
                                         }
-                                        return summaryText;
+                                        return cleanedText;
                                       })()}
                                     </pre>
                                   ) : (
