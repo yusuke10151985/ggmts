@@ -16,8 +16,11 @@ export function TranslationModeToggle({ onModeChange }: TranslationModeTogglePro
     const savedMode = localStorage.getItem('translationMode')
     const isRealTimeMode = savedMode === 'realtime'
     setIsRealTime(isRealTimeMode)
-    onModeChange?.(isRealTimeMode)
-  }, [])
+    // Only call onModeChange if explicitly provided
+    if (onModeChange) {
+      onModeChange(isRealTimeMode)
+    }
+  }, [onModeChange])
 
   const handleModeChange = (checked: boolean) => {
     setIsRealTime(checked)

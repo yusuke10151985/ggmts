@@ -101,7 +101,16 @@ export const TranslatorApp: React.FC = () => {
   const [inputText, setInputText] = useState('')
   const [sourceLang, setSourceLang] = useState('auto')
   const [targetLangs, setTargetLangs] = useState<string[]>(DEFAULT_TARGET_LANGUAGES)
-  const [result, setResult] = useState<TranslationResult | null>(null)
+  const [result, setResultInternal] = useState<TranslationResult | null>(null)
+  
+  // Wrap setResult to add debugging
+  const setResult = (newResult: TranslationResult | null) => {
+    console.trace('🔍 setResult called with:', newResult ? 'TranslationResult' : 'null')
+    if (newResult === null) {
+      console.error('⚠️ WARNING: Setting result to null!')
+    }
+    setResultInternal(newResult)
+  }
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [history, setHistory] = useLocalStorage<HistoryItem[]>('translationHistory', [])
@@ -145,6 +154,11 @@ export const TranslatorApp: React.FC = () => {
       isRealTimeMode
     });
   }, []);
+  
+  // Debug: Track mode changes
+  useEffect(() => {
+    console.log('🔄 Mode changed to:', mode)
+  }, [mode])
 
   // Debug: Important state change log
   useEffect(() => {
@@ -173,7 +187,7 @@ export const TranslatorApp: React.FC = () => {
     setSelectedForCopy({})
   }, [])
 
-  const executeTranslation = useCallback(async (text: string, source: string, targets: string[]) => {
+  const executeTranslation = async (text: string, source: string, targets: string[]) => {
     console.log('🚀 executeTranslation called with:', { text: text.substring(0, 50), source, targets })
     if (!text.trim()) {
       console.log('❌ Empty text, returning')
@@ -188,7 +202,7 @@ export const TranslatorApp: React.FC = () => {
 
     setIsLoading(true)
     setError(null)
-    handleResetSelections()
+    setSelectedForCopy({})
 
     try {
       let requestBody: any
@@ -257,9 +271,14 @@ export const TranslatorApp: React.FC = () => {
         throw new Error('Invalid response format from server')
       }
 
+      console.log('📊 About to set result:', translationResult)
+      console.trace('📊 Setting result from executeTranslation')
       setResult(translationResult)
+      console.log('📊 About to set loading false')
       setIsLoading(false)
       console.log('✅ Result state updated:', translationResult)
+      
+      // State update is complete at this point
       
       // Regression check: Ensure results are visible
       if (!translationResult || translationResult.translations.length === 0) {
@@ -277,6 +296,7 @@ export const TranslatorApp: React.FC = () => {
       }
 
       setHistory(prev => [newHistoryItem, ...prev.slice(0, 9)])
+      setSelectedForCopy({})
       console.log('✅ History updated with new item')
     } catch (e: unknown) {
       if (e instanceof Error && e.name === 'AbortError') {
@@ -290,7 +310,7 @@ export const TranslatorApp: React.FC = () => {
         abortControllerRef.current = null
       }
     }
-  }, [setHistory, handleResetSelections, apiProvider, mode])
+  }
 
   // Debug logging for result state
   useEffect(() => {
@@ -298,6 +318,11 @@ export const TranslatorApp: React.FC = () => {
     console.log('🔄 isLoading:', isLoading)
     console.log('🔄 isRealTimeMode:', isRealTimeMode)
     console.log('🔄 Display condition met:', result && !isLoading && !isRealTimeMode)
+    
+    // Stack trace to find what's clearing the result
+    if (result === null && !isLoading) {
+      console.trace('⚠️ Result was set to null')
+    }
     
     // Regression prevention: Warn if results exist but might not be displayed
     if (result && result.translations && result.translations.length > 0 && !isLoading && !isRealTimeMode) {
@@ -383,11 +408,18 @@ export const TranslatorApp: React.FC = () => {
 
   // Handle real-time mode change
   const handleRealTimeModeChange = useCallback((isRealTime: boolean) => {
-    setIsRealTimeMode(isRealTime)
-    // Clear results when switching modes
-    setResult(null)
-    setError(null)
-  }, [])
+    console.log('🔄 Real-time mode change:', isRealTime)
+    // Only clear results if we're actually changing the mode, not during initialization
+    if (isRealTimeMode !== isRealTime) {
+      setIsRealTimeMode(isRealTime)
+      // Clear results when switching modes
+      setResult(null)
+      setError(null)
+    } else {
+      // Just update the state without clearing results
+      setIsRealTimeMode(isRealTime)
+    }
+  }, [isRealTimeMode])
 
   // Handle copy in real-time mode with sequential copy support
   const [copyStates, setCopyStates] = useState<Record<string, boolean>>({});
@@ -401,7 +433,7 @@ export const TranslatorApp: React.FC = () => {
   }, [])
 
   // Execute button handler
-  const handleExecute = useCallback(() => {
+  const handleExecute = () => {
     console.log('🔘 Execute button clicked');
     console.log('🔍 Current state:', {
       session: !!session,
@@ -448,10 +480,10 @@ export const TranslatorApp: React.FC = () => {
     console.log('✅ Starting translation execution');
     // Call executeTranslation directly instead of using ref
     executeTranslation(inputText, sourceLang, targetLangs);
-  }, [executeTranslation, inputText, sourceLang, targetLangs, mode, session, status]);
+  };
 
   // --- Mode toggle switch UI ---
-  const ModeToggle = () => (
+  const ModeToggle = useMemo(() => () => (
     <div className="flex flex-col sm:flex-row items-center gap-4 my-4">
       {/* Mode buttons */}
       <div className="flex items-center bg-gray-200 dark:bg-gray-800 rounded-xl p-1 w-full sm:w-auto">
@@ -462,12 +494,14 @@ export const TranslatorApp: React.FC = () => {
               : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
           }`}
           onClick={() => {
-            setMode('translate');
-            setResult(null);
-            setError(null);
-            setTargetLangs([]);
-            setSelectedForCopy({});
-            setSelectionOrder([]);
+            if (mode !== 'translate') {
+              setMode('translate');
+              setResult(null);
+              setError(null);
+              setTargetLangs([]);
+              setSelectedForCopy({});
+              setSelectionOrder([]);
+            }
           }}
         >
           {UI_TEXT.modes.translate}
@@ -479,13 +513,15 @@ export const TranslatorApp: React.FC = () => {
               : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
           }`}
           onClick={() => {
-            setMode('summarize');
-            setResult(null);
-            setError(null);
-            setTargetLangs([]);
-            setSelectedForCopy({});
-            setSelectionOrder([]);
-            // Real-time mode is now enabled for summarize
+            if (mode !== 'summarize') {
+              setMode('summarize');
+              setResult(null);
+              setError(null);
+              setTargetLangs([]);
+              setSelectedForCopy({});
+              setSelectionOrder([]);
+              // Real-time mode is now enabled for summarize
+            }
           }}
         >
           {UI_TEXT.modes.summarize}
@@ -497,17 +533,18 @@ export const TranslatorApp: React.FC = () => {
               : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white'
           }`}
           onClick={() => {
-            setMode('generate');
-            setResult(null);
-            setError(null);
-            setTargetLangs([]);
-            setSelectedForCopy({});
-            setSelectionOrder([]);
-            setIsRealTimeMode(false); // Disable real-time mode for generate
-            
-            // Set template text when generate mode is selected
-            if (!inputText.trim()) {
-              const template = `${UI_TEXT.template.place}:
+            if (mode !== 'generate') {
+              setMode('generate');
+              setResult(null);
+              setError(null);
+              setTargetLangs([]);
+              setSelectedForCopy({});
+              setSelectionOrder([]);
+              setIsRealTimeMode(false); // Disable real-time mode for generate
+              
+              // Set template text when generate mode is selected
+              if (!inputText.trim()) {
+                const template = `${UI_TEXT.template.place}:
 
 ${UI_TEXT.template.whatToDo}:
 
@@ -520,7 +557,8 @@ ${UI_TEXT.template.special}:
 ${UI_TEXT.template.tips}:
 
 ${UI_TEXT.template.time}:`;
-              setInputText(template);
+                setInputText(template);
+              }
             }
           }}
         >
