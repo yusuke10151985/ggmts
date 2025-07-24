@@ -582,7 +582,7 @@ ${UI_TEXT.template.time}:`;
         <History className="w-8 h-8" />
       </button>
     </div>
-  );
+  ), [mode, inputText, isRealTimeMode, isHistoryVisible]);
 
   // Prepare language objects for RealTimeTranslationLayout
   const targetLanguageObjects = useMemo(() => {
