@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Copy, Check } from 'lucide-react'
 import { TranslationResult, Language } from '@/lib/types'
 import { cn } from '@/lib/utils'
+import { UI_TEXT } from '@/lib/constants/uiText'
 
 interface RealTimeTranslationLayoutProps {
   text: string
@@ -14,6 +15,7 @@ interface RealTimeTranslationLayoutProps {
   maxChars: number
   targetLanguages: Language[]
   onCopy: (text: string, lang: string) => void
+  copyStates?: Record<string, boolean>
 }
 
 export function RealTimeTranslationLayout({
@@ -25,9 +27,11 @@ export function RealTimeTranslationLayout({
   maxChars,
   targetLanguages,
   onCopy,
+  copyStates = {},
 }: RealTimeTranslationLayoutProps) {
   const [primaryTranslation, setPrimaryTranslation] = useState<{ lang: string; text: string } | null>(null)
   const [secondaryTranslation, setSecondaryTranslation] = useState<{ lang: string; text: string } | null>(null)
+  const [localCopyStates, setLocalCopyStates] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     if (results?.translations) {
@@ -53,7 +57,7 @@ export function RealTimeTranslationLayout({
           <textarea
             value={text}
             onChange={(e) => onTextChange(e.target.value)}
-            placeholder="翻訳したいテキストを入力..."
+            placeholder={UI_TEXT.placeholders.inputText}
             className={cn(
               "w-full h-full min-h-[300px] p-4 rounded-lg border resize-none",
               "bg-background text-foreground",
@@ -92,10 +96,20 @@ export function RealTimeTranslationLayout({
                   {targetLanguages.find(l => l.code === primaryTranslation.lang)?.name || primaryTranslation.lang}
                 </span>
                 <button
-                  onClick={() => onCopy(primaryTranslation.text, primaryTranslation.lang)}
-                  className="text-xs px-2 py-1 rounded hover:bg-muted transition-colors"
+                  onClick={() => {
+                    onCopy(primaryTranslation.text, primaryTranslation.lang);
+                    setLocalCopyStates(prev => ({ ...prev, [primaryTranslation.lang]: true }));
+                    setTimeout(() => {
+                      setLocalCopyStates(prev => ({ ...prev, [primaryTranslation.lang]: false }));
+                    }, 2000);
+                  }}
+                  className="text-xs px-2 py-1 rounded hover:bg-muted transition-colors flex items-center gap-1"
                 >
-                  コピー
+                  {(copyStates[primaryTranslation.lang] || localCopyStates[primaryTranslation.lang]) ? (
+                    <><Check className="w-3 h-3" /> {UI_TEXT.labels.copied}</>
+                  ) : (
+                    <><Copy className="w-3 h-3" /> {UI_TEXT.buttons.copy}</>
+                  )}
                 </button>
               </div>
               <div className="whitespace-pre-wrap">{primaryTranslation.text}</div>
@@ -103,7 +117,7 @@ export function RealTimeTranslationLayout({
           )}
           {!isTranslating && !error && !primaryTranslation && text.trim() && (
             <div className="text-muted-foreground text-sm">
-              翻訳結果がここに表示されます
+              {UI_TEXT.messages.noResults}
             </div>
           )}
         </div>
@@ -128,10 +142,20 @@ export function RealTimeTranslationLayout({
                     {targetLanguages.find(l => l.code === secondaryTranslation.lang)?.name || secondaryTranslation.lang}
                   </span>
                   <button
-                    onClick={() => onCopy(secondaryTranslation.text, secondaryTranslation.lang)}
-                    className="text-xs px-2 py-1 rounded hover:bg-muted transition-colors"
+                    onClick={() => {
+                      onCopy(secondaryTranslation.text, secondaryTranslation.lang);
+                      setLocalCopyStates(prev => ({ ...prev, [secondaryTranslation.lang]: true }));
+                      setTimeout(() => {
+                        setLocalCopyStates(prev => ({ ...prev, [secondaryTranslation.lang]: false }));
+                      }, 2000);
+                    }}
+                    className="text-xs px-2 py-1 rounded hover:bg-muted transition-colors flex items-center gap-1"
                   >
-                    コピー
+                    {(copyStates[secondaryTranslation.lang] || localCopyStates[secondaryTranslation.lang]) ? (
+                      <><Check className="w-3 h-3" /> {UI_TEXT.labels.copied}</>
+                    ) : (
+                      <><Copy className="w-3 h-3" /> {UI_TEXT.buttons.copy}</>
+                    )}
                   </button>
                 </div>
                 <div className="whitespace-pre-wrap">{secondaryTranslation.text}</div>
@@ -139,7 +163,7 @@ export function RealTimeTranslationLayout({
             )}
             {!isTranslating && !error && !secondaryTranslation && text.trim() && (
               <div className="text-muted-foreground text-sm">
-                翻訳結果がここに表示されます
+                {UI_TEXT.messages.noResults}
               </div>
             )}
           </div>
@@ -159,10 +183,20 @@ export function RealTimeTranslationLayout({
                   {targetLanguages.find(l => l.code === translation.lang)?.name || translation.lang}
                 </span>
                 <button
-                  onClick={() => onCopy(translation.text, translation.lang)}
-                  className="text-xs px-2 py-1 rounded hover:bg-muted transition-colors"
+                  onClick={() => {
+                    onCopy(translation.text, translation.lang);
+                    setLocalCopyStates(prev => ({ ...prev, [translation.lang]: true }));
+                    setTimeout(() => {
+                      setLocalCopyStates(prev => ({ ...prev, [translation.lang]: false }));
+                    }, 2000);
+                  }}
+                  className="text-xs px-2 py-1 rounded hover:bg-muted transition-colors flex items-center gap-1"
                 >
-                  コピー
+                  {(copyStates[translation.lang] || localCopyStates[translation.lang]) ? (
+                    <><Check className="w-3 h-3" /> {UI_TEXT.labels.copied}</>
+                  ) : (
+                    <><Copy className="w-3 h-3" /> {UI_TEXT.buttons.copy}</>
+                  )}
                 </button>
               </div>
               <div className="whitespace-pre-wrap">{translation.text}</div>

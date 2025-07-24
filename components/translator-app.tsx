@@ -3,7 +3,8 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HistoryItem, Language, TranslationResult, TranslationMode } from '@/lib/types'
-import { FROM_LANGUAGES, OTHER_LANGUAGES, getLanguageByCode } from '@/lib/constants'
+import { getLanguageByCode, DEFAULT_TARGET_LANGUAGES } from '@/lib/constants'
+import { UI_TEXT } from '@/lib/constants/uiText'
 import { useLocalStorage } from '@/lib/hooks/useLocalStorage'
 import { useDebounceTranslation } from '@/lib/hooks/useDebounceTranslation'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { AdBanner } from '@/components/ad-banner'
 import { TranslationModeToggle } from '@/components/TranslationModeToggle'
 import { RealTimeTranslationLayout } from '@/components/RealTimeTranslationLayout'
+import { LanguageSelector } from '@/components/LanguageSelector'
 import { 
   History, 
   Copy, 
@@ -29,7 +31,7 @@ type ApiProvider = 'gemini' | 'gpt'
 function enforceSummaryStructure(summary: any[], parentId: string = ''): any[] {
   if (!Array.isArray(summary)) return [];
   return summary.map((item, idx) => {
-    // 文字列の場合はtitleに格納
+    // If it's a string, store it as title
     if (typeof item === 'string') {
       return {
         id: parentId ? `${parentId}.${idx + 1}` : `${idx + 1}`,
@@ -37,7 +39,7 @@ function enforceSummaryStructure(summary: any[], parentId: string = ''): any[] {
         children: [],
       };
     }
-    // 既存のobject形式
+    // Existing object format
     let id = item.id;
     if (!id || typeof id !== 'string') {
       id = parentId ? `${parentId}.${idx + 1}` : `${idx + 1}`;
@@ -52,7 +54,7 @@ function enforceSummaryStructure(summary: any[], parentId: string = ''): any[] {
   });
 }
 
-// summary配列を再帰的に番号付きテキストに変換するユーティリティ
+// Utility to recursively convert summary array to numbered text
 function flattenSummaryToText(items: any[], prefix = ''): string[] {
   if (!Array.isArray(items)) return [];
   let lines: string[] = [];
@@ -68,7 +70,7 @@ function flattenSummaryToText(items: any[], prefix = ''): string[] {
   return lines;
 }
 
-// 多言語注意文定義
+// Multi-language notice text definitions
 const NOTICE_TEXTS: Record<string, string> = {
   ja: '【ご注意】本出力はAIによる機械翻訳・要約です。内容の正確性は保証されません。ご自身で必ずご確認ください。',
   en: '[Notice] This output is machine-translated/summarized by AI. Accuracy is not guaranteed. Please verify the content yourself.',
@@ -79,14 +81,14 @@ const NOTICE_TEXTS: Record<string, string> = {
 export const TranslatorApp: React.FC = () => {
   const [inputText, setInputText] = useState('')
   const [sourceLang, setSourceLang] = useState('auto')
-  const [targetLangs, setTargetLangs] = useState<string[]>([])
+  const [targetLangs, setTargetLangs] = useState<string[]>(DEFAULT_TARGET_LANGUAGES)
   const [result, setResult] = useState<TranslationResult | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [history, setHistory] = useLocalStorage<HistoryItem[]>('translationHistory', [])
   const [isHistoryVisible, setIsHistoryVisible] = useState(false)
   const [selectedForCopy, setSelectedForCopy] = useState<Record<string, boolean>>({})
-  const [copyButtonText, setCopyButtonText] = useState('Copy Selected')
+  const [copyButtonText, setCopyButtonText] = useState<string>(UI_TEXT.buttons.copySelected)
   const [snsButtonStates, setSnsButtonStates] = useState<Record<string, string>>({})
   const [showMoreLangs, setShowMoreLangs] = useState(false)
   const [mode, setMode] = useState<TranslationMode>('translate')
@@ -96,7 +98,6 @@ export const TranslatorApp: React.FC = () => {
   const executeTranslationRef = useRef<((text: string, source: string, targets: string[]) => Promise<void>) | null>(null)
   const { data: session, status } = useSession();
   const [selectionOrder, setSelectionOrder] = useState<string[]>([]);
-  const [userPreferredLanguages, setUserPreferredLanguages] = useState<string[]>(['en', 'ja', 'th']);
 
   // Use debounced translation hook for real-time mode
   const { 
@@ -108,25 +109,12 @@ export const TranslatorApp: React.FC = () => {
     sourceLang,
     targetLangs,
     mode,
-    enabled: isRealTimeMode && mode === 'translate',
+    enabled: isRealTimeMode && (mode === 'translate' || mode === 'summarize'),
     delay: 800
   })
 
-  // ユーザーの言語使用履歴を取得
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetch('/api/user-preferred-languages')
-        .then(res => res.json())
-        .then(data => {
-          if (data.preferredLanguages && data.preferredLanguages.length > 0) {
-            setUserPreferredLanguages(data.preferredLanguages.slice(0, 3));
-          }
-        })
-        .catch(err => console.log('Failed to fetch preferred languages:', err));
-    }
-  }, [session?.user?.id]);
 
-  // デバッグ用：コンポーネント初期化ログ
+  // Debug: Component initialization log
   useEffect(() => {
     console.log('🚀 TranslatorApp initialized');
     console.log('📊 Initial state:', {
@@ -140,7 +128,7 @@ export const TranslatorApp: React.FC = () => {
     });
   }, []);
 
-  // デバッグ用：重要なstate変更のログ
+  // Debug: Important state change log
   useEffect(() => {
     console.log('🔄 State changed:', {
       inputTextLength: inputText.length,
@@ -283,19 +271,6 @@ export const TranslatorApp: React.FC = () => {
     executeTranslationRef.current = executeTranslation
   }, [])
 
-  const handleTargetLangClick = useCallback((langCode: string) => {
-    const newTargetLangs = targetLangs.includes(langCode)
-      ? targetLangs.filter(l => l !== langCode)
-      : [...targetLangs, langCode]
-
-    setTargetLangs(newTargetLangs)
-
-    if (newTargetLangs.length === 0) {
-      setResult(null)
-      setError(null)
-      return
-    }
-  }, [targetLangs, inputText, sourceLang])
 
   // Debug logging for result state
   useEffect(() => {
@@ -324,10 +299,10 @@ export const TranslatorApp: React.FC = () => {
       const next = { ...prev, [key]: !prev[key] };
       setSelectionOrder(order => {
         if (next[key]) {
-          // 選択時は末尾に追加
+          // When selected, add to the end
           return [...order, key].filter((v, i, arr) => arr.indexOf(v) === i);
         } else {
-          // 解除時は除外
+          // When deselected, remove from the list
           return order.filter(k => k !== key);
         }
       });
@@ -366,8 +341,8 @@ export const TranslatorApp: React.FC = () => {
     }
     
     navigator.clipboard.writeText(textToCopy.trim()).then(() => {
-      setCopyButtonText('Copied!');
-      setTimeout(() => setCopyButtonText('Copy Selected'), 2000);
+      setCopyButtonText(UI_TEXT.labels.copied);
+      setTimeout(() => setCopyButtonText(UI_TEXT.buttons.copySelected), 2000);
     });
   }
 
@@ -379,13 +354,18 @@ export const TranslatorApp: React.FC = () => {
     setError(null)
   }, [])
 
-  // Handle copy in real-time mode
+  // Handle copy in real-time mode with sequential copy support
+  const [copyStates, setCopyStates] = useState<Record<string, boolean>>({});
+  
   const handleRealTimeCopy = useCallback((text: string, lang: string) => {
-    navigator.clipboard.writeText(text)
-    // You could add toast notification here
+    navigator.clipboard.writeText(text);
+    setCopyStates(prev => ({ ...prev, [lang]: true }));
+    setTimeout(() => {
+      setCopyStates(prev => ({ ...prev, [lang]: false }));
+    }, 2000);
   }, [])
 
-  // 実行ボタンのハンドラ
+  // Execute button handler
   const handleExecute = () => {
     console.log('🔘 Execute button clicked');
     console.log('🔍 Current state:', {
@@ -423,7 +403,10 @@ export const TranslatorApp: React.FC = () => {
     const currentLimit = characterLimits[mode];
     if (inputText.length > currentLimit) {
       console.log('❌ Text exceeds character limit:', inputText.length, '>', currentLimit);
-      setError(`制限を超えています。${mode === 'translate' ? '翻訳' : mode === 'summarize' ? '要約' : '生成'}モードの上限は${currentLimit.toLocaleString()}です。現在: ${inputText.length.toLocaleString()}`);
+      setError(UI_TEXT.messages.characterLimitMessage
+        .replace('{mode}', UI_TEXT.modes[mode])
+        .replace('{limit}', currentLimit.toLocaleString())
+        .replace('{current}', inputText.length.toLocaleString()));
       return;
     }
     
@@ -431,7 +414,7 @@ export const TranslatorApp: React.FC = () => {
     executeTranslation(inputText, sourceLang, targetLangs);
   };
 
-  // --- 3つのトグルスイッチUI ---
+  // --- Mode toggle switch UI ---
   const ModeToggle = () => (
     <div className="flex flex-col sm:flex-row items-center gap-4 my-4">
       <div className="flex items-center bg-gray-200 dark:bg-gray-800 rounded-xl p-1 w-full sm:w-auto">
@@ -450,7 +433,7 @@ export const TranslatorApp: React.FC = () => {
             setSelectionOrder([]);
           }}
         >
-          Translate
+          {UI_TEXT.modes.translate}
         </button>
         <button
           className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg font-bold transition-all text-sm sm:text-base ${
@@ -465,10 +448,10 @@ export const TranslatorApp: React.FC = () => {
             setTargetLangs([]);
             setSelectedForCopy({});
             setSelectionOrder([]);
-            setIsRealTimeMode(false); // Disable real-time mode for summarize
+            // Real-time mode is now enabled for summarize
           }}
         >
-          Summarize
+          {UI_TEXT.modes.summarize}
         </button>
         <button
           className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg font-bold transition-all text-sm sm:text-base ${
@@ -487,30 +470,30 @@ export const TranslatorApp: React.FC = () => {
             
             // Set template text when generate mode is selected
             if (!inputText.trim()) {
-              const template = `Place / 場所:
+              const template = `${UI_TEXT.template.place}:
 
-What to do / 何をする？:
+${UI_TEXT.template.whatToDo}:
 
-Feeling / 感じたこと・雰囲気:
+${UI_TEXT.template.feeling}:
 
-With who / 誰と？:
+${UI_TEXT.template.withWho}:
 
-Special / 特別なこと:
+${UI_TEXT.template.special}:
 
-Tips / おすすめポイント・コツ:
+${UI_TEXT.template.tips}:
 
-Time / 時期・時間:`;
+${UI_TEXT.template.time}:`;
               setInputText(template);
             }
           }}
         >
-          Generate for SNS
+          {UI_TEXT.modes.generate}
         </button>
       </div>
       <button
         className="ml-auto w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-primary hover:bg-blue-100 dark:hover:bg-blue-900 transition"
         onClick={() => setIsHistoryVisible(v => !v)}
-        aria-label="Show translation history"
+        aria-label={UI_TEXT.tooltips.toggleHistory}
       >
         <History className="w-8 h-8" />
       </button>
@@ -533,97 +516,39 @@ Time / 時期・時間:`;
             <main className="flex-1 w-full">
               <Card className="w-full">
                 <CardContent className="p-2 md:p-4 w-full">
-                  {/* Language Selection - Now at the top */}
-                  <div className="mt-4 flex flex-col gap-4">
-                    <div>
-                      <label htmlFor="source-lang" className="block text-sm font-medium text-muted-foreground">From</label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <select
-                          id="source-lang"
-                          value={sourceLang}
-                          onChange={(e) => setSourceLang(e.target.value)}
-                          className="w-full pl-3 pr-8 py-1.5 text-sm border-border bg-background focus:outline-none focus:ring-primary focus:border-primary rounded-md h-[36px]"
-                        >
-                          <option value="auto">Auto-Detect</option>
-                          {FROM_LANGUAGES.map((lang) => (
-                            <option key={lang.code} value={lang.code}>
-                              {lang.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-muted-foreground">To</label>
-                      <div className="mt-1 flex flex-wrap gap-2">
-                        {userPreferredLanguages.map(langCode => {
-                          const lang = getLanguageByCode(langCode);
-                          return lang ? (
-                            <Button
-                              key={lang.code}
-                              variant={targetLangs.includes(lang.code) ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => handleTargetLangClick(lang.code)}
-                            >
-                              {lang.name}
-                            </Button>
-                          ) : null;
-                        })}
-                      </div>
-                      <div className="mt-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowMoreLangs(!showMoreLangs)}
-                        >
-                          {showMoreLangs ? 'Hide other languages' : 'Show more languages...'}
-                        </Button>
-
-                        <AnimatePresence>
-                          {showMoreLangs && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="mt-2 flex flex-wrap gap-2"
-                            >
-                              {OTHER_LANGUAGES.map(lang => (
-                                <Button
-                                  key={lang.code}
-                                  variant={targetLangs.includes(lang.code) ? 'default' : 'outline'}
-                                  size="sm"
-                                  onClick={() => handleTargetLangClick(lang.code)}
-                                >
-                                  {lang.name}
-                                </Button>
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </div>
+                  {/* Language Selection - Using new LanguageSelector component */}
+                  <div className="mt-4">
+                    <LanguageSelector
+                      sourceLang={sourceLang}
+                      targetLangs={targetLangs}
+                      onSourceLangChange={setSourceLang}
+                      onTargetLangChange={setTargetLangs}
+                      showMoreLangs={showMoreLangs}
+                      onShowMoreChange={setShowMoreLangs}
+                    />
                   </div>
 
                   <ModeToggle />
 
-                  {/* Real-time mode toggle - Only visible in translate mode */}
-                  {mode === 'translate' && (
+                  {/* Real-time mode toggle - Visible in translate and summarize modes */}
+                  {(mode === 'translate' || mode === 'summarize') && (
                     <div className="mb-4 flex justify-end">
                       <TranslationModeToggle onModeChange={handleRealTimeModeChange} />
                     </div>
                   )}
 
                   {/* Conditional rendering based on real-time mode */}
-                  {isRealTimeMode && mode === 'translate' ? (
+                  {isRealTimeMode && (mode === 'translate' || mode === 'summarize') ? (
                     <RealTimeTranslationLayout
                       text={inputText}
                       onTextChange={setInputText}
                       results={realtimeResults}
                       isTranslating={isRealtimeTranslating}
                       error={realtimeError}
-                      maxChars={8000}
+                      maxChars={mode === 'translate' ? 8000 : 12000}
                       targetLanguages={targetLanguageObjects}
                       onCopy={handleRealTimeCopy}
+                      copyStates={copyStates}
                     />
                   ) : (
                     // Normal mode layout
@@ -631,7 +556,7 @@ Time / 時期・時間:`;
                       <textarea
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}
-                        placeholder={mode === 'translate' ? "Enter text to translate..." : mode === 'summarize' ? "Enter text to summarize..." : "Click 'Generate for SNS' to load template, then fill in each section with your content..."}
+                        placeholder={mode === 'translate' ? UI_TEXT.placeholders.inputText : mode === 'summarize' ? UI_TEXT.placeholders.inputSummarize : UI_TEXT.placeholders.inputGenerate}
                         className="w-full p-3 border border-input bg-transparent rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring resize-none transition-shadow"
                         rows={5}
                       />
@@ -639,15 +564,15 @@ Time / 時期・時間:`;
                       {/* SNS generation mode example guide */}
                       {mode === 'generate' && (
                         <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
-                          <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">入力例 / Examples:</p>
+                          <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Examples:</p>
                           <div className="space-y-1 text-xs text-gray-500 dark:text-gray-500">
-                            <p><span className="font-medium">Place / 場所:</span> <span className="italic">e.g. Ishigaki Island, Okinawa / 例：沖縄 石垣島</span></p>
-                            <p><span className="font-medium">What to do / 何をする？:</span> <span className="italic">e.g. Snorkeling with colorful fish / 例：カラフルな魚たちとシュノーケリング</span></p>
-                            <p><span className="font-medium">Feeling / 感じたこと・雰囲気:</span> <span className="italic">e.g. Like another world – so peaceful and healing / 例：まるで別世界みたいで、とても癒されました</span></p>
-                            <p><span className="font-medium">With who / 誰と？:</span> <span className="italic">e.g. With my best friend / 例：大切な友人と一緒に</span></p>
-                            <p><span className="font-medium">Special / 特別なこと:</span> <span className="italic">e.g. Spotted a rare blue starfish for the first time! / 例：初めて珍しい青いヒトデを見つけました！</span></p>
-                            <p><span className="font-medium">Tips / おすすめポイント・コツ:</span> <span className="italic">e.g. Morning is best for clear water and calm waves / 例：朝のほうが海が穏やかで透明度が高くおすすめです</span></p>
-                            <p><span className="font-medium">Time / 時期・時間:</span> <span className="italic">e.g. Visited in October – perfect weather! / 例：10月に訪れました、最高の天気でした！</span></p>
+                            <p><span className="font-medium">{UI_TEXT.template.place}:</span> <span className="italic">{UI_TEXT.template.examples.place}</span></p>
+                            <p><span className="font-medium">{UI_TEXT.template.whatToDo}:</span> <span className="italic">{UI_TEXT.template.examples.whatToDo}</span></p>
+                            <p><span className="font-medium">{UI_TEXT.template.feeling}:</span> <span className="italic">{UI_TEXT.template.examples.feeling}</span></p>
+                            <p><span className="font-medium">{UI_TEXT.template.withWho}:</span> <span className="italic">{UI_TEXT.template.examples.withWho}</span></p>
+                            <p><span className="font-medium">{UI_TEXT.template.special}:</span> <span className="italic">{UI_TEXT.template.examples.special}</span></p>
+                            <p><span className="font-medium">{UI_TEXT.template.tips}:</span> <span className="italic">{UI_TEXT.template.examples.tips}</span></p>
+                            <p><span className="font-medium">{UI_TEXT.template.time}:</span> <span className="italic">{UI_TEXT.template.examples.time}</span></p>
                           </div>
                         </div>
                       )}
@@ -674,12 +599,12 @@ Time / 時期・時間:`;
                                 {textLength.toLocaleString()}/{currentLimit.toLocaleString()}
                                 {isOverLimit && (
                                   <span className="ml-2 text-red-600 dark:text-red-400 font-bold">
-                                    ({(textLength - currentLimit).toLocaleString()}超過)
+                                    (Exceeded by {(textLength - currentLimit).toLocaleString()})
                                   </span>
                                 )}
                                 {isNearLimit && !isOverLimit && (
                                   <span className="ml-2 text-yellow-600 dark:text-yellow-400">
-                                    (上限接近 {Math.round(percentage)}%)
+                                    (Near limit {Math.round(percentage)}%)
                                   </span>
                                 )}
                               </span>
@@ -688,7 +613,7 @@ Time / 時期・時間:`;
                         </div>
                         {inputText.length > (mode === 'translate' ? 8000 : mode === 'summarize' ? 12000 : 5000) && (
                           <div className="text-xs text-red-600 dark:text-red-400 font-medium">
-                            ⚠️ 制限を超えています
+                            ⚠️ {UI_TEXT.messages.characterLimit}
                           </div>
                         )}
                       </div>
@@ -706,8 +631,8 @@ Time / 時期・時間:`;
                           disabled={!inputText.trim()}
                         />
                         <label htmlFor="copy-source" className="ml-2 block text-sm text-muted-foreground flex items-center gap-2">
-                          Select source text for copy
-                          <span className="text-base text-primary font-bold ml-2">Original language</span>
+                          {UI_TEXT.tooltips.selectForCopy}
+                          <span className="text-base text-primary font-bold ml-2">{UI_TEXT.labels.sourceLanguage}</span>
                         </label>
                       </div>
                       
@@ -728,7 +653,7 @@ Time / 時期・時間:`;
                           disabled={isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading' || inputText.length > (mode === 'translate' ? 8000 : mode === 'summarize' ? 12000 : 5000)}
                           title={`Debug: isLoading=${isLoading}, hasText=${!!inputText.trim()}, targetLangs=${targetLangs.length}, status=${status}, charLimit=${inputText.length}/${mode === 'translate' ? 8000 : 12000}`}
                         >
-                          {isLoading ? (mode === 'summarize' ? 'Summarizing...' : mode === 'generate' ? 'Generating...' : 'Translating...') : (mode === 'summarize' ? 'Summarize' : mode === 'generate' ? 'Generate for SNS' : 'Translate')}
+                          {isLoading ? UI_TEXT.labels.loading : UI_TEXT.modes[mode]}
                         </Button>
                       </div>
                     </>
@@ -749,7 +674,7 @@ Time / 時期・時間:`;
                       <div className="flex flex-col items-center">
                         <div className="animate-spin mb-4 h-12 w-12 text-primary border-4 border-primary border-t-transparent rounded-full"></div>
                         <p className="text-lg font-semibold text-primary-foreground drop-shadow-md">
-                          {mode === 'summarize' ? 'Summarizing...' : mode === 'generate' ? 'Generating...' : 'Translating...'}
+                          {UI_TEXT.labels.loading}
                         </p>
                       </div>
                     </div>
@@ -763,15 +688,15 @@ Time / 時期・時間:`;
                     >
                       <div className="flex justify-between items-center mb-4">
                         <p className="text-sm text-muted-foreground">
-                          Detected language: <span className="font-semibold text-foreground">{getLanguageName(result.sourceLanguage)}</span>
+                          {UI_TEXT.labels.sourceLanguage}: <span className="font-semibold text-foreground">{getLanguageName(result.sourceLanguage)}</span>
                         </p>
                         <Button
                           onClick={handleMasterCopy}
                           disabled={selectedCount === 0}
                           className="inline-flex items-center gap-2"
                         >
-                          {copyButtonText === 'Copied!' ? <Check className="w-5 h-5"/> : <Copy className="w-5 h-5"/>}
-                          {copyButtonText === 'Copied!' ? 'Copied!' : `Copy Selected (${selectedCount})`}
+                          {copyButtonText === UI_TEXT.labels.copied ? <Check className="w-5 h-5"/> : <Copy className="w-5 h-5"/>}
+                          {copyButtonText === UI_TEXT.labels.copied ? UI_TEXT.labels.copied : `${UI_TEXT.buttons.copySelected} (${selectedCount})`}
                         </Button>
                       </div>
                       <div className="space-y-4">
@@ -802,7 +727,7 @@ Time / 時期・時間:`;
                                 text={mode === 'generate' && (translation as any).snsContents 
                                   ? (translation as any).snsContents.map((sns: any) => {
                                       if (sns.platform === 'youtube') {
-                                        return `${sns.platform.toUpperCase()}\nタイトル: ${sns.title}\n\n説明: ${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
+                                        return `${sns.platform.toUpperCase()}\n${UI_TEXT.labels.title}: ${sns.title}\n\n${UI_TEXT.labels.description}: ${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\n${UI_TEXT.labels.tags}: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
                                       } else {
                                         return `${sns.platform.toUpperCase()}\n${sns.title}\n\n${sns.content}\n\n${Array.isArray(sns.hashtags) ? sns.hashtags.join(' ') : ''}`;
                                       }
@@ -833,7 +758,7 @@ Time / 時期・時間:`;
                                               onClick={() => {
                                                 let content = '';
                                                 if (sns.platform === 'youtube') {
-                                                  content = `タイトル: ${sns.title}${Array.isArray(sns.hashtags) ? ' ' + sns.hashtags.join(' ') : ''}\n\n説明: ${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
+                                                  content = `${UI_TEXT.labels.title}: ${sns.title}${Array.isArray(sns.hashtags) ? ' ' + sns.hashtags.join(' ') : ''}\n\n${UI_TEXT.labels.description}: ${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\n${UI_TEXT.labels.tags}: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
                                                 } else {
                                                   // All other platforms: just content
                                                   content = sns.content;
@@ -843,15 +768,15 @@ Time / 時期・時間:`;
                                                   }
                                                 }
                                                 navigator.clipboard.writeText(content)
-                                                setSnsButtonStates(prev => ({ ...prev, [`${translation.lang}-${sns.platform}`]: '✓ Copied' }))
+                                                setSnsButtonStates(prev => ({ ...prev, [`${translation.lang}-${sns.platform}`]: `✓ ${UI_TEXT.labels.copied}` }))
                                                 setTimeout(() => {
-                                                  setSnsButtonStates(prev => ({ ...prev, [`${translation.lang}-${sns.platform}`]: 'Copy' }))
+                                                  setSnsButtonStates(prev => ({ ...prev, [`${translation.lang}-${sns.platform}`]: UI_TEXT.buttons.copy }))
                                                 }, 2000)
                                               }}
                                               className="flex items-center gap-1"
                                             >
                                               <Copy className="w-4 h-4" />
-                                              {snsButtonStates[`${translation.lang}-${sns.platform}`] || 'Copy'}
+                                              {snsButtonStates[`${translation.lang}-${sns.platform}`] || UI_TEXT.buttons.copy}
                                             </Button>
                                             {(sns.platform === 'x' || sns.platform === 'instagram' || sns.platform === 'facebook' || sns.platform === 'youtube' || sns.platform === 'tiktok') && (
                                               <Button
@@ -860,7 +785,7 @@ Time / 時期・時間:`;
                                                 onClick={() => {
                                                   let content = '';
                                                   if (sns.platform === 'youtube') {
-                                                    content = `タイトル: ${sns.title}\n\n説明: ${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\nタグ: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
+                                                    content = `${UI_TEXT.labels.title}: ${sns.title}\n\n${UI_TEXT.labels.description}: ${sns.description || sns.content}\n\n${Array.isArray(sns.descriptionHashtags) ? sns.descriptionHashtags.join(' ') : ''}\n\n${UI_TEXT.labels.tags}: ${Array.isArray(sns.tags) ? sns.tags.join(', ') : ''}`;
                                                   } else {
                                                     // All other platforms: just content
                                                     content = sns.content;
@@ -899,7 +824,7 @@ Time / 時期・時間:`;
                                                 }}
                                                 className="flex items-center gap-1"
                                               >
-                                                📤 Share
+                                                📤 {UI_TEXT.snsButtons.share}
                                               </Button>
                                             )}
                                           </div>
@@ -909,7 +834,7 @@ Time / 時期・時間:`;
                                           {sns.platform === 'youtube' && (
                                             <>
                                               <div>
-                                                <p className="text-sm font-medium text-muted-foreground mb-1">Title:</p>
+                                                <p className="text-sm font-medium text-muted-foreground mb-1">{UI_TEXT.labels.title}:</p>
                                                 <p className="text-base">{sns.title}</p>
                                                 {sns.hashtags && Array.isArray(sns.hashtags) && (
                                                   <p className="text-base text-blue-600 mt-1">{sns.hashtags.join(' ')}</p>
@@ -917,7 +842,7 @@ Time / 時期・時間:`;
                                               </div>
                                               {sns.description && (
                                                 <div>
-                                                  <p className="text-sm font-medium text-muted-foreground mb-1">Description:</p>
+                                                  <p className="text-sm font-medium text-muted-foreground mb-1">{UI_TEXT.labels.description}:</p>
                                                   <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
                                                     <p>{sns.description}</p>
                                                   </div>
@@ -929,7 +854,7 @@ Time / 時期・時間:`;
                                           {/* Content for non-YouTube platforms */}
                                           {sns.platform !== 'youtube' && (
                                             <div>
-                                              <p className="text-sm font-medium text-muted-foreground mb-1">Content:</p>
+                                              <p className="text-sm font-medium text-muted-foreground mb-1">{UI_TEXT.labels.content}:</p>
                                               <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
                                                 <p>{sns.content}</p>
                                                 {sns.platform === 'x' && !sns.content.includes('https://www.ggmts.com') && (
@@ -942,7 +867,7 @@ Time / 時期・時間:`;
                                           {/* YouTube tags */}
                                           {sns.platform === 'youtube' && sns.tags && Array.isArray(sns.tags) && (
                                             <div>
-                                              <p className="text-sm font-medium text-muted-foreground mb-1">Tags:</p>
+                                              <p className="text-sm font-medium text-muted-foreground mb-1">{UI_TEXT.labels.tags}:</p>
                                               <p className="text-base text-green-600">{sns.tags.join(', ')}</p>
                                             </div>
                                           )}
@@ -951,7 +876,7 @@ Time / 時期・時間:`;
                                     ))}
                                   </div>
                                 ) : (
-                                  <div className="text-gray-400 italic">No SNS content available.</div>
+                                  <div className="text-gray-400 italic">{UI_TEXT.messages.noSnsContent}</div>
                                 )
                               ) : mode === 'summarize' ? (
                                 Array.isArray((translation as any).summary) && (translation as any).summary.length > 0 ? (
@@ -965,7 +890,7 @@ Time / 時期・時間:`;
                                     </pre>
                                   )
                                 ) : (
-                                  <div className="text-gray-400 italic">No summary available.</div>
+                                  <div className="text-gray-400 italic">{UI_TEXT.messages.noSummary}</div>
                                 )
                               ) : (
                                 <p className="text-foreground whitespace-pre-wrap">{translation.text}</p>
@@ -986,14 +911,14 @@ Time / 時期・時間:`;
                         className="bg-card p-6 rounded-lg border border-border shadow-sm mt-4"
                       >
                         <div className="flex justify-between items-center mb-4">
-                          <h2 className="text-xl font-semibold">History</h2>
+                          <h2 className="text-xl font-semibold">{UI_TEXT.history.title}</h2>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={handleClearHistory}
                             className="flex items-center gap-2 text-muted-foreground hover:text-destructive"
                           >
-                            <Trash2 className="w-4 h-4" /> Clear
+                            <Trash2 className="w-4 h-4" /> {UI_TEXT.history.clear}
                           </Button>
                         </div>
                         {history.length > 0 ? (
@@ -1010,7 +935,7 @@ Time / 時期・時間:`;
                             ))}
                           </ul>
                         ) : (
-                          <p className="text-muted-foreground text-center py-4">No translation history.</p>
+                          <p className="text-muted-foreground text-center py-4">{UI_TEXT.history.empty}</p>
                         )}
                       </motion.div>
                     )}
@@ -1055,7 +980,7 @@ function CopyButtonWithFeedback({ text }: { text: string }) {
       disabled={copied}
     >
       {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-      {copied ? 'Copied!' : 'Copy'}
+      {copied ? UI_TEXT.labels.copied : UI_TEXT.buttons.copy}
     </Button>
   );
 }

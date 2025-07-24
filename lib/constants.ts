@@ -55,4 +55,10 @@ const fromOtherLangs = allLanguages
 export const FROM_LANGUAGES: Language[] = [...fromPriorityLangs, ...fromOtherLangs];
 
 // A simple alphabetically sorted list for general purposes.
-export const SUPPORTED_LANGUAGES: Language[] = [...allLanguages].sort((a, b) => a.name.localeCompare(b.name)); 
+export const SUPPORTED_LANGUAGES: Language[] = [...allLanguages].sort((a, b) => a.name.localeCompare(b.name));
+
+// Use the same language list for both From and To selectors to ensure consistency
+export const UNIFIED_LANGUAGES: Language[] = FROM_LANGUAGES;
+
+// Default target languages
+export const DEFAULT_TARGET_LANGUAGES = ['en', 'th']; 

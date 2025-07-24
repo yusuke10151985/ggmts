@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { UI_TEXT } from '@/lib/constants/uiText'
 
 interface TranslationModeToggleProps {
   onModeChange?: (isRealTime: boolean) => void
@@ -32,7 +33,7 @@ export function TranslationModeToggle({ onModeChange }: TranslationModeTogglePro
         onCheckedChange={handleModeChange}
       />
       <Label htmlFor="translation-mode" className="text-sm font-medium">
-        {isRealTime ? 'リアルタイムモード' : '通常モード'}
+        {isRealTime ? UI_TEXT.modes.realtime : UI_TEXT.modes.normal}
       </Label>
     </div>
   )
