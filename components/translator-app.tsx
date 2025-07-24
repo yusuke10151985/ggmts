@@ -5,10 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { HistoryItem, Language, TranslationResult, TranslationMode } from '@/lib/types'
 import { FROM_LANGUAGES, OTHER_LANGUAGES, getLanguageByCode } from '@/lib/constants'
 import { useLocalStorage } from '@/lib/hooks/useLocalStorage'
+import { useDebounceTranslation } from '@/lib/hooks/useDebounceTranslation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { AdBanner } from '@/components/ad-banner'
+import { TranslationModeToggle } from '@/components/TranslationModeToggle'
+import { RealTimeTranslationLayout } from '@/components/RealTimeTranslationLayout'
 import { 
   History, 
   Copy, 
@@ -87,15 +90,27 @@ export const TranslatorApp: React.FC = () => {
   const [snsButtonStates, setSnsButtonStates] = useState<Record<string, string>>({})
   const [showMoreLangs, setShowMoreLangs] = useState(false)
   const [mode, setMode] = useState<TranslationMode>('translate')
-  // Removed unused placeholderText state
+  const [isRealTimeMode, setIsRealTimeMode] = useState(false)
   const apiProvider: ApiProvider = 'gpt'
-  // Removed unused isModeDropdownOpen state
-  // Removed unused modeDropdownRef
   const abortControllerRef = useRef<AbortController | null>(null)
   const executeTranslationRef = useRef<((text: string, source: string, targets: string[]) => Promise<void>) | null>(null)
   const { data: session, status } = useSession();
   const [selectionOrder, setSelectionOrder] = useState<string[]>([]);
   const [userPreferredLanguages, setUserPreferredLanguages] = useState<string[]>(['en', 'ja', 'th']);
+
+  // Use debounced translation hook for real-time mode
+  const { 
+    results: realtimeResults, 
+    isTranslating: isRealtimeTranslating, 
+    error: realtimeError 
+  } = useDebounceTranslation({
+    text: inputText,
+    sourceLang,
+    targetLangs,
+    mode,
+    enabled: isRealTimeMode && mode === 'translate',
+    delay: 800
+  })
 
   // ユーザーの言語使用履歴を取得
   useEffect(() => {
@@ -120,7 +135,8 @@ export const TranslatorApp: React.FC = () => {
       targetLangs,
       mode,
       session: !!session,
-      status
+      status,
+      isRealTimeMode
     });
   }, []);
 
@@ -130,9 +146,10 @@ export const TranslatorApp: React.FC = () => {
       inputTextLength: inputText.length,
       targetLangs,
       isLoading,
-      session: !!session
+      session: !!session,
+      isRealTimeMode
     });
-  }, [inputText, targetLangs, isLoading, session]);
+  }, [inputText, targetLangs, isLoading, session, isRealTimeMode]);
 
   useEffect(() => {
     const root = document.documentElement
@@ -145,8 +162,6 @@ export const TranslatorApp: React.FC = () => {
       root.classList.add('generate-mode')
     }
   }, [mode])
-
-  // Removed unused useEffect for dropdown
 
   const handleResetSelections = useCallback(() => {
     setSelectedForCopy({})
@@ -356,7 +371,19 @@ export const TranslatorApp: React.FC = () => {
     });
   }
 
-  // Auth UI moved to GlobalHeader component
+  // Handle real-time mode change
+  const handleRealTimeModeChange = useCallback((isRealTime: boolean) => {
+    setIsRealTimeMode(isRealTime)
+    // Clear results when switching modes
+    setResult(null)
+    setError(null)
+  }, [])
+
+  // Handle copy in real-time mode
+  const handleRealTimeCopy = useCallback((text: string, lang: string) => {
+    navigator.clipboard.writeText(text)
+    // You could add toast notification here
+  }, [])
 
   // 実行ボタンのハンドラ
   const handleExecute = () => {
@@ -438,6 +465,7 @@ export const TranslatorApp: React.FC = () => {
             setTargetLangs([]);
             setSelectedForCopy({});
             setSelectionOrder([]);
+            setIsRealTimeMode(false); // Disable real-time mode for summarize
           }}
         >
           Summarize
@@ -455,6 +483,7 @@ export const TranslatorApp: React.FC = () => {
             setTargetLangs([]);
             setSelectedForCopy({});
             setSelectionOrder([]);
+            setIsRealTimeMode(false); // Disable real-time mode for generate
             
             // Set template text when generate mode is selected
             if (!inputText.trim()) {
@@ -488,6 +517,14 @@ Time / 時期・時間:`;
     </div>
   );
 
+  // Prepare language objects for RealTimeTranslationLayout
+  const targetLanguageObjects = useMemo(() => {
+    return targetLangs.map(code => ({
+      code,
+      name: getLanguageName(code)
+    }))
+  }, [targetLangs])
+
   return (
     <div className={`relative w-full min-h-screen ${mode === 'summarize' ? 'bg-green-50' : mode === 'generate' ? 'bg-purple-50' : 'bg-blue-50'}`}>
       <div className="flex-grow w-full pt-4 sm:pt-6 md:pt-8">
@@ -496,191 +533,218 @@ Time / 時期・時間:`;
             <main className="flex-1 w-full">
               <Card className="w-full">
                 <CardContent className="p-2 md:p-4 w-full">
-                  <ModeToggle />
-                <textarea
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                    placeholder={mode === 'translate' ? "Enter text to translate..." : mode === 'summarize' ? "Enter text to summarize..." : "Click 'Generate for SNS' to load template, then fill in each section with your content..."}
-                  className="w-full p-3 border border-input bg-transparent rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring resize-none transition-shadow"
-                  rows={5}
-                />
-                
-                {/* SNS generation mode example guide */}
-                {mode === 'generate' && (
-                  <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">入力例 / Examples:</p>
-                    <div className="space-y-1 text-xs text-gray-500 dark:text-gray-500">
-                      <p><span className="font-medium">Place / 場所:</span> <span className="italic">e.g. Ishigaki Island, Okinawa / 例：沖縄 石垣島</span></p>
-                      <p><span className="font-medium">What to do / 何をする？:</span> <span className="italic">e.g. Snorkeling with colorful fish / 例：カラフルな魚たちとシュノーケリング</span></p>
-                      <p><span className="font-medium">Feeling / 感じたこと・雰囲気:</span> <span className="italic">e.g. Like another world – so peaceful and healing / 例：まるで別世界みたいで、とても癒されました</span></p>
-                      <p><span className="font-medium">With who / 誰と？:</span> <span className="italic">e.g. With my best friend / 例：大切な友人と一緒に</span></p>
-                      <p><span className="font-medium">Special / 特別なこと:</span> <span className="italic">e.g. Spotted a rare blue starfish for the first time! / 例：初めて珍しい青いヒトデを見つけました！</span></p>
-                      <p><span className="font-medium">Tips / おすすめポイント・コツ:</span> <span className="italic">e.g. Morning is best for clear water and calm waves / 例：朝のほうが海が穏やかで透明度が高くおすすめです</span></p>
-                      <p><span className="font-medium">Time / 時期・時間:</span> <span className="italic">e.g. Visited in October – perfect weather! / 例：10月に訪れました、最高の天気でした！</span></p>
+                  {/* Language Selection - Now at the top */}
+                  <div className="mt-4 flex flex-col gap-4">
+                    <div>
+                      <label htmlFor="source-lang" className="block text-sm font-medium text-muted-foreground">From</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <select
+                          id="source-lang"
+                          value={sourceLang}
+                          onChange={(e) => setSourceLang(e.target.value)}
+                          className="w-full pl-3 pr-8 py-1.5 text-sm border-border bg-background focus:outline-none focus:ring-primary focus:border-primary rounded-md h-[36px]"
+                        >
+                          <option value="auto">Auto-Detect</option>
+                          {FROM_LANGUAGES.map((lang) => (
+                            <option key={lang.code} value={lang.code}>
+                              {lang.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-muted-foreground">To</label>
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        {userPreferredLanguages.map(langCode => {
+                          const lang = getLanguageByCode(langCode);
+                          return lang ? (
+                            <Button
+                              key={lang.code}
+                              variant={targetLangs.includes(lang.code) ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => handleTargetLangClick(lang.code)}
+                            >
+                              {lang.name}
+                            </Button>
+                          ) : null;
+                        })}
+                      </div>
+                      <div className="mt-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowMoreLangs(!showMoreLangs)}
+                        >
+                          {showMoreLangs ? 'Hide other languages' : 'Show more languages...'}
+                        </Button>
+
+                        <AnimatePresence>
+                          {showMoreLangs && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="mt-2 flex flex-wrap gap-2"
+                            >
+                              {OTHER_LANGUAGES.map(lang => (
+                                <Button
+                                  key={lang.code}
+                                  variant={targetLangs.includes(lang.code) ? 'default' : 'outline'}
+                                  size="sm"
+                                  onClick={() => handleTargetLangClick(lang.code)}
+                                >
+                                  {lang.name}
+                                </Button>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
                   </div>
-                )}
-                
-                {/* Character count and limit warning */}
-                <div className="flex justify-between items-center mt-2 mb-2">
-                  <div className="text-xs text-muted-foreground">
-                    {(() => {
-                      const characterLimits = { translate: 8000, summarize: 12000, generate: 5000 };
-                      const currentLimit = characterLimits[mode];
-                      const textLength = inputText.length;
-                      const percentage = (textLength / currentLimit) * 100;
-                      const isOverLimit = textLength > currentLimit;
-                      const isNearLimit = percentage > 90;
-                      
-                      return (
-                        <span className={`font-medium ${
-                          isOverLimit 
-                            ? 'text-red-600 dark:text-red-400' 
-                            : isNearLimit 
-                              ? 'text-yellow-600 dark:text-yellow-400' 
-                              : 'text-muted-foreground'
-                        }`}>
-                          {textLength.toLocaleString()}/{currentLimit.toLocaleString()}
-                          {isOverLimit && (
-                            <span className="ml-2 text-red-600 dark:text-red-400 font-bold">
-                              ({(textLength - currentLimit).toLocaleString()}超過)
-                            </span>
-                          )}
-                          {isNearLimit && !isOverLimit && (
-                            <span className="ml-2 text-yellow-600 dark:text-yellow-400">
-                              (上限接近 {Math.round(percentage)}%)
-                            </span>
-                          )}
-                        </span>
-                      );
-                    })()}
-                  </div>
-                  {inputText.length > (mode === 'translate' ? 8000 : mode === 'summarize' ? 12000 : 5000) && (
-                    <div className="text-xs text-red-600 dark:text-red-400 font-medium">
-                      ⚠️ 制限を超えています
+
+                  <ModeToggle />
+
+                  {/* Real-time mode toggle - Only visible in translate mode */}
+                  {mode === 'translate' && (
+                    <div className="mb-4 flex justify-end">
+                      <TranslationModeToggle onModeChange={handleRealTimeModeChange} />
                     </div>
                   )}
-                </div>
-                
-                <div className="flex items-center mt-2">
-                    {selectionOrder.includes('source') && selectedForCopy['source'] && (
-                      <span className="text-3xl font-extrabold text-primary mr-2">{selectionOrder.indexOf('source') + 1}</span>
-                    )}
-                  <input
-                    type="checkbox"
-                    id="copy-source"
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                    checked={!!selectedForCopy['source']}
-                    onChange={() => handleToggleCopySelection('source')}
-                    disabled={!inputText.trim()}
-                  />
-                    <label htmlFor="copy-source" className="ml-2 block text-sm text-muted-foreground flex items-center gap-2">
-                    Select source text for copy
-                      <span className="text-base text-primary font-bold ml-2">Original language</span>
-                  </label>
-                </div>
-                
-                <div className="mt-4 flex flex-col gap-4">
-                  <div>
-                    <label htmlFor="source-lang" className="block text-sm font-medium text-muted-foreground">From</label>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex w-full gap-2">
-                    <select
-                      id="source-lang"
-                      value={sourceLang}
-                      onChange={(e) => setSourceLang(e.target.value)}
-                            className="w-1/2 min-w-0 pl-3 pr-8 py-1.5 text-sm border-border bg-background focus:outline-none focus:ring-primary focus:border-primary rounded-md h-[36px]"
-                    >
-                      <option value="auto">Auto-Detect</option>
-                      {FROM_LANGUAGES.map((lang) => (
-                        <option key={lang.code} value={lang.code}>
-                          {lang.name}
-                        </option>
-                      ))}
-                    </select>
-                          <Button
-                            onClick={(e) => {
-                              console.log('🔘 Button clicked!', e);
-                              console.log('🔍 Button state:', {
-                                isLoading,
-                                inputTextLength: inputText.length,
-                                inputTextTrimmed: inputText.trim().length,
-                                targetLangsLength: targetLangs.length,
-                                disabled: isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading' || inputText.length > (mode === 'translate' ? 8000 : mode === 'summarize' ? 12000 : 5000)
-                              });
-                              handleExecute();
-                            }}
-                            className={`w-1/2 min-w-0 px-4 py-1.5 text-sm font-bold ${mode === 'summarize' ? 'bg-green-500 hover:bg-green-600' : mode === 'generate' ? 'bg-purple-500 hover:bg-purple-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
-                            disabled={isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading' || inputText.length > (mode === 'translate' ? 8000 : mode === 'summarize' ? 12000 : 5000)}
-                            title={`Debug: isLoading=${isLoading}, hasText=${!!inputText.trim()}, targetLangs=${targetLangs.length}, status=${status}, charLimit=${inputText.length}/${mode === 'translate' ? 8000 : 12000}`}
-                          >
-                            {isLoading ? (mode === 'summarize' ? 'Summarizing...' : mode === 'generate' ? 'Generating...' : 'Translating...') : (mode === 'summarize' ? 'Summarize' : mode === 'generate' ? 'Generate for SNS' : 'Translate')}
-                          </Button>
+
+                  {/* Conditional rendering based on real-time mode */}
+                  {isRealTimeMode && mode === 'translate' ? (
+                    <RealTimeTranslationLayout
+                      text={inputText}
+                      onTextChange={setInputText}
+                      results={realtimeResults}
+                      isTranslating={isRealtimeTranslating}
+                      error={realtimeError}
+                      maxChars={8000}
+                      targetLanguages={targetLanguageObjects}
+                      onCopy={handleRealTimeCopy}
+                    />
+                  ) : (
+                    // Normal mode layout
+                    <>
+                      <textarea
+                        value={inputText}
+                        onChange={(e) => setInputText(e.target.value)}
+                        placeholder={mode === 'translate' ? "Enter text to translate..." : mode === 'summarize' ? "Enter text to summarize..." : "Click 'Generate for SNS' to load template, then fill in each section with your content..."}
+                        className="w-full p-3 border border-input bg-transparent rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring resize-none transition-shadow"
+                        rows={5}
+                      />
+                      
+                      {/* SNS generation mode example guide */}
+                      {mode === 'generate' && (
+                        <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
+                          <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">入力例 / Examples:</p>
+                          <div className="space-y-1 text-xs text-gray-500 dark:text-gray-500">
+                            <p><span className="font-medium">Place / 場所:</span> <span className="italic">e.g. Ishigaki Island, Okinawa / 例：沖縄 石垣島</span></p>
+                            <p><span className="font-medium">What to do / 何をする？:</span> <span className="italic">e.g. Snorkeling with colorful fish / 例：カラフルな魚たちとシュノーケリング</span></p>
+                            <p><span className="font-medium">Feeling / 感じたこと・雰囲気:</span> <span className="italic">e.g. Like another world – so peaceful and healing / 例：まるで別世界みたいで、とても癒されました</span></p>
+                            <p><span className="font-medium">With who / 誰と？:</span> <span className="italic">e.g. With my best friend / 例：大切な友人と一緒に</span></p>
+                            <p><span className="font-medium">Special / 特別なこと:</span> <span className="italic">e.g. Spotted a rare blue starfish for the first time! / 例：初めて珍しい青いヒトデを見つけました！</span></p>
+                            <p><span className="font-medium">Tips / おすすめポイント・コツ:</span> <span className="italic">e.g. Morning is best for clear water and calm waves / 例：朝のほうが海が穏やかで透明度が高くおすすめです</span></p>
+                            <p><span className="font-medium">Time / 時期・時間:</span> <span className="italic">e.g. Visited in October – perfect weather! / 例：10月に訪れました、最高の天気でした！</span></p>
+                          </div>
                         </div>
-                      </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground">To</label>
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      {userPreferredLanguages.map(langCode => {
-                        const lang = getLanguageByCode(langCode);
-                        return lang ? (
-                          <Button
-                            key={lang.code}
-                            variant={targetLangs.includes(lang.code) ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => handleTargetLangClick(lang.code)}
-                          >
-                            {lang.name}
-                          </Button>
-                        ) : null;
-                      })}
-                    </div>
-                    <div className="mt-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowMoreLangs(!showMoreLangs)}
-                      >
-                        {showMoreLangs ? 'Hide other languages' : 'Show more languages...'}
-                      </Button>
-
-                      <AnimatePresence>
-                        {showMoreLangs && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="mt-2 flex flex-wrap gap-2"
-                          >
-                            {OTHER_LANGUAGES.map(lang => (
-                              <Button
-                                key={lang.code}
-                                variant={targetLangs.includes(lang.code) ? 'default' : 'outline'}
-                                size="sm"
-                                onClick={() => handleTargetLangClick(lang.code)}
-                              >
-                                {lang.name}
-                              </Button>
-                            ))}
-                          </motion.div>
+                      )}
+                      
+                      {/* Character count and limit warning */}
+                      <div className="flex justify-between items-center mt-2 mb-2">
+                        <div className="text-xs text-muted-foreground">
+                          {(() => {
+                            const characterLimits = { translate: 8000, summarize: 12000, generate: 5000 };
+                            const currentLimit = characterLimits[mode];
+                            const textLength = inputText.length;
+                            const percentage = (textLength / currentLimit) * 100;
+                            const isOverLimit = textLength > currentLimit;
+                            const isNearLimit = percentage > 90;
+                            
+                            return (
+                              <span className={`font-medium ${
+                                isOverLimit 
+                                  ? 'text-red-600 dark:text-red-400' 
+                                  : isNearLimit 
+                                    ? 'text-yellow-600 dark:text-yellow-400' 
+                                    : 'text-muted-foreground'
+                              }`}>
+                                {textLength.toLocaleString()}/{currentLimit.toLocaleString()}
+                                {isOverLimit && (
+                                  <span className="ml-2 text-red-600 dark:text-red-400 font-bold">
+                                    ({(textLength - currentLimit).toLocaleString()}超過)
+                                  </span>
+                                )}
+                                {isNearLimit && !isOverLimit && (
+                                  <span className="ml-2 text-yellow-600 dark:text-yellow-400">
+                                    (上限接近 {Math.round(percentage)}%)
+                                  </span>
+                                )}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                        {inputText.length > (mode === 'translate' ? 8000 : mode === 'summarize' ? 12000 : 5000) && (
+                          <div className="text-xs text-red-600 dark:text-red-400 font-medium">
+                            ⚠️ 制限を超えています
+                          </div>
                         )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </div>
+                      </div>
+                      
+                      <div className="flex items-center mt-2">
+                        {selectionOrder.includes('source') && selectedForCopy['source'] && (
+                          <span className="text-3xl font-extrabold text-primary mr-2">{selectionOrder.indexOf('source') + 1}</span>
+                        )}
+                        <input
+                          type="checkbox"
+                          id="copy-source"
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          checked={!!selectedForCopy['source']}
+                          onChange={() => handleToggleCopySelection('source')}
+                          disabled={!inputText.trim()}
+                        />
+                        <label htmlFor="copy-source" className="ml-2 block text-sm text-muted-foreground flex items-center gap-2">
+                          Select source text for copy
+                          <span className="text-base text-primary font-bold ml-2">Original language</span>
+                        </label>
+                      </div>
+                      
+                      <div className="mt-4">
+                        <Button
+                          onClick={(e) => {
+                            console.log('🔘 Button clicked!', e);
+                            console.log('🔍 Button state:', {
+                              isLoading,
+                              inputTextLength: inputText.length,
+                              inputTextTrimmed: inputText.trim().length,
+                              targetLangsLength: targetLangs.length,
+                              disabled: isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading' || inputText.length > (mode === 'translate' ? 8000 : mode === 'summarize' ? 12000 : 5000)
+                            });
+                            handleExecute();
+                          }}
+                          className={`w-full px-4 py-2 text-sm font-bold ${mode === 'summarize' ? 'bg-green-500 hover:bg-green-600' : mode === 'generate' ? 'bg-purple-500 hover:bg-purple-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
+                          disabled={isLoading || !inputText.trim() || targetLangs.length === 0 || status === 'loading' || inputText.length > (mode === 'translate' ? 8000 : mode === 'summarize' ? 12000 : 5000)}
+                          title={`Debug: isLoading=${isLoading}, hasText=${!!inputText.trim()}, targetLangs=${targetLangs.length}, status=${status}, charLimit=${inputText.length}/${mode === 'translate' ? 8000 : 12000}`}
+                        >
+                          {isLoading ? (mode === 'summarize' ? 'Summarizing...' : mode === 'generate' ? 'Generating...' : 'Translating...') : (mode === 'summarize' ? 'Summarize' : mode === 'generate' ? 'Generate for SNS' : 'Translate')}
+                        </Button>
+                      </div>
+                    </>
+                  )}
               
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-destructive/20 text-destructive-foreground p-4 rounded-md border border-destructive/50"
-              >
-                {error}
-              </motion.div>
-            )}
+                  {error && !isRealTimeMode && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-destructive/20 text-destructive-foreground p-4 rounded-md border border-destructive/50 mt-4"
+                    >
+                      {error}
+                    </motion.div>
+                  )}
 
-            {isLoading && (
+                  {isLoading && !isRealTimeMode && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
                       <div className="flex flex-col items-center">
                         <div className="animate-spin mb-4 h-12 w-12 text-primary border-4 border-primary border-t-transparent rounded-full"></div>
@@ -689,50 +753,50 @@ Time / 時期・時間:`;
                         </p>
                       </div>
                     </div>
-            )}
+                  )}
 
-            {result && !isLoading && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-card p-6 rounded-lg border border-border shadow-sm"
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-sm text-muted-foreground">
-                    Detected language: <span className="font-semibold text-foreground">{getLanguageName(result.sourceLanguage)}</span>
-                  </p>
-                  <Button
-                    onClick={handleMasterCopy}
-                    disabled={selectedCount === 0}
-                    className="inline-flex items-center gap-2"
-                  >
-                    {copyButtonText === 'Copied!' ? <Check className="w-5 h-5"/> : <Copy className="w-5 h-5"/>}
-                    {copyButtonText === 'Copied!' ? 'Copied!' : `Copy Selected (${selectedCount})`}
-                  </Button>
-                </div>
-                <div className="space-y-4">
-                  {result.translations.map((translation) => (
+                  {result && !isLoading && !isRealTimeMode && (
                     <motion.div
-                      key={translation.lang}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="rounded-lg border bg-secondary"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-card p-6 rounded-lg border border-border shadow-sm mt-4"
                     >
-                      <div className="flex items-center p-3 border-b border-border">
+                      <div className="flex justify-between items-center mb-4">
+                        <p className="text-sm text-muted-foreground">
+                          Detected language: <span className="font-semibold text-foreground">{getLanguageName(result.sourceLanguage)}</span>
+                        </p>
+                        <Button
+                          onClick={handleMasterCopy}
+                          disabled={selectedCount === 0}
+                          className="inline-flex items-center gap-2"
+                        >
+                          {copyButtonText === 'Copied!' ? <Check className="w-5 h-5"/> : <Copy className="w-5 h-5"/>}
+                          {copyButtonText === 'Copied!' ? 'Copied!' : `Copy Selected (${selectedCount})`}
+                        </Button>
+                      </div>
+                      <div className="space-y-4">
+                        {result.translations.map((translation) => (
+                          <motion.div
+                            key={translation.lang}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="rounded-lg border bg-secondary"
+                          >
+                            <div className="flex items-center p-3 border-b border-border">
                               {selectionOrder.includes(translation.lang) && selectedForCopy[translation.lang] && (
                                 <span className="text-3xl font-extrabold text-primary mr-3">{selectionOrder.indexOf(translation.lang) + 1}</span>
                               )}
-                        <input
-                          type="checkbox"
-                          id={`copy-${translation.lang}`}
-                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                          checked={!!selectedForCopy[translation.lang]}
-                          onChange={() => handleToggleCopySelection(translation.lang)}
-                        />
+                              <input
+                                type="checkbox"
+                                id={`copy-${translation.lang}`}
+                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                checked={!!selectedForCopy[translation.lang]}
+                                onChange={() => handleToggleCopySelection(translation.lang)}
+                              />
                               <label htmlFor={`copy-${translation.lang}`} className="ml-3 flex-1 flex items-center gap-2">
-                          <h3 className="font-semibold text-foreground">{getLanguageName(translation.lang)}</h3>
+                                <h3 className="font-semibold text-foreground">{getLanguageName(translation.lang)}</h3>
                                 <span className="text-xs text-muted-foreground">{NOTICE_TEXTS[translation.lang] || NOTICE_TEXTS.default}</span>
-                        </label>
+                              </label>
                               {/* 個別コピーボタン */}
                               <CopyButtonWithFeedback 
                                 text={mode === 'generate' && (translation as any).snsContents 
@@ -746,8 +810,8 @@ Time / 時期・時間:`;
                                   : translation.text
                                 } 
                               />
-                      </div>
-                      <div className="p-4 min-h-[120px]">
+                            </div>
+                            <div className="p-4 min-h-[120px]">
                               {mode === 'generate' ? (
                                 // SNS Content Generation Display
                                 (translation as any).snsContents ? (
@@ -852,16 +916,15 @@ Time / 時期・時間:`;
                                                 )}
                                               </div>
                                               {sns.description && (
-                                            <div>
-                                              <p className="text-sm font-medium text-muted-foreground mb-1">Description:</p>
-                                              <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
-                                                <p>{sns.description}</p>
-                                              </div>
-                                            </div>
+                                                <div>
+                                                  <p className="text-sm font-medium text-muted-foreground mb-1">Description:</p>
+                                                  <div className="text-base whitespace-pre-wrap bg-gray-50 dark:bg-gray-800 p-3 rounded">
+                                                    <p>{sns.description}</p>
+                                                  </div>
+                                                </div>
                                               )}
                                             </>
                                           )}
-                                          
                                           
                                           {/* Content for non-YouTube platforms */}
                                           {sns.platform !== 'youtube' && (
@@ -905,65 +968,65 @@ Time / 時期・時間:`;
                                   <div className="text-gray-400 italic">No summary available.</div>
                                 )
                               ) : (
-                        <p className="text-foreground whitespace-pre-wrap">{translation.text}</p>
+                                <p className="text-foreground whitespace-pre-wrap">{translation.text}</p>
                               )}
+                            </div>
+                          </motion.div>
+                        ))}
                       </div>
                     </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            <AnimatePresence>
-              {isHistoryVisible && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="bg-card p-6 rounded-lg border border-border shadow-sm"
-                >
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">History</h2>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleClearHistory}
-                      className="flex items-center gap-2 text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" /> Clear
-                    </Button>
-                  </div>
-                  {history.length > 0 ? (
-                    <ul className="space-y-2 max-h-80 overflow-y-auto">
-                      {history.map(item => (
-                        <li
-                          key={item.id}
-                          onClick={() => handleLoadHistory(item)}
-                          className="p-3 rounded-md bg-secondary hover:bg-accent cursor-pointer transition-colors"
-                        >
-                          <p className="truncate font-medium text-foreground">{item.inputText}</p>
-                          <p className="text-xs text-muted-foreground">{item.timestamp}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-muted-foreground text-center py-4">No translation history.</p>
                   )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+
+                  <AnimatePresence>
+                    {isHistoryVisible && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-card p-6 rounded-lg border border-border shadow-sm mt-4"
+                      >
+                        <div className="flex justify-between items-center mb-4">
+                          <h2 className="text-xl font-semibold">History</h2>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleClearHistory}
+                            className="flex items-center gap-2 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" /> Clear
+                          </Button>
+                        </div>
+                        {history.length > 0 ? (
+                          <ul className="space-y-2 max-h-80 overflow-y-auto">
+                            {history.map(item => (
+                              <li
+                                key={item.id}
+                                onClick={() => handleLoadHistory(item)}
+                                className="p-3 rounded-md bg-secondary hover:bg-accent cursor-pointer transition-colors"
+                              >
+                                <p className="truncate font-medium text-foreground">{item.inputText}</p>
+                                <p className="text-xs text-muted-foreground">{item.timestamp}</p>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-muted-foreground text-center py-4">No translation history.</p>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </CardContent>
               </Card>
               
               <AdBanner title="Advertisement Area" className="h-24" />
-          </main>
+            </main>
 
-          <aside className="hidden xl:block w-48 flex-shrink-0 py-8">
-            <div className="sticky top-24 space-y-8">
-              <AdBanner title="Right Sidebar Ad" className="h-96" />
-              <AdBanner title="Right Sidebar Ad 2" className="h-64" />
-            </div>
-          </aside>
+            <aside className="hidden xl:block w-48 flex-shrink-0 py-8">
+              <div className="sticky top-24 space-y-8">
+                <AdBanner title="Right Sidebar Ad" className="h-96" />
+                <AdBanner title="Right Sidebar Ad 2" className="h-64" />
+              </div>
+            </aside>
           </div>
         </div>
       </div>
@@ -996,5 +1059,3 @@ function CopyButtonWithFeedback({ text }: { text: string }) {
     </Button>
   );
 }
-
-// Removed unused SummaryList component 
