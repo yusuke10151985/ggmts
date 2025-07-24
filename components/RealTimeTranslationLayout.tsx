@@ -74,28 +74,51 @@ export function RealTimeTranslationLayout({
 
   return (
     <>
-      {/* Top Controls - Source Language and Copy Selected Button */}
-      <div className="mb-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <p className="text-sm text-muted-foreground">
-            {(results?.sourceLanguage || sourceLanguage) && (
-              <>
-                {UI_TEXT.labels.sourceLanguage}: <span className="font-semibold text-foreground">{getLanguageByCode(results?.sourceLanguage || sourceLanguage || '')?.name || results?.sourceLanguage || sourceLanguage}</span>
-              </>
+      {/* Top Controls - Source Language, Bulk Copy Checkbox, and Copy Selected Button */}
+      <div className="mb-4 flex flex-col gap-2">
+        {/* Source Language */}
+        <p className="text-sm text-muted-foreground">
+          {(results?.sourceLanguage || sourceLanguage) && (
+            <>
+              {UI_TEXT.labels.sourceLanguage}: <span className="font-semibold text-foreground">{getLanguageByCode(results?.sourceLanguage || sourceLanguage || '')?.name || results?.sourceLanguage || sourceLanguage}</span>
+            </>
+          )}
+        </p>
+        
+        {/* Click to select for bulk copy - moved from input column */}
+        {text.trim() && (
+          <div className="flex items-center gap-2">
+            <Checkbox
+              checked={isSelected('input')}
+              onCheckedChange={() => toggleSelection({ 
+                id: 'input', 
+                text, 
+                type: 'input',
+                sourceLanguage: sourceLanguage || results?.sourceLanguage
+              })}
+              aria-label="Select input text for copying"
+            />
+            {isSelected('input') && getSelectionOrder('input') !== undefined && (
+              <span className="text-3xl font-extrabold text-primary">
+                {getSelectionOrder('input')}
+              </span>
             )}
-          </p>
-          <Button
-            onClick={handleBulkCopy}
-            disabled={selectedItems.length === 0}
-            className="inline-flex items-center gap-2"
-          >
-            {bulkCopyText ? (
-              <><Check className="w-5 h-5"/> {bulkCopyText}</>
-            ) : (
-              <><Copy className="w-5 h-5"/> {UI_TEXT.buttons.copySelected} ({selectedItems.length})</>
-            )}
-          </Button>
-        </div>
+            <span className="text-sm text-muted-foreground">{UI_TEXT.tooltips.selectForCopy}</span>
+          </div>
+        )}
+        
+        {/* Copy Selected Button */}
+        <Button
+          onClick={handleBulkCopy}
+          disabled={selectedItems.length === 0}
+          className="inline-flex items-center gap-2 self-start"
+        >
+          {bulkCopyText ? (
+            <><Check className="w-5 h-5"/> {bulkCopyText}</>
+          ) : (
+            <><Copy className="w-5 h-5"/> {UI_TEXT.buttons.copySelected} ({selectedItems.length})</>
+          )}
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -121,28 +144,6 @@ export function RealTimeTranslationLayout({
             {charCount} / {maxChars}
           </div>
           </div>
-          
-          {/* Input text selection checkbox */}
-          {text.trim() && (
-            <div className="mt-2 flex items-center gap-2">
-              <Checkbox
-                checked={isSelected('input')}
-                onCheckedChange={() => toggleSelection({ 
-                  id: 'input', 
-                  text, 
-                  type: 'input',
-                  sourceLanguage: sourceLanguage || results?.sourceLanguage
-                })}
-                aria-label="Select input text for copying"
-              />
-              {isSelected('input') && getSelectionOrder('input') !== undefined && (
-                <span className="text-3xl font-extrabold text-primary">
-                  {getSelectionOrder('input')}
-                </span>
-              )}
-              <span className="text-sm text-muted-foreground">{UI_TEXT.tooltips.selectForCopy}</span>
-            </div>
-          )}
         </div>
 
       {/* Primary Translation Column */}

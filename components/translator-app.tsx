@@ -24,6 +24,8 @@ import {
   FileText
 } from 'lucide-react'
 import { useSession, signIn } from 'next-auth/react'
+import { shouldShowAds } from '@/lib/utils/ads'
+import { cn } from '@/lib/utils'
 
 type ApiProvider = 'gemini' | 'gpt'
 
@@ -269,7 +271,7 @@ export const TranslatorApp: React.FC = () => {
 
   useEffect(() => {
     executeTranslationRef.current = executeTranslation
-  }, [])
+  }, [executeTranslation])
 
 
   // Debug logging for result state
@@ -411,7 +413,11 @@ export const TranslatorApp: React.FC = () => {
     }
     
     console.log('✅ Starting translation execution');
-    executeTranslation(inputText, sourceLang, targetLangs);
+    if (executeTranslationRef.current) {
+      executeTranslationRef.current(inputText, sourceLang, targetLangs);
+    } else {
+      console.error('❌ executeTranslationRef.current is null');
+    }
   };
 
   // --- Mode toggle switch UI ---
@@ -518,12 +524,22 @@ ${UI_TEXT.template.time}:`;
     }))
   }, [targetLangs])
 
+  // Determine if we should show ads based on user role
+  const userRole = (session?.user as any)?.role
+  const showAds = shouldShowAds(userRole)
+
   return (
     <div className={`relative w-full min-h-screen ${mode === 'summarize' ? 'bg-green-50' : mode === 'generate' ? 'bg-purple-50' : 'bg-blue-50'}`}>
       <div className="flex-grow w-full pt-4 sm:pt-6 md:pt-8">
-        <div className="w-full px-2 sm:px-4 md:px-2">
+        <div className={cn(
+          "w-full px-2 sm:px-4 md:px-8 mx-auto",
+          showAds ? "max-w-7xl" : "max-w-full" // Wider layout when ads are hidden
+        )}>
           <div className="flex flex-col xl:flex-row gap-4 w-full">
-            <main className="flex-1 w-full">
+            <main className={cn(
+              "flex-1 w-full",
+              !showAds && "xl:max-w-6xl xl:mx-auto" // Center content when no ads
+            )}>
               <Card className="w-full">
                 <CardContent className="p-2 md:p-4 w-full">
                   {/* Language Selection - Using new LanguageSelector component */}
@@ -886,7 +902,14 @@ ${UI_TEXT.template.time}:`;
                                 Array.isArray((translation as any).summary) && (translation as any).summary.length > 0 ? (
                                   typeof (translation as any).summary[0] === 'string' ? (
                                     <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
-                                      {(translation as any).summary.join('\n')}
+                                      {(() => {
+                                        const summaryText = (translation as any).summary.join('\n');
+                                        // Debug log to check for n/ issue
+                                        if (summaryText.includes('n/')) {
+                                          console.warn('⚠️ Found n/ in summary:', summaryText);
+                                        }
+                                        return summaryText;
+                                      })()}
                                     </pre>
                                   ) : (
                                     <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
@@ -947,15 +970,17 @@ ${UI_TEXT.template.time}:`;
                 </CardContent>
               </Card>
               
-              <AdBanner title="Advertisement Area" className="h-24" />
+              {showAds && <AdBanner title="Advertisement Area" className="h-24" />}
             </main>
 
-            <aside className="hidden xl:block w-48 flex-shrink-0 py-8">
-              <div className="sticky top-24 space-y-8">
-                <AdBanner title="Right Sidebar Ad" className="h-96" />
-                <AdBanner title="Right Sidebar Ad 2" className="h-64" />
-              </div>
-            </aside>
+            {showAds && (
+              <aside className="hidden xl:block w-48 flex-shrink-0 py-8">
+                <div className="sticky top-24 space-y-8">
+                  <AdBanner title="Right Sidebar Ad" className="h-96" />
+                  <AdBanner title="Right Sidebar Ad 2" className="h-64" />
+                </div>
+              </aside>
+            )}
           </div>
         </div>
       </div>
