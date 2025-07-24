@@ -153,7 +153,7 @@ export const TranslatorApp: React.FC = () => {
       status,
       isRealTimeMode
     });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Debug: Track mode changes
   useEffect(() => {
@@ -483,7 +483,8 @@ export const TranslatorApp: React.FC = () => {
   };
 
   // --- Mode toggle switch UI ---
-  const ModeToggle = useMemo(() => () => (
+  const ModeToggle = useMemo(() => {
+    const ModeToggleComponent = () => (
     <div className="flex flex-col sm:flex-row items-center gap-4 my-4">
       {/* Mode buttons */}
       <div className="flex items-center bg-gray-200 dark:bg-gray-800 rounded-xl p-1 w-full sm:w-auto">
@@ -582,7 +583,10 @@ ${UI_TEXT.template.time}:`;
         <History className="w-8 h-8" />
       </button>
     </div>
-  ), [mode, inputText, isRealTimeMode, isHistoryVisible]);
+  );
+    ModeToggleComponent.displayName = 'ModeToggle';
+    return ModeToggleComponent;
+  }, [mode, inputText, isRealTimeMode, isHistoryVisible, handleRealTimeModeChange]);
 
   // Prepare language objects for RealTimeTranslationLayout
   const targetLanguageObjects = useMemo(() => {
