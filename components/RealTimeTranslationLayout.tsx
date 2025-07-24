@@ -8,6 +8,7 @@ import { UI_TEXT } from '@/lib/constants/uiText'
 import { SelectableText } from '@/components/SelectableText'
 import { useBulkCopy } from '@/lib/hooks/useBulkCopy'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { getLanguageByCode } from '@/lib/constants'
 
 interface RealTimeTranslationLayoutProps {
@@ -73,6 +74,30 @@ export function RealTimeTranslationLayout({
 
   return (
     <>
+      {/* Top Controls - Source Language and Copy Selected Button */}
+      <div className="mb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <p className="text-sm text-muted-foreground">
+            {(results?.sourceLanguage || sourceLanguage) && (
+              <>
+                {UI_TEXT.labels.sourceLanguage}: <span className="font-semibold text-foreground">{getLanguageByCode(results?.sourceLanguage || sourceLanguage || '')?.name || results?.sourceLanguage || sourceLanguage}</span>
+              </>
+            )}
+          </p>
+          <Button
+            onClick={handleBulkCopy}
+            disabled={selectedItems.length === 0}
+            className="inline-flex items-center gap-2"
+          >
+            {bulkCopyText ? (
+              <><Check className="w-5 h-5"/> {bulkCopyText}</>
+            ) : (
+              <><Copy className="w-5 h-5"/> {UI_TEXT.buttons.copySelected} ({selectedItems.length})</>
+            )}
+          </Button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Input Column */}
         <div className="flex flex-col">
@@ -99,19 +124,23 @@ export function RealTimeTranslationLayout({
           
           {/* Input text selection checkbox */}
           {text.trim() && (
-            <div className="mt-2">
-              <SelectableText
-                text={text}
-                type="input"
-                isSelected={isSelected('input')}
-                selectionOrder={getSelectionOrder('input')}
-                onToggle={() => toggleSelection({ 
+            <div className="mt-2 flex items-center gap-2">
+              <Checkbox
+                checked={isSelected('input')}
+                onCheckedChange={() => toggleSelection({ 
                   id: 'input', 
                   text, 
                   type: 'input',
                   sourceLanguage: sourceLanguage || results?.sourceLanguage
                 })}
+                aria-label="Select input text for copying"
               />
+              {isSelected('input') && getSelectionOrder('input') !== undefined && (
+                <span className="text-3xl font-extrabold text-primary">
+                  {getSelectionOrder('input')}
+                </span>
+              )}
+              <span className="text-sm text-muted-foreground">{UI_TEXT.tooltips.selectForCopy}</span>
             </div>
           )}
         </div>
@@ -281,30 +310,6 @@ export function RealTimeTranslationLayout({
           ))}
         </div>
       )}
-    </div>
-
-    {/* Bulk Copy Controls - Always visible like in normal mode */}
-    <div className="mt-4">
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-muted-foreground">
-          {results?.sourceLanguage && (
-            <>
-              {UI_TEXT.labels.sourceLanguage}: <span className="font-semibold text-foreground">{getLanguageByCode(results.sourceLanguage)?.name || results.sourceLanguage}</span>
-            </>
-          )}
-        </p>
-        <Button
-          onClick={handleBulkCopy}
-          disabled={selectedItems.length === 0}
-          className="inline-flex items-center gap-2"
-        >
-          {bulkCopyText ? (
-            <><Check className="w-5 h-5"/> {bulkCopyText}</>
-          ) : (
-            <><Copy className="w-5 h-5"/> {UI_TEXT.buttons.copySelected} ({selectedItems.length})</>
-          )}
-        </Button>
-      </div>
     </div>
     </>
   )
