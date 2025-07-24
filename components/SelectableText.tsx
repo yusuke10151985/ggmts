@@ -41,7 +41,7 @@ export function SelectableText({
         />
         
         {isSelected && selectionOrder !== undefined && (
-          <span className="absolute top-2 right-2 flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-blue-500 rounded-full">
+          <span className="text-3xl font-extrabold text-primary ml-2">
             {selectionOrder}
           </span>
         )}

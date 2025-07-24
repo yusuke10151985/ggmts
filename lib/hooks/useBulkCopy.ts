@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { getLanguageByCode } from '@/lib/constants'
 
 export interface CopyItem {
   id: string
@@ -8,6 +9,7 @@ export interface CopyItem {
   order: number
   type: 'source' | 'input' | 'output'
   lang?: string
+  sourceLanguage?: string
 }
 
 interface UseBulkCopyReturn {
@@ -17,6 +19,14 @@ interface UseBulkCopyReturn {
   clearSelection: () => void
   isSelected: (id: string) => boolean
   getSelectionOrder: (id: string) => number | undefined
+}
+
+// Multi-language notice texts (same as in translator-app.tsx)
+const NOTICE_TEXTS: Record<string, string> = {
+  ja: '【ご注意】本出力はAIによる機械翻訳・要約です。内容の正確性は保証されません。ご自身で必ずご確認ください。',
+  en: '[Notice] This output is machine-translated/summarized by AI. Accuracy is not guaranteed. Please verify the content yourself.',
+  th: '[ข้อควรระวัง] ข้อมูลนี้เป็นผลลัพธ์จากการแปล/สรุปโดย AI ความถูกต้องอาจไม่สมบูรณ์ กรุณาตรวจสอบด้วยตนเอง',
+  default: '[Notice] This output is machine-translated/summarized by AI. Accuracy is not guaranteed. Please verify the content yourself.'
 }
 
 export function useBulkCopy(): UseBulkCopyReturn {
@@ -44,13 +54,15 @@ export function useBulkCopy(): UseBulkCopyReturn {
     let textToCopy = ''
 
     sortedItems.forEach(item => {
-      const header = item.type === 'source' 
-        ? `--- Original Text ---`
-        : item.lang 
-          ? `--- ${item.lang} ---`
-          : `--- Translation ---`
-      
-      textToCopy += `${header}\n${item.text}\n\n`
+      if (item.type === 'source' || item.type === 'input') {
+        const sourceLanguageName = item.sourceLanguage 
+          ? (getLanguageByCode(item.sourceLanguage)?.name || 'Source Text')
+          : 'Source Text'
+        textToCopy += `--- ${sourceLanguageName} (Original language) ---\n${item.text}\n\n`
+      } else if (item.lang) {
+        const langName = getLanguageByCode(item.lang)?.name || item.lang
+        textToCopy += `--- ${langName} ---\n${NOTICE_TEXTS[item.lang] || NOTICE_TEXTS.default}\n${item.text}\n\n`
+      }
     })
 
     navigator.clipboard.writeText(textToCopy.trim())

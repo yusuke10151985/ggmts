@@ -19,6 +19,7 @@ interface RealTimeTranslationLayoutProps {
   targetLanguages: Language[]
   onCopy: (text: string, lang: string) => void
   copyStates?: Record<string, boolean>
+  sourceLanguage?: string
 }
 
 export function RealTimeTranslationLayout({
@@ -31,6 +32,7 @@ export function RealTimeTranslationLayout({
   targetLanguages,
   onCopy,
   copyStates = {},
+  sourceLanguage,
 }: RealTimeTranslationLayoutProps) {
   const [primaryTranslation, setPrimaryTranslation] = useState<{ lang: string; text: string } | null>(null)
   const [secondaryTranslation, setSecondaryTranslation] = useState<{ lang: string; text: string } | null>(null)
@@ -73,21 +75,13 @@ export function RealTimeTranslationLayout({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Input Column */}
         <div className="flex flex-col">
-          <SelectableText
-            text={text}
-            type="input"
-            isSelected={isSelected('input')}
-            selectionOrder={getSelectionOrder('input')}
-            onToggle={() => toggleSelection({ id: 'input', text, type: 'input' })}
-            className="flex-1"
-          />
-          <div className="relative mt-2">
+          <div className="relative flex-1">
             <textarea
             value={text}
             onChange={(e) => onTextChange(e.target.value)}
             placeholder={UI_TEXT.placeholders.inputText}
             className={cn(
-              "w-full min-h-[200px] p-4 rounded-lg border resize-none",
+              "w-full min-h-[300px] p-4 rounded-lg border resize-none",
               "bg-background text-foreground",
               "focus:outline-none focus:ring-2 focus:ring-ring",
               isOverLimit && "border-red-500 focus:ring-red-500"
@@ -101,6 +95,24 @@ export function RealTimeTranslationLayout({
             {charCount} / {maxChars}
           </div>
         </div>
+        
+        {/* Input text selection checkbox */}
+        {text.trim() && (
+          <div className="mt-2">
+            <SelectableText
+              text={text}
+              type="input"
+              isSelected={isSelected('input')}
+              selectionOrder={getSelectionOrder('input')}
+              onToggle={() => toggleSelection({ 
+                id: 'input', 
+                text, 
+                type: 'input',
+                sourceLanguage: sourceLanguage || results?.sourceLanguage
+              })}
+            />
+          </div>
+        )}
       </div>
 
       {/* Primary Translation Column */}

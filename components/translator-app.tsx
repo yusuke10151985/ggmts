@@ -549,6 +549,7 @@ ${UI_TEXT.template.time}:`;
                       targetLanguages={targetLanguageObjects}
                       onCopy={handleRealTimeCopy}
                       copyStates={copyStates}
+                      sourceLanguage={sourceLang}
                     />
                   ) : (
                     // Normal mode layout
