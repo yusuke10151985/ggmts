@@ -61,4 +61,7 @@ export const SUPPORTED_LANGUAGES: Language[] = [...allLanguages].sort((a, b) => 
 export const UNIFIED_LANGUAGES: Language[] = FROM_LANGUAGES;
 
 // Default target languages
-export const DEFAULT_TARGET_LANGUAGES = ['en', 'th']; 
+export const DEFAULT_TARGET_LANGUAGES = ['en', 'th'];
+
+// Primary languages (always visible in To selection)
+export const PRIMARY_LANGUAGES = ['en', 'ja', 'th']; 

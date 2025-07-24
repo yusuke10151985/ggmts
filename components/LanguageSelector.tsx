@@ -1,7 +1,7 @@
 'use client'
 
 import { Language } from '@/lib/types'
-import { UNIFIED_LANGUAGES } from '@/lib/constants'
+import { UNIFIED_LANGUAGES, PRIMARY_LANGUAGES } from '@/lib/constants'
 import { UI_TEXT } from '@/lib/constants/uiText'
 import { ChevronDown } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
@@ -51,8 +51,13 @@ export function LanguageSelector({
   }
 
   // Split languages for display
-  const priorityLanguages = UNIFIED_LANGUAGES.slice(0, 10)
-  const otherLanguages = UNIFIED_LANGUAGES.slice(10)
+  const primaryLanguageObjects = PRIMARY_LANGUAGES
+    .map(code => UNIFIED_LANGUAGES.find(lang => lang.code === code))
+    .filter((lang): lang is Language => lang !== undefined)
+  
+  const otherLanguages = UNIFIED_LANGUAGES.filter(
+    lang => !PRIMARY_LANGUAGES.includes(lang.code)
+  )
 
   return (
     <div className="w-full space-y-4">
@@ -112,16 +117,17 @@ export function LanguageSelector({
             {UI_TEXT.labels.to}
           </label>
           <div className="space-y-2">
-            {/* Priority Languages */}
-            <div className="flex flex-wrap gap-2">
-              {priorityLanguages.map(lang => (
+            {/* Primary Languages - Always Visible */}
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {primaryLanguageObjects.map(lang => (
                 <button
                   key={lang.code}
                   onClick={() => handleTargetLangToggle(lang.code)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                     targetLangs.includes(lang.code)
-                      ? 'bg-blue-500 text-white hover:bg-blue-600'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-md'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600'
                   }`}
                 >
                   {lang.name}
@@ -129,18 +135,26 @@ export function LanguageSelector({
               ))}
             </div>
 
-            {/* Show More/Less Toggle */}
-            {otherLanguages.length > 0 && (
-              <>
-                <button
-                  onClick={() => onShowMoreChange(!showMoreLangs)}
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
-                >
-                  {showMoreLangs ? UI_TEXT.buttons.showLess : UI_TEXT.buttons.showMore}
-                </button>
+              {/* Visual Separator */}
+              {otherLanguages.length > 0 && (
+                <div className="relative py-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+                  </div>
+                  <div className="relative flex justify-center">
+                    <button
+                      onClick={() => onShowMoreChange(!showMoreLangs)}
+                      className="px-4 py-1 bg-white dark:bg-gray-900 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+                    >
+                      {showMoreLangs ? UI_TEXT.buttons.showLess : `${UI_TEXT.buttons.showMore} (${otherLanguages.length})`}
+                    </button>
+                  </div>
+                </div>
+              )}
 
-                {/* Other Languages */}
-                {showMoreLangs && (
+              {/* Other Languages - Collapsible */}
+              {showMoreLangs && otherLanguages.length > 0 && (
+                <div className="pt-2">
                   <div className="flex flex-wrap gap-2">
                     {otherLanguages.map(lang => (
                       <button
@@ -156,9 +170,9 @@ export function LanguageSelector({
                       </button>
                     ))}
                   </div>
-                )}
-              </>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -5,6 +5,9 @@ import { Loader2, Copy, Check } from 'lucide-react'
 import { TranslationResult, Language } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { UI_TEXT } from '@/lib/constants/uiText'
+import { SelectableText } from '@/components/SelectableText'
+import { useBulkCopy } from '@/lib/hooks/useBulkCopy'
+import { Button } from '@/components/ui/button'
 
 interface RealTimeTranslationLayoutProps {
   text: string
@@ -32,6 +35,16 @@ export function RealTimeTranslationLayout({
   const [primaryTranslation, setPrimaryTranslation] = useState<{ lang: string; text: string } | null>(null)
   const [secondaryTranslation, setSecondaryTranslation] = useState<{ lang: string; text: string } | null>(null)
   const [localCopyStates, setLocalCopyStates] = useState<Record<string, boolean>>({})
+  const [bulkCopyText, setBulkCopyText] = useState('')
+  
+  const {
+    selectedItems,
+    toggleSelection,
+    copySelected,
+    clearSelection,
+    isSelected,
+    getSelectionOrder
+  } = useBulkCopy()
 
   useEffect(() => {
     if (results?.translations) {
@@ -49,17 +62,32 @@ export function RealTimeTranslationLayout({
   const isNearLimit = charPercent > 80
   const isOverLimit = charCount > maxChars
 
+  const handleBulkCopy = () => {
+    copySelected()
+    setBulkCopyText(UI_TEXT.labels.copied)
+    setTimeout(() => setBulkCopyText(''), 2000)
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {/* Input Column */}
-      <div className="flex flex-col">
-        <div className="relative flex-1">
-          <textarea
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Input Column */}
+        <div className="flex flex-col">
+          <SelectableText
+            text={text}
+            type="input"
+            isSelected={isSelected('input')}
+            selectionOrder={getSelectionOrder('input')}
+            onToggle={() => toggleSelection({ id: 'input', text, type: 'input' })}
+            className="flex-1"
+          />
+          <div className="relative mt-2">
+            <textarea
             value={text}
             onChange={(e) => onTextChange(e.target.value)}
             placeholder={UI_TEXT.placeholders.inputText}
             className={cn(
-              "w-full h-full min-h-[300px] p-4 rounded-lg border resize-none",
+              "w-full min-h-[200px] p-4 rounded-lg border resize-none",
               "bg-background text-foreground",
               "focus:outline-none focus:ring-2 focus:ring-ring",
               isOverLimit && "border-red-500 focus:ring-red-500"
@@ -90,7 +118,7 @@ export function RealTimeTranslationLayout({
             <div className="text-red-500 text-sm">{error}</div>
           )}
           {!isTranslating && !error && primaryTranslation && (
-            <div>
+            <>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-muted-foreground">
                   {targetLanguages.find(l => l.code === primaryTranslation.lang)?.name || primaryTranslation.lang}
@@ -112,8 +140,20 @@ export function RealTimeTranslationLayout({
                   )}
                 </button>
               </div>
-              <div className="whitespace-pre-wrap">{primaryTranslation.text}</div>
-            </div>
+              <SelectableText
+                text={primaryTranslation.text}
+                type="output"
+                lang={primaryTranslation.lang}
+                isSelected={isSelected(`output-${primaryTranslation.lang}`)}
+                selectionOrder={getSelectionOrder(`output-${primaryTranslation.lang}`)}
+                onToggle={() => toggleSelection({
+                  id: `output-${primaryTranslation.lang}`,
+                  text: primaryTranslation.text,
+                  type: 'output',
+                  lang: primaryTranslation.lang
+                })}
+              />
+            </>
           )}
           {!isTranslating && !error && !primaryTranslation && text.trim() && (
             <div className="text-muted-foreground text-sm">
@@ -136,7 +176,7 @@ export function RealTimeTranslationLayout({
               </div>
             )}
             {!isTranslating && !error && secondaryTranslation && (
-              <div>
+              <>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium text-muted-foreground">
                     {targetLanguages.find(l => l.code === secondaryTranslation.lang)?.name || secondaryTranslation.lang}
@@ -158,8 +198,20 @@ export function RealTimeTranslationLayout({
                     )}
                   </button>
                 </div>
-                <div className="whitespace-pre-wrap">{secondaryTranslation.text}</div>
-              </div>
+                <SelectableText
+                  text={secondaryTranslation.text}
+                  type="output"
+                  lang={secondaryTranslation.lang}
+                  isSelected={isSelected(`output-${secondaryTranslation.lang}`)}
+                  selectionOrder={getSelectionOrder(`output-${secondaryTranslation.lang}`)}
+                  onToggle={() => toggleSelection({
+                    id: `output-${secondaryTranslation.lang}`,
+                    text: secondaryTranslation.text,
+                    type: 'output',
+                    lang: secondaryTranslation.lang
+                  })}
+                />
+              </>
             )}
             {!isTranslating && !error && !secondaryTranslation && text.trim() && (
               <div className="text-muted-foreground text-sm">
@@ -199,11 +251,47 @@ export function RealTimeTranslationLayout({
                   )}
                 </button>
               </div>
-              <div className="whitespace-pre-wrap">{translation.text}</div>
+              <SelectableText
+                text={translation.text}
+                type="output"
+                lang={translation.lang}
+                isSelected={isSelected(`output-${translation.lang}`)}
+                selectionOrder={getSelectionOrder(`output-${translation.lang}`)}
+                onToggle={() => toggleSelection({
+                  id: `output-${translation.lang}`,
+                  text: translation.text,
+                  type: 'output',
+                  lang: translation.lang
+                })}
+              />
             </div>
           ))}
         </div>
       )}
     </div>
+
+    {/* Bulk Copy Controls */}
+    {selectedItems.length > 0 && (
+      <div className="fixed bottom-4 right-4 bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 flex items-center gap-3">
+        <span className="text-sm font-medium">
+          {selectedItems.length} {UI_TEXT.labels.selected || 'selected'}
+        </span>
+        <Button
+          onClick={handleBulkCopy}
+          size="sm"
+          disabled={selectedItems.length === 0}
+        >
+          {bulkCopyText || UI_TEXT.buttons.copySelected}
+        </Button>
+        <Button
+          onClick={clearSelection}
+          size="sm"
+          variant="outline"
+        >
+          {UI_TEXT.buttons.clear}
+        </Button>
+      </div>
+    )}
+    </>
   )
 }

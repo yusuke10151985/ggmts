@@ -41,6 +41,7 @@ export const UI_TEXT = {
     loading: 'Loading...',
     copied: 'Copied!',
     copyToClipboard: 'Copy to clipboard',
+    selected: 'selected',
     noHistory: 'No translation history',
     clearHistory: 'Clear History',
     usage: 'Usage',
