@@ -26,6 +26,12 @@ import {
 import { useSession, signIn } from 'next-auth/react'
 import { shouldShowAds } from '@/lib/utils/ads'
 import { cn } from '@/lib/utils'
+import { 
+  formatSummaryOutput, 
+  validateSummaryFormat, 
+  addHierarchicalNumbering,
+  debugSummaryStructure 
+} from '@/lib/utils/summaryFormatter'
 
 type ApiProvider = 'gemini' | 'gpt'
 
@@ -56,23 +62,28 @@ function enforceSummaryStructure(summary: any[], parentId: string = ''): any[] {
   });
 }
 
-// Utility to recursively convert summary array to numbered text
+// Utility to recursively convert summary array to numbered text with proper indentation
 function flattenSummaryToText(items: any[], prefix = ''): string[] {
   if (!Array.isArray(items)) return [];
   let lines: string[] = [];
+  
   items.forEach((item, idx) => {
     const number = prefix ? `${prefix}.${idx + 1}` : `${idx + 1}`;
     if (item.title && item.title.trim()) {
-      lines.push(`${number}. ${item.title.trim()}`);
+      // Determine indentation based on hierarchy level
+      const level = number.split('.').length - 1;
+      const indent = '   '.repeat(level); // 3 spaces per level
+      lines.push(`${indent}${number}. ${item.title.trim()}`);
     }
     if (Array.isArray(item.children) && item.children.length > 0) {
       lines = lines.concat(flattenSummaryToText(item.children, number));
     }
   });
+  
   return lines;
 }
 
-// Utility to clean and format summary text
+// Utility to clean and format summary text with proper indentation
 function cleanSummaryText(summaryArray: string[]): string {
   if (!Array.isArray(summaryArray)) return '';
   
@@ -82,14 +93,36 @@ function cleanSummaryText(summaryArray: string[]): string {
   // Remove n/ artifacts
   text = text.replace(/n\//g, '\n');
   
-  // Ensure proper formatting for numbered lists
-  // Fix lines that might have lost their structure
-  const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+  // Process lines to ensure proper formatting and indentation
+  const lines = text.split('\n').map(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return '';
+    
+    // Check for hierarchical numbering patterns
+    // Main level: 1., 2., 3., etc.
+    if (/^\d+\.\s/.test(trimmed)) {
+      return trimmed;
+    }
+    // Sub level: 1.1, 1.2, 2.1, etc.
+    else if (/^\d+\.\d+\.?\s/.test(trimmed)) {
+      return '   ' + trimmed; // 3 spaces for sub-level
+    }
+    // Sub-sub level: 1.1.1, 1.1.2, etc.
+    else if (/^\d+\.\d+\.\d+\.?\s/.test(trimmed)) {
+      return '      ' + trimmed; // 6 spaces for sub-sub-level
+    }
+    // If line starts with existing spaces, preserve relative indentation
+    else if (line.startsWith('   ') || line.startsWith('\t')) {
+      return line;
+    }
+    
+    return trimmed;
+  }).filter(line => line !== undefined);
   
   return lines.join('\n');
 }
 
-// Multi-language notice text definitions
+// These functions are now imported from summaryFormatter module\n\n// Multi-language notice text definitions
 const NOTICE_TEXTS: Record<string, string> = {
   ja: '【ご注意】本出力はAIによる機械翻訳・要約です。内容の正確性は保証されません。ご自身で必ずご確認ください。',
   en: '[Notice] This output is machine-translated/summarized by AI. Accuracy is not guaranteed. Please verify the content yourself.',
@@ -976,11 +1009,24 @@ ${UI_TEXT.template.time}:`;
                                   typeof (translation as any).summary[0] === 'string' ? (
                                     <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed">
                                       {(() => {
-                                        const cleanedText = cleanSummaryText((translation as any).summary);
+                                        let cleanedText = cleanSummaryText((translation as any).summary);
+                                        
+                                        // Validate hierarchical format
+                                        if (!validateSummaryFormat(cleanedText)) {
+                                          console.warn('⚠️ Summary lacks hierarchical format, applying fallback formatting');
+                                          cleanedText = addHierarchicalNumbering(cleanedText);
+                                        }
+                                        
+                                        // Debug summary structure in development
+                                        if (process.env.NODE_ENV === 'development') {
+                                          debugSummaryStructure(cleanedText);
+                                        }
+                                        
                                         // Debug log to check for n/ issue
                                         if (cleanedText.includes('n/')) {
                                           console.warn('⚠️ Found n/ in summary after cleaning:', cleanedText);
                                         }
+                                        
                                         return cleanedText;
                                       })()}
                                     </pre>
