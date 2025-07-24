@@ -417,6 +417,7 @@ export const TranslatorApp: React.FC = () => {
   // --- Mode toggle switch UI ---
   const ModeToggle = () => (
     <div className="flex flex-col sm:flex-row items-center gap-4 my-4">
+      {/* Mode buttons */}
       <div className="flex items-center bg-gray-200 dark:bg-gray-800 rounded-xl p-1 w-full sm:w-auto">
         <button
           className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg font-bold transition-all text-sm sm:text-base ${
@@ -490,6 +491,15 @@ ${UI_TEXT.template.time}:`;
           {UI_TEXT.modes.generate}
         </button>
       </div>
+      
+      {/* Real-time mode toggle - Visible in translate and summarize modes */}
+      {(mode === 'translate' || mode === 'summarize') && (
+        <div className="flex-shrink-0">
+          <TranslationModeToggle onModeChange={handleRealTimeModeChange} />
+        </div>
+      )}
+      
+      {/* History button */}
       <button
         className="ml-auto w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-primary hover:bg-blue-100 dark:hover:bg-blue-900 transition"
         onClick={() => setIsHistoryVisible(v => !v)}
@@ -529,13 +539,6 @@ ${UI_TEXT.template.time}:`;
                   </div>
 
                   <ModeToggle />
-
-                  {/* Real-time mode toggle - Visible in translate and summarize modes */}
-                  {(mode === 'translate' || mode === 'summarize') && (
-                    <div className="mb-4 flex justify-end">
-                      <TranslationModeToggle onModeChange={handleRealTimeModeChange} />
-                    </div>
-                  )}
 
                   {/* Conditional rendering based on real-time mode */}
                   {isRealTimeMode && (mode === 'translate' || mode === 'summarize') ? (

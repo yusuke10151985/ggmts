@@ -8,6 +8,7 @@ import { UI_TEXT } from '@/lib/constants/uiText'
 import { SelectableText } from '@/components/SelectableText'
 import { useBulkCopy } from '@/lib/hooks/useBulkCopy'
 import { Button } from '@/components/ui/button'
+import { getLanguageByCode } from '@/lib/constants'
 
 interface RealTimeTranslationLayoutProps {
   text: string
@@ -94,26 +95,26 @@ export function RealTimeTranslationLayout({
           )}>
             {charCount} / {maxChars}
           </div>
-        </div>
-        
-        {/* Input text selection checkbox */}
-        {text.trim() && (
-          <div className="mt-2">
-            <SelectableText
-              text={text}
-              type="input"
-              isSelected={isSelected('input')}
-              selectionOrder={getSelectionOrder('input')}
-              onToggle={() => toggleSelection({ 
-                id: 'input', 
-                text, 
-                type: 'input',
-                sourceLanguage: sourceLanguage || results?.sourceLanguage
-              })}
-            />
           </div>
-        )}
-      </div>
+          
+          {/* Input text selection checkbox */}
+          {text.trim() && (
+            <div className="mt-2">
+              <SelectableText
+                text={text}
+                type="input"
+                isSelected={isSelected('input')}
+                selectionOrder={getSelectionOrder('input')}
+                onToggle={() => toggleSelection({ 
+                  id: 'input', 
+                  text, 
+                  type: 'input',
+                  sourceLanguage: sourceLanguage || results?.sourceLanguage
+                })}
+              />
+            </div>
+          )}
+        </div>
 
       {/* Primary Translation Column */}
       <div className="flex flex-col">
@@ -282,28 +283,29 @@ export function RealTimeTranslationLayout({
       )}
     </div>
 
-    {/* Bulk Copy Controls */}
-    {selectedItems.length > 0 && (
-      <div className="fixed bottom-4 right-4 bg-white dark:bg-gray-800 shadow-lg rounded-lg p-4 flex items-center gap-3">
-        <span className="text-sm font-medium">
-          {selectedItems.length} {UI_TEXT.labels.selected || 'selected'}
-        </span>
+    {/* Bulk Copy Controls - Always visible like in normal mode */}
+    <div className="mt-4">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">
+          {results?.sourceLanguage && (
+            <>
+              {UI_TEXT.labels.sourceLanguage}: <span className="font-semibold text-foreground">{getLanguageByCode(results.sourceLanguage)?.name || results.sourceLanguage}</span>
+            </>
+          )}
+        </p>
         <Button
           onClick={handleBulkCopy}
-          size="sm"
           disabled={selectedItems.length === 0}
+          className="inline-flex items-center gap-2"
         >
-          {bulkCopyText || UI_TEXT.buttons.copySelected}
-        </Button>
-        <Button
-          onClick={clearSelection}
-          size="sm"
-          variant="outline"
-        >
-          {UI_TEXT.buttons.clear}
+          {bulkCopyText ? (
+            <><Check className="w-5 h-5"/> {bulkCopyText}</>
+          ) : (
+            <><Copy className="w-5 h-5"/> {UI_TEXT.buttons.copySelected} ({selectedItems.length})</>
+          )}
         </Button>
       </div>
-    )}
+    </div>
     </>
   )
 }
