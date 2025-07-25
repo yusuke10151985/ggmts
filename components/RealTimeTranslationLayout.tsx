@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Loader2, Copy, Check } from 'lucide-react'
+import { useEffect, useState, useCallback } from 'react'
+import { Loader2, Copy, Check, Plus, X } from 'lucide-react'
 import { TranslationResult, Language, TranslationMode } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { UI_TEXT } from '@/lib/constants/uiText'

@@ -148,6 +148,6 @@ a:hover, a:focus {
 @media (max-width: 768px) {
   .auto-resize-textarea {
     min-height: 80px !important;
-    max-height: 300px !important;
+    max-height: 250px !important;
   }
 } 

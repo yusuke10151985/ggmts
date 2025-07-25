@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { getLanguageByCode } from '@/lib/constants'
 
 export interface CopyItem {
@@ -31,6 +31,19 @@ const NOTICE_TEXTS: Record<string, string> = {
 
 export function useBulkCopy(): UseBulkCopyReturn {
   const [selectedItems, setSelectedItems] = useState<CopyItem[]>([])
+
+  // Listen for text updates from translation boxes
+  useEffect(() => {
+    const handleTextUpdate = (event: CustomEvent<{ id: string; text: string }>) => {
+      const { id, text } = event.detail
+      setSelectedItems(prev => prev.map(item => 
+        item.id === id ? { ...item, text } : item
+      ))
+    }
+
+    window.addEventListener('updateSelectionText' as any, handleTextUpdate)
+    return () => window.removeEventListener('updateSelectionText' as any, handleTextUpdate)
+  }, [])
 
   const toggleSelection = useCallback((item: Omit<CopyItem, 'order'>) => {
     setSelectedItems(prev => {

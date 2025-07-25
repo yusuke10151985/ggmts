@@ -13,6 +13,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { AdBanner } from '@/components/ad-banner'
 import { TranslationModeToggle } from '@/components/TranslationModeToggle'
 import { RealTimeTranslationLayout } from '@/components/RealTimeTranslationLayout'
+import { MultiInputRealTimeLayout } from '@/components/MultiInputRealTimeLayout'
 import { LanguageSelector } from '@/components/LanguageSelector'
 import { 
   History, 
@@ -154,6 +155,7 @@ export const TranslatorApp: React.FC = () => {
   const [showMoreLangs, setShowMoreLangs] = useState(false)
   const [mode, setMode] = useState<TranslationMode>('translate')
   const [isRealTimeMode, setIsRealTimeMode] = useState(false)
+  const [useMultiInput, setUseMultiInput] = useState(false)
   const apiProvider: ApiProvider = 'gpt'
   const abortControllerRef = useRef<AbortController | null>(null)
   const { data: session, status } = useSession();
@@ -594,8 +596,17 @@ ${UI_TEXT.template.time}:`;
       
       {/* Real-time mode toggle - Visible in translate and summarize modes */}
       {(mode === 'translate' || mode === 'summarize') && (
-        <div className="flex-shrink-0">
+        <div className="flex items-center gap-4 flex-shrink-0">
           <TranslationModeToggle onModeChange={handleRealTimeModeChange} />
+          {isRealTimeMode && (
+            <Button
+              variant={useMultiInput ? "default" : "outline"}
+              size="sm"
+              onClick={() => setUseMultiInput(prev => !prev)}
+            >
+              {useMultiInput ? "Multi-Input" : "Single Input"}
+            </Button>
+          )}
         </div>
       )}
       
@@ -660,19 +671,29 @@ ${UI_TEXT.template.time}:`;
                   {/* ⚠️ CRITICAL: DO NOT MODIFY WITHOUT TESTING NORMAL MODE! */}
                   {/* Normal mode (when isRealTimeMode is false) MUST continue to work */}
                   {isRealTimeMode && (mode === 'translate' || mode === 'summarize') ? (
-                    <RealTimeTranslationLayout
-                      text={inputText}
-                      onTextChange={setInputText}
-                      results={realtimeResults}
-                      isTranslating={isRealtimeTranslating}
-                      error={realtimeError}
-                      maxChars={mode === 'translate' ? 8000 : 12000}
-                      targetLanguages={targetLanguageObjects}
-                      onCopy={handleRealTimeCopy}
-                      copyStates={copyStates}
-                      sourceLanguage={sourceLang}
-                      mode={mode}
-                    />
+                    useMultiInput ? (
+                      <MultiInputRealTimeLayout
+                        sourceLang={sourceLang}
+                        targetLanguages={targetLanguageObjects}
+                        maxChars={mode === 'translate' ? 8000 : 12000}
+                        mode={mode}
+                        onCopy={handleRealTimeCopy}
+                      />
+                    ) : (
+                      <RealTimeTranslationLayout
+                        text={inputText}
+                        onTextChange={setInputText}
+                        results={realtimeResults}
+                        isTranslating={isRealtimeTranslating}
+                        error={realtimeError}
+                        maxChars={mode === 'translate' ? 8000 : 12000}
+                        targetLanguages={targetLanguageObjects}
+                        onCopy={handleRealTimeCopy}
+                        copyStates={copyStates}
+                        sourceLanguage={sourceLang}
+                        mode={mode}
+                      />
+                    )
                   ) : (
                     // Normal mode layout
                     <>

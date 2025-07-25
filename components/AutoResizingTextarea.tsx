@@ -18,8 +18,8 @@ interface AutoResizingTextareaProps {
 export function AutoResizingTextarea({
   value,
   onChange,
-  minHeight = 120,
-  maxHeight = 600,
+  minHeight = 100,
+  maxHeight = 400,
   placeholder = "Enter text to translate...",
   className,
   maxChars,
