@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { getLanguageByCode } from '@/lib/constants'
 import { cleanSummaryText, validateSummaryFormat, addHierarchicalNumbering, debugSummaryStructure } from '@/lib/utils/summaryFormatter'
+import { AutoResizingTextarea } from '@/components/AutoResizingTextarea'
 
 interface RealTimeTranslationLayoutProps {
   text: string
@@ -147,26 +148,15 @@ export function RealTimeTranslationLayout({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Input Column */}
         <div className="flex flex-col">
-          <div className="relative flex-1">
-            <textarea
+          <AutoResizingTextarea
             value={text}
-            onChange={(e) => onTextChange(e.target.value)}
+            onChange={onTextChange}
             placeholder={UI_TEXT.placeholders.inputText}
-            className={cn(
-              "w-full min-h-[300px] p-4 rounded-lg border resize-none",
-              "bg-background text-foreground",
-              "focus:outline-none focus:ring-2 focus:ring-ring",
-              isOverLimit && "border-red-500 focus:ring-red-500"
-            )}
+            maxChars={maxChars}
+            isOverLimit={isOverLimit}
+            minHeight={300}
+            maxHeight={600}
           />
-          <div className={cn(
-            "absolute bottom-2 right-2 text-xs",
-            isNearLimit && "text-orange-500",
-            isOverLimit && "text-red-500"
-          )}>
-            {charCount} / {maxChars}
-          </div>
-          </div>
         </div>
 
       {/* Primary Translation Column */}
