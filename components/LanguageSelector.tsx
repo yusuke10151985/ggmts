@@ -5,6 +5,7 @@ import { UNIFIED_LANGUAGES, PRIMARY_LANGUAGES } from '@/lib/constants'
 import { UI_TEXT } from '@/lib/constants/uiText'
 import { ChevronDown } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
+import { cn } from '@/lib/utils'
 
 interface LanguageSelectorProps {
   sourceLang: string
@@ -15,6 +16,8 @@ interface LanguageSelectorProps {
   onShowMoreChange: (show: boolean) => void
 }
 
+const MAX_TARGET_LANGUAGES = 2
+
 export function LanguageSelector({
   sourceLang,
   targetLangs,
@@ -24,6 +27,7 @@ export function LanguageSelector({
   onShowMoreChange
 }: LanguageSelectorProps) {
   const [isSourceDropdownOpen, setIsSourceDropdownOpen] = useState(false)
+  const [showWarning, setShowWarning] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -39,8 +43,18 @@ export function LanguageSelector({
 
   const handleTargetLangToggle = (langCode: string) => {
     if (targetLangs.includes(langCode)) {
+      // Always allow deselection
       onTargetLangChange(targetLangs.filter(l => l !== langCode))
+      setShowWarning(false)
     } else {
+      // Check limit before adding
+      if (targetLangs.length >= MAX_TARGET_LANGUAGES) {
+        // Show warning instead of adding
+        setShowWarning(true)
+        // Auto-hide warning after 3 seconds
+        setTimeout(() => setShowWarning(false), 3000)
+        return
+      }
       onTargetLangChange([...targetLangs, langCode])
     }
   }
@@ -113,9 +127,29 @@ export function LanguageSelector({
 
         {/* To Languages Selector */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {UI_TEXT.labels.to}
-          </label>
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {UI_TEXT.labels.to}
+            </label>
+            <span className={cn(
+              "text-sm px-2 py-1 rounded-full",
+              targetLangs.length === MAX_TARGET_LANGUAGES 
+                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+            )}>
+              {targetLangs.length}/{MAX_TARGET_LANGUAGES} selected
+            </span>
+          </div>
+          
+          {/* Warning message */}
+          {showWarning && (
+            <div className="bg-yellow-100 dark:bg-yellow-900 p-3 rounded-lg">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                Maximum {MAX_TARGET_LANGUAGES} languages can be selected. Please deselect a language first.
+              </p>
+            </div>
+          )}
+          
           <div className="space-y-2">
             {/* Primary Languages - Always Visible */}
             <div className="space-y-3">
@@ -124,13 +158,20 @@ export function LanguageSelector({
                 <button
                   key={lang.code}
                   onClick={() => handleTargetLangToggle(lang.code)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  disabled={!targetLangs.includes(lang.code) && targetLangs.length >= MAX_TARGET_LANGUAGES}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-semibold transition-all",
                     targetLangs.includes(lang.code)
-                      ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-md'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600'
-                  }`}
+                      ? "bg-blue-500 text-white hover:bg-blue-600 shadow-md"
+                      : !targetLangs.includes(lang.code) && targetLangs.length >= MAX_TARGET_LANGUAGES
+                        ? "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50 border border-gray-300 dark:border-gray-600"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600"
+                  )}
                 >
                   {lang.name}
+                  {!targetLangs.includes(lang.code) && targetLangs.length >= MAX_TARGET_LANGUAGES && (
+                    <span className="ml-1 text-xs">(Max {MAX_TARGET_LANGUAGES})</span>
+                  )}
                 </button>
               ))}
             </div>
@@ -160,11 +201,15 @@ export function LanguageSelector({
                       <button
                         key={lang.code}
                         onClick={() => handleTargetLangToggle(lang.code)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                        disabled={!targetLangs.includes(lang.code) && targetLangs.length >= MAX_TARGET_LANGUAGES}
+                        className={cn(
+                          "px-3 py-1.5 rounded-full text-sm font-medium transition-all",
                           targetLangs.includes(lang.code)
-                            ? 'bg-blue-500 text-white hover:bg-blue-600'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                        }`}
+                            ? "bg-blue-500 text-white hover:bg-blue-600"
+                            : !targetLangs.includes(lang.code) && targetLangs.length >= MAX_TARGET_LANGUAGES
+                              ? "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50"
+                              : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                        )}
                       >
                         {lang.name}
                       </button>

@@ -81,4 +81,34 @@ a {
 }
 a:hover, a:focus {
   color: #1d4ed8; /* Tailwindのblue-700相当 */
+}
+
+/* Real-time output box improvements */
+.real-time-output {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.dark .real-time-output {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.real-time-output::-webkit-scrollbar {
+  width: 8px;
+}
+
+.real-time-output::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.real-time-output::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.dark .real-time-output::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
 } 

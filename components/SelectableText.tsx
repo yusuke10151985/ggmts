@@ -46,7 +46,7 @@ export function SelectableText({
           </span>
         )}
         
-        <div className="flex-1 whitespace-pre-wrap break-words">
+        <div className="flex-1 whitespace-pre-wrap break-words overflow-wrap-anywhere">
           {text}
         </div>
       </div>

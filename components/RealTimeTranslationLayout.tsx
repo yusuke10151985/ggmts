@@ -173,7 +173,10 @@ export function RealTimeTranslationLayout({
       <div className="flex flex-col">
         <div className={cn(
           "flex-1 min-h-[300px] p-4 rounded-lg border",
-          "bg-muted/50"
+          "bg-muted/50",
+          "overflow-y-auto max-h-[600px]",
+          "break-words",
+          "real-time-output"
         )}>
           {isTranslating && (
             <div className="flex items-center justify-center h-full">
@@ -234,7 +237,10 @@ export function RealTimeTranslationLayout({
         <div className="hidden lg:flex flex-col">
           <div className={cn(
             "flex-1 min-h-[300px] p-4 rounded-lg border",
-            "bg-muted/50"
+            "bg-muted/50",
+            "overflow-y-auto max-h-[600px]",
+            "break-words",
+            "real-time-output"
           )}>
             {isTranslating && (
               <div className="flex items-center justify-center h-full">
@@ -294,7 +300,10 @@ export function RealTimeTranslationLayout({
           {results?.translations.slice(1).map((translation, index) => (
             <div key={translation.lang} className={cn(
               "p-4 rounded-lg border mb-4",
-              "bg-muted/50"
+              "bg-muted/50",
+              "overflow-y-auto max-h-[400px]",
+              "break-words",
+              "real-time-output"
             )}>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-muted-foreground">
