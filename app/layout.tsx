@@ -67,7 +67,7 @@ export default function RootLayout({
           <SessionProviderWrapper>
             <BlockGuard>
               <GlobalHeader />
-              <main>{children}</main>
+              <main className="pb-24">{children}</main>
               <FooterWithAdmin />
             </BlockGuard>
           </SessionProviderWrapper>

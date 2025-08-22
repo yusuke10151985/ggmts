@@ -6,7 +6,13 @@
   "regions": ["iad1"],
   "functions": {
     "app/api/translate/route.ts": {
-      "maxDuration": 30
+      "maxDuration": 60
+    },
+    "app/api/generate/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/gpt-translate/route.ts": {
+      "maxDuration": 60
     }
   }
 } 

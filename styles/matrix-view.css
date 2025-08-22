@@ -1,0 +1,133 @@
+/* Matrix View Table Styles */
+
+/* Ensure table container allows horizontal scroll */
+.matrix-table-container {
+  width: 100%;
+  position: relative;
+}
+
+/* Set minimum table width to ensure all columns are visible */
+.matrix-table {
+  min-width: 1800px; /* Increased to accommodate all columns properly */
+  table-layout: fixed;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+/* Column width distribution with proper percentages */
+.matrix-table th:nth-child(1), /* No. */
+.matrix-table td:nth-child(1) {
+  width: 5%;
+  min-width: 60px;
+}
+
+.matrix-table th:nth-child(2), /* Main Title */
+.matrix-table td:nth-child(2) {
+  width: 15%;
+  min-width: 200px;
+}
+
+.matrix-table th:nth-child(3), /* Sub Title */
+.matrix-table td:nth-child(3) {
+  width: 15%;
+  min-width: 200px;
+}
+
+.matrix-table th:nth-child(4), /* Sub Sub Title */
+.matrix-table td:nth-child(4) {
+  width: 15%;
+  min-width: 200px;
+}
+
+.matrix-table th:nth-child(5), /* Action */
+.matrix-table td:nth-child(5) {
+  width: 15%;
+  min-width: 200px;
+}
+
+.matrix-table th:nth-child(6), /* Responsible */
+.matrix-table td:nth-child(6) {
+  width: 12%;
+  min-width: 150px;
+}
+
+.matrix-table th:nth-child(7), /* Due Date */
+.matrix-table td:nth-child(7) {
+  width: 10%;
+  min-width: 120px;
+}
+
+.matrix-table th:nth-child(8), /* Status */
+.matrix-table td:nth-child(8) {
+  width: 8%;
+  min-width: 100px;
+}
+
+.matrix-table th:nth-child(9), /* Files */
+.matrix-table td:nth-child(9) {
+  width: 5%;
+  min-width: 80px;
+}
+
+.matrix-table th:nth-child(10), /* Actions */
+.matrix-table td:nth-child(10) {
+  width: 5%;
+  min-width: 100px;
+}
+
+/* Ensure text doesn't overflow */
+.matrix-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1600px) {
+  .matrix-table {
+    font-size: 0.875rem; /* 14px */
+  }
+  
+  .matrix-table th,
+  .matrix-table td {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 1400px) {
+  .matrix-table {
+    font-size: 0.75rem; /* 12px */
+  }
+  
+  .matrix-table th,
+  .matrix-table td {
+    padding: 0.375rem;
+  }
+}
+
+/* Ensure scrollbar is always visible on overflow container */
+.overflow-x-auto {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f7fafc;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}

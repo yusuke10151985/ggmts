@@ -128,12 +128,22 @@ JSONレスポンス形式:
     let unitCost = 0.00001;
     
     // モデル名からプロバイダ判定
-    if (model.startsWith('gpt')) {
+    if (model.startsWith('gpt') || model.startsWith('o1')) {
       provider = 'openai';
-      unitCost = model === 'gpt-4o-mini' ? 0.001 / 1000 : 0.002 / 1000;
+      unitCost = model === 'gpt-4o-mini' ? 0.0006 / 1000 : 
+                 model === 'gpt-4o' ? 0.0025 / 1000 :
+                 model === 'gpt-4-turbo' ? 0.01 / 1000 :
+                 model === 'gpt-4' ? 0.03 / 1000 :
+                 model === 'gpt-5' ? 0.05 / 1000 :
+                 model === 'o1-mini' ? 0.0011 / 1000 :
+                 model === 'o1' ? 0.015 / 1000 : 0.002 / 1000;
     } else if (model.startsWith('gemini')) {
       provider = 'google';
-      unitCost = model === 'gemini-1.5-flash' ? 0.0004 / 1000 : 0.0008 / 1000;
+      unitCost = model === 'gemini-1.5-flash' ? 0.0004 / 1000 : 
+                 model === 'gemini-1.5-flash-8b' ? 0.0004 / 1000 :
+                 model === 'gemini-1.5-pro' ? 0.0008 / 1000 :
+                 model === 'gemini-2.0-flash' ? 0.0004 / 1000 :
+                 model === 'gemini-2.5-flash-lite' ? 0.0001 / 1000 : 0.0008 / 1000;
     }
     
     console.log('🎨 Using model for generation:', { provider, model });

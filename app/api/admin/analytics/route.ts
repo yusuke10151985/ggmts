@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/authOptions'
-import { google } from 'googleapis'
+import { BetaAnalyticsDataClient } from '@google-analytics/data'
 
-// Google Analytics Reporting API v4を使用
-// 本格的な実装のためにはGoogle Analytics Reporting APIの設定が必要
-// 現在は模擬データを返す
+// Google Analytics Data API (GA4)を使用
 
 interface AnalyticsData {
   realTimeUsers: number
@@ -21,65 +19,14 @@ interface AnalyticsData {
   topPages: Array<{ page: string; views: number }>
   dailyStats: Array<{ date: string; users: number; pageViews: number }>
   trafficSources: Array<{ source: string; users: number; percentage: number }>
+  deviceCategories: Array<{ category: string; users: number; percentage: number }>
+  topCountries: Array<{ country: string; users: number }>
+  newVsReturning: { new: number; returning: number }
 }
 
-// 模擬データ生成（実際の実装時にはGoogle Analytics APIに置き換え）
-function generateMockAnalyticsData(): AnalyticsData {
-  const today = new Date()
-  const dailyStats = []
-  
-  // 過去7日間のデータを生成
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(today)
-    date.setDate(date.getDate() - i)
-    
-    const baseUsers = Math.floor(Math.random() * 50) + 10 + (6 - i) * 5 // 成長トレンド
-    const basePageViews = baseUsers * (1.5 + Math.random() * 1)
-    
-    dailyStats.push({
-      date: date.toISOString().split('T')[0],
-      users: baseUsers,
-      pageViews: Math.floor(basePageViews)
-    })
-  }
-
-  const todayUsers = dailyStats[6].users
-  const yesterdayUsers = dailyStats[5].users
-  const thisWeekUsers = dailyStats.reduce((sum, day) => sum + day.users, 0)
-  const lastWeekUsers = Math.floor(thisWeekUsers * 0.8) // 20%成長と仮定
-
-  return {
-    realTimeUsers: Math.floor(Math.random() * 5) + 1,
-    todayUsers,
-    yesterdayUsers,
-    thisWeekUsers,
-    lastWeekUsers,
-    thisMonthUsers: Math.floor(thisWeekUsers * 4.2),
-    lastMonthUsers: Math.floor(thisWeekUsers * 3.5),
-    todayPageViews: Math.floor(todayUsers * 2.3),
-    averageSessionDuration: Math.floor(Math.random() * 180) + 60,
-    bounceRate: Math.random() * 30 + 50,
-    topPages: [
-      { page: '/', views: Math.floor(todayUsers * 0.6) },
-      { page: '/about', views: Math.floor(todayUsers * 0.2) },
-      { page: '/contact', views: Math.floor(todayUsers * 0.1) },
-      { page: '/terms', views: Math.floor(todayUsers * 0.05) },
-      { page: '/privacy-policy', views: Math.floor(todayUsers * 0.05) }
-    ],
-    trafficSources: [
-      { source: 'Direct', users: Math.floor(todayUsers * 0.4), percentage: 40 },
-      { source: 'Google Search', users: Math.floor(todayUsers * 0.3), percentage: 30 },
-      { source: 'Social Media', users: Math.floor(todayUsers * 0.2), percentage: 20 },
-      { source: 'Referral', users: Math.floor(todayUsers * 0.1), percentage: 10 }
-    ],
-    dailyStats
-  }
-}
-
-// Google Analytics認証設定
-function getAnalyticsAuth() {
+// Google Analytics クライアントの初期化
+function getAnalyticsClient() {
   try {
-    // 環境変数からサービスアカウント認証情報を取得
     const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY
     if (!credentials) {
       console.log('Google service account credentials not found')
@@ -87,117 +34,243 @@ function getAnalyticsAuth() {
     }
 
     const serviceAccountKey = JSON.parse(credentials)
-    const auth = new google.auth.GoogleAuth({
-      credentials: serviceAccountKey,
-      scopes: ['https://www.googleapis.com/auth/analytics.readonly']
+    const analyticsDataClient = new BetaAnalyticsDataClient({
+      credentials: serviceAccountKey
     })
 
-    return auth
+    return analyticsDataClient
   } catch (error) {
-    console.error('Analytics auth setup error:', error)
+    console.error('Analytics client setup error:', error)
     return null
   }
 }
 
-// Analytics APIレスポンスを処理
-function processAnalyticsResponse(reportsData: any): AnalyticsData {
-  const reports = reportsData.reports || []
-  const report = reports[0]
-  
-  if (!report || !report.data || !report.data.rows) {
-    return generateMockAnalyticsData()
-  }
+// 日付フォーマット
+function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0]
+}
 
-  const rows = report.data.rows
-  const dailyStats: Array<{ date: string; users: number; pageViews: number }> = []
-  
-  // 日別データを処理
-  rows.forEach((row: any) => {
-    const date = row.dimensions[0]
-    const metrics = row.metrics[0].values
-    const users = parseInt(metrics[0]) || 0
-    const pageViews = parseInt(metrics[1]) || 0
-    
-    dailyStats.push({
-      date: `${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)}`,
-      users,
-      pageViews
-    })
-  })
-
-  // 統計計算
-  const todayUsers = dailyStats[dailyStats.length - 1]?.users || 0
-  const yesterdayUsers = dailyStats[dailyStats.length - 2]?.users || 0
-  const thisWeekUsers = dailyStats.slice(-7).reduce((sum, day) => sum + day.users, 0)
-  const lastWeekUsers = Math.max(thisWeekUsers * 0.8, 1)
-  const todayPageViews = dailyStats[dailyStats.length - 1]?.pageViews || 0
-
-  return {
-    realTimeUsers: Math.floor(Math.random() * 5) + 1, // Real-time APIは別途必要
-    todayUsers,
-    yesterdayUsers,
-    thisWeekUsers,
-    lastWeekUsers: Math.floor(lastWeekUsers),
-    thisMonthUsers: Math.floor(thisWeekUsers * 4.2),
-    lastMonthUsers: Math.floor(thisWeekUsers * 3.5),
-    todayPageViews,
-    averageSessionDuration: Math.floor(Math.random() * 180) + 60, // 詳細は別のクエリが必要
-    bounceRate: Math.random() * 30 + 50,
-    topPages: [
-      { page: '/', views: Math.floor(todayPageViews * 0.6) },
-      { page: '/about', views: Math.floor(todayPageViews * 0.2) },
-      { page: '/contact', views: Math.floor(todayPageViews * 0.1) },
-      { page: '/terms', views: Math.floor(todayPageViews * 0.05) },
-      { page: '/privacy-policy', views: Math.floor(todayPageViews * 0.05) }
-    ],
-    trafficSources: [
-      { source: 'Direct', users: Math.floor(todayUsers * 0.4), percentage: 40 },
-      { source: 'Google Search', users: Math.floor(todayUsers * 0.3), percentage: 30 },
-      { source: 'Social Media', users: Math.floor(todayUsers * 0.2), percentage: 20 },
-      { source: 'Referral', users: Math.floor(todayUsers * 0.1), percentage: 10 }
-    ],
-    dailyStats: dailyStats.slice(-7) // 過去7日間
-  }
+// パーセンテージ計算
+function calculatePercentage(value: number, total: number): number {
+  return total > 0 ? Math.round((value / total) * 100) : 0
 }
 
 // 実際のGoogle Analytics APIからデータを取得
 async function fetchRealAnalyticsData(): Promise<AnalyticsData | null> {
   try {
-    const auth = getAnalyticsAuth()
-    if (!auth) {
-      console.log('Analytics authentication not configured')
+    const client = getAnalyticsClient()
+    if (!client) {
+      console.log('Analytics client not configured')
       return null
     }
 
-    const viewId = process.env.GA_VIEW_ID
-    if (!viewId) {
-      console.log('GA_VIEW_ID environment variable not set')
+    const propertyId = process.env.GA4_PROPERTY_ID
+    if (!propertyId) {
+      console.log('GA4_PROPERTY_ID environment variable not set')
       return null
     }
 
-    const analytics = google.analyticsreporting({ version: 'v4', auth })
-    
-    const response = await analytics.reports.batchGet({
-      requestBody: {
-        reportRequests: [
-          {
-            viewId: viewId,
-            dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
-            metrics: [
-              { expression: 'ga:users' },
-              { expression: 'ga:pageviews' },
-              { expression: 'ga:avgSessionDuration' },
-              { expression: 'ga:bounceRate' }
-            ],
-            dimensions: [{ name: 'ga:date' }],
-            orderBys: [{ fieldName: 'ga:date', sortOrder: 'ASCENDING' }]
-          }
+    const property = `properties/${propertyId}`
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    const weekAgo = new Date(today)
+    weekAgo.setDate(weekAgo.getDate() - 7)
+    const twoWeeksAgo = new Date(today)
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
+    const monthAgo = new Date(today)
+    monthAgo.setDate(monthAgo.getDate() - 30)
+    const twoMonthsAgo = new Date(today)
+    twoMonthsAgo.setDate(twoMonthsAgo.getDate() - 60)
+
+    // 複数のレポートを並行して取得
+    const [
+      realTimeResponse,
+      dailyResponse,
+      topPagesResponse,
+      trafficSourcesResponse,
+      deviceResponse,
+      geoResponse,
+      userTypeResponse,
+      overviewResponse
+    ] = await Promise.all([
+      // リアルタイムユーザー数
+      client.runRealtimeReport({
+        property,
+        dimensions: [{ name: 'country' }],
+        metrics: [{ name: 'activeUsers' }]
+      }).catch(() => null),
+      
+      // 日別統計（過去7日間）
+      client.runReport({
+        property,
+        dateRanges: [{ startDate: formatDate(weekAgo), endDate: formatDate(today) }],
+        dimensions: [{ name: 'date' }],
+        metrics: [
+          { name: 'activeUsers' },
+          { name: 'screenPageViews' }
+        ],
+        orderBys: [{ dimension: { dimensionName: 'date' } }]
+      }),
+      
+      // トップページ
+      client.runReport({
+        property,
+        dateRanges: [{ startDate: formatDate(today), endDate: formatDate(today) }],
+        dimensions: [{ name: 'pagePath' }],
+        metrics: [{ name: 'screenPageViews' }],
+        limit: 10,
+        orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }]
+      }),
+      
+      // トラフィックソース
+      client.runReport({
+        property,
+        dateRanges: [{ startDate: formatDate(today), endDate: formatDate(today) }],
+        dimensions: [{ name: 'sessionDefaultChannelGroup' }],
+        metrics: [{ name: 'activeUsers' }],
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }]
+      }),
+      
+      // デバイスカテゴリ
+      client.runReport({
+        property,
+        dateRanges: [{ startDate: formatDate(today), endDate: formatDate(today) }],
+        dimensions: [{ name: 'deviceCategory' }],
+        metrics: [{ name: 'activeUsers' }],
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }]
+      }),
+      
+      // 国別ユーザー
+      client.runReport({
+        property,
+        dateRanges: [{ startDate: formatDate(today), endDate: formatDate(today) }],
+        dimensions: [{ name: 'country' }],
+        metrics: [{ name: 'activeUsers' }],
+        limit: 5,
+        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }]
+      }),
+      
+      // 新規 vs リピーター
+      client.runReport({
+        property,
+        dateRanges: [{ startDate: formatDate(today), endDate: formatDate(today) }],
+        dimensions: [{ name: 'newVsReturning' }],
+        metrics: [{ name: 'activeUsers' }]
+      }),
+      
+      // 概要メトリクス
+      client.runReport({
+        property,
+        dateRanges: [
+          { startDate: formatDate(today), endDate: formatDate(today) },
+          { startDate: formatDate(yesterday), endDate: formatDate(yesterday) },
+          { startDate: formatDate(weekAgo), endDate: formatDate(today) },
+          { startDate: formatDate(twoWeeksAgo), endDate: formatDate(weekAgo) },
+          { startDate: formatDate(monthAgo), endDate: formatDate(today) },
+          { startDate: formatDate(twoMonthsAgo), endDate: formatDate(monthAgo) }
+        ],
+        metrics: [
+          { name: 'activeUsers' },
+          { name: 'screenPageViews' },
+          { name: 'averageSessionDuration' },
+          { name: 'bounceRate' }
         ]
+      })
+    ])
+
+    // データの処理
+    const realTimeUsers = realTimeResponse?.[0]?.rows?.reduce((sum, row) => 
+      sum + parseInt(row.metricValues?.[0]?.value || '0'), 0) || 0
+
+    // 日別統計の処理
+    const dailyStats = dailyResponse[0]?.rows?.map(row => ({
+      date: `${row.dimensionValues?.[0]?.value?.slice(0,4)}-${row.dimensionValues?.[0]?.value?.slice(4,6)}-${row.dimensionValues?.[0]?.value?.slice(6,8)}`,
+      users: parseInt(row.metricValues?.[0]?.value || '0'),
+      pageViews: parseInt(row.metricValues?.[1]?.value || '0')
+    })) || []
+
+    // 概要メトリクスの処理
+    const overviewMetrics = overviewResponse[0]?.rows?.[0]?.metricValues || []
+    const todayUsers = parseInt(overviewMetrics[0]?.value || '0')
+    const todayPageViews = parseInt(overviewMetrics[1]?.value || '0')
+    const avgSessionDuration = parseFloat(overviewMetrics[2]?.value || '0')
+    const bounceRate = parseFloat(overviewMetrics[3]?.value || '0') * 100
+
+    const yesterdayUsers = overviewResponse[0]?.rows?.[1]?.metricValues?.[0]?.value 
+      ? parseInt(overviewResponse[0].rows[1].metricValues[0].value) : 0
+    const thisWeekUsers = overviewResponse[0]?.rows?.[2]?.metricValues?.[0]?.value 
+      ? parseInt(overviewResponse[0].rows[2].metricValues[0].value) : 0
+    const lastWeekUsers = overviewResponse[0]?.rows?.[3]?.metricValues?.[0]?.value 
+      ? parseInt(overviewResponse[0].rows[3].metricValues[0].value) : 0
+    const thisMonthUsers = overviewResponse[0]?.rows?.[4]?.metricValues?.[0]?.value 
+      ? parseInt(overviewResponse[0].rows[4].metricValues[0].value) : 0
+    const lastMonthUsers = overviewResponse[0]?.rows?.[5]?.metricValues?.[0]?.value 
+      ? parseInt(overviewResponse[0].rows[5].metricValues[0].value) : 0
+
+    // トップページの処理
+    const topPages = topPagesResponse[0]?.rows?.map(row => ({
+      page: row.dimensionValues?.[0]?.value || '',
+      views: parseInt(row.metricValues?.[0]?.value || '0')
+    })) || []
+
+    // トラフィックソースの処理
+    const totalSourceUsers = trafficSourcesResponse[0]?.rows?.reduce((sum, row) => 
+      sum + parseInt(row.metricValues?.[0]?.value || '0'), 0) || 1
+    const trafficSources = trafficSourcesResponse[0]?.rows?.map(row => {
+      const users = parseInt(row.metricValues?.[0]?.value || '0')
+      return {
+        source: row.dimensionValues?.[0]?.value || '',
+        users,
+        percentage: calculatePercentage(users, totalSourceUsers)
       }
+    }) || []
+
+    // デバイスカテゴリの処理
+    const totalDeviceUsers = deviceResponse[0]?.rows?.reduce((sum, row) => 
+      sum + parseInt(row.metricValues?.[0]?.value || '0'), 0) || 1
+    const deviceCategories = deviceResponse[0]?.rows?.map(row => {
+      const users = parseInt(row.metricValues?.[0]?.value || '0')
+      return {
+        category: row.dimensionValues?.[0]?.value || '',
+        users,
+        percentage: calculatePercentage(users, totalDeviceUsers)
+      }
+    }) || []
+
+    // 国別ユーザーの処理
+    const topCountries = geoResponse[0]?.rows?.map(row => ({
+      country: row.dimensionValues?.[0]?.value || '',
+      users: parseInt(row.metricValues?.[0]?.value || '0')
+    })) || []
+
+    // 新規 vs リピーターの処理
+    let newUsers = 0, returningUsers = 0
+    userTypeResponse[0]?.rows?.forEach(row => {
+      const type = row.dimensionValues?.[0]?.value
+      const users = parseInt(row.metricValues?.[0]?.value || '0')
+      if (type === 'new') newUsers = users
+      else if (type === 'returning') returningUsers = users
     })
 
-    console.log('Analytics API response received')
-    return processAnalyticsResponse(response.data)
+    return {
+      realTimeUsers,
+      todayUsers,
+      yesterdayUsers,
+      thisWeekUsers,
+      lastWeekUsers,
+      thisMonthUsers,
+      lastMonthUsers,
+      todayPageViews,
+      averageSessionDuration: Math.round(avgSessionDuration),
+      bounceRate: Math.round(bounceRate * 10) / 10,
+      topPages,
+      dailyStats,
+      trafficSources,
+      deviceCategories,
+      topCountries,
+      newVsReturning: { new: newUsers, returning: returningUsers }
+    }
     
   } catch (error) {
     console.error('Google Analytics API error:', error)
@@ -213,12 +286,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    // 実際のAnalyticsデータを取得（現在は模擬データ）
-    let analyticsData = await fetchRealAnalyticsData()
+    // 実際のAnalyticsデータを取得
+    const analyticsData = await fetchRealAnalyticsData()
     
-    // 実際のデータが取得できない場合は模擬データを使用
     if (!analyticsData) {
-      analyticsData = generateMockAnalyticsData()
+      return NextResponse.json(
+        { error: 'Analytics data not available. Please check GA4 configuration.' },
+        { status: 503 }
+      )
     }
 
     return NextResponse.json(analyticsData)

@@ -7,14 +7,16 @@ export default function BlockGuard({ children }: { children: React.ReactNode }) 
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const userRole = session?.user?.role ?? "free";
-  console.log('BlockGuard session:', session, status);
+  if (process.env.NODE_ENV === 'development') {
+    console.log('BlockGuard session:', session, status);
+  }
   if (status === "loading") return null;
   if (userRole === "block") {
     if (pathname === "/contact") {
       return <>{children}</>;
     }
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-8">
+      <div className="flex flex-col items-center justify-center bg-background text-foreground p-8 py-32">
         <div className="max-w-xl bg-card p-8 rounded shadow border text-center">
           <h1 className="text-2xl font-bold mb-4">アクセス制限 / Access Blocked / การเข้าถึงถูกบล็อก</h1>
           <p className="mb-2">あなたはなんらかの理由でこのWebサイトにアクセスできません。利用再開を希望する場合は、管理者までメールでご連絡ください：<a href="mailto:ggtms.info@gmail.com" className="underline text-blue-600">ggtms.info@gmail.com</a></p>

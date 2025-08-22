@@ -1,269 +1,354 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getTranslations as getGeminiTranslations } from '@/lib/services/geminiService'
-import { getTranslations as getGptTranslations } from '@/lib/services/gptService'
-import { TranslationMode } from '@/lib/types'
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
-import prisma from '@/lib/prisma';
-
-// Timeout promise helper
-function timeoutPromise<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Request timed out')), ms)
-    promise.then(
-      (val) => { clearTimeout(timer); resolve(val) },
-      (err) => { clearTimeout(timer); reject(err) }
-    )
-  })
-}
+import { NextRequest, NextResponse } from 'next/server';
+import { translationService } from '@/services/mom/translationService';
+import { translationMonitor } from '@/services/mom/translationMonitor';
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+  
   try {
-    // Check if request has a body
-    const contentType = request.headers.get('content-type')
-    if (!contentType || !contentType.includes('application/json')) {
-      console.error('Invalid Content-Type:', contentType)
-      return NextResponse.json(
-        { error: 'Content-Type must be application/json' },
-        { status: 400 }
-      )
-    }
-
-    // Get the raw body text first for debugging
-    const rawBody = await request.text()
-    console.log('Raw request body:', rawBody)
-
-    if (!rawBody.trim()) {
-      console.error('Empty request body')
-      return NextResponse.json(
-        { error: 'Request body is empty' },
-        { status: 400 }
-      )
-    }
-
-    let body
-    try {
-      body = JSON.parse(rawBody)
-    } catch (parseError) {
-      console.error('Failed to parse request body:', parseError)
-      console.error('Raw body that failed to parse:', rawBody)
-      return NextResponse.json(
-        { error: 'Invalid JSON in request body' },
-        { status: 400 }
-      )
-    }
-
-    console.log('Parsed request body:', body)
-
-    const { text, sourceLang, targetLangs, mode, apiProvider } = body
-
-    if (!text || !targetLangs || targetLangs.length === 0) {
-      console.error('Missing required fields:', { text: !!text, targetLangs: !!targetLangs, targetLangsLength: targetLangs?.length })
-      return NextResponse.json(
-        { error: 'Text and target languages are required' },
-        { status: 400 }
-      )
-    }
-
-    const translationMode: TranslationMode = mode || 'translate'
+    const { text, sourceLang } = await request.json();
     
-    // Character limit validation
-    const characterLimits = {
-      translate: 8000,
-      summarize: 12000,
-      generate: 5000
-    };
-    
-    const currentLimit = characterLimits[translationMode];
-    const textLength = text.length;
-    
-    console.log(`📏 Character count: ${textLength}/${currentLimit} (${translationMode} mode)`);
-    
-    if (textLength > currentLimit) {
-      console.warn(`❌ Text exceeds character limit: ${textLength} > ${currentLimit}`);
-      return NextResponse.json(
-        { 
-          error: `制限を超えています。${translationMode === 'translate' ? '翻訳' : translationMode === 'summarize' ? '要約' : '生成'}モードの上限は${currentLimit.toLocaleString()}です。現在: ${textLength.toLocaleString()}`,
-          characterLimit: currentLimit,
-          currentLength: textLength,
-          exceeded: textLength - currentLimit
-        },
-        { status: 400 }
-      )
-    }
-    
-    // Warning for near-limit text
-    const warningThreshold = currentLimit * 0.9; // 90% of limit
-    if (textLength > warningThreshold) {
-      console.warn(`⚠️ Text approaching character limit: ${textLength}/${currentLimit} (${Math.round((textLength/currentLimit)*100)}%)`);
-    }
-    
-    console.log('Translation request:', {
-      text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
-      sourceLang,
-      targetLangs,
-      mode: translationMode,
-      apiProvider
-    })
-    
-    const session = await getServerSession(authOptions);
-    const userRole = session?.user?.role ?? "free";
-    
-    // SettingsからAPIモデル設定を取得（エラーハンドリング追加）
-    let settings: any[] = [];
-    try {
-      settings = await prisma.settings.findMany();
-    } catch (dbError) {
-      console.error('Database error fetching settings:', dbError);
-      // デフォルト値を使用
-      settings = [];
-    }
-    const getSetting = (key: string) => settings.find(s => s.key === key)?.value;
-    // roleごとのモデル設定
-    let model = '';
-    let provider = '';
-    let unitCost = 0.00001;
-    if (translationMode === 'summarize') {
-      model = getSetting('summarize_api_model') || 'gpt-4o-mini';
-    } else {
-      model = getSetting('translate_api_model') || 'gpt-4o-mini';
-    }
-    // モデル名からプロバイダ判定
-    if (model.startsWith('gpt')) {
-      provider = 'openai';
-      unitCost = model === 'gpt-4o-mini' ? 0.001 / 1000 : 0.002 / 1000; // 仮: nanoは0.002/1K
-    } else if (model.startsWith('gemini')) {
-      provider = 'google';
-      unitCost = model === 'gemini-1.5-flash' ? 0.0004 / 1000 : 0.0008 / 1000; // 仮: proは0.0008/1K
-    }
-    // API実行（管理画面設定値で強制）
-    let result;
-    try {
-      console.log('Starting translation with provider:', provider, 'model:', model);
-      let translationPromise;
-      if (provider === 'openai') {
-        console.log('Using OpenAI/GPT service');
-        translationPromise = getGptTranslations(text, sourceLang, targetLangs, translationMode, model);
-      } else if (provider === 'google') {
-        console.log('Using Google/Gemini service');
-        translationPromise = getGeminiTranslations(text, sourceLang, targetLangs, translationMode, model);
-      } else {
-        console.log('Defaulting to OpenAI/GPT service');
-        translationPromise = getGptTranslations(text, sourceLang, targetLangs, translationMode, model);
-      }
-      result = await timeoutPromise(translationPromise, 25000);
-      console.log('Translation completed successfully');
-    } catch (translationError) {
-      console.error('Translation service error:', translationError)
-      console.error('Error details:', {
-        message: translationError instanceof Error ? translationError.message : 'Unknown error',
-        stack: translationError instanceof Error ? translationError.stack : undefined
-      });
-      if (translationError instanceof Error && translationError.message === 'Request timed out') {
-        return NextResponse.json(
-          { error: 'Translation service timed out. Please try again or use shorter input.' },
-          { status: 504 }
-        )
-      }
-      return NextResponse.json(
-        { error: translationError instanceof Error ? translationError.message : 'Translation service failed' },
-        { status: 500 }
-      )
-    }
+    // Debug: Log incoming request
+    console.log('=== Translation API Request ===');
+    console.log('Input text:', text);
+    console.log('Source language:', sourceLang);
+    console.log('Text encoding check:', {
+      length: text?.length,
+      charCodes: text ? text.split('').map((char: string) => char.charCodeAt(0)) : [],
+      isJapanese: text ? /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text) : false
+    });
 
-    console.log('Translation result:', result)
-
-    if (!result || !Array.isArray(result.translations)) {
-      console.error('Invalid result format:', result)
-      return NextResponse.json(
-        { error: 'Invalid response format from translation service' },
-        { status: 500 }
-      )
-    }
-
-    // --- API実行履歴を記録 ---
-    try {
-      const userId = session?.user?.id;
-      const tokens = text.length + (result.translations?.map((t:any)=>t.text.length).reduce((a:number,b:number)=>a+b,0) || 0);
-      const cost = tokens * unitCost;
+    if (!text) {
+      console.log('Empty text, returning empty translations');
+      const response = {
+        success: true,
+        data: { en: '', ja: '', th: '' },
+        detectedLanguage: 'auto',
+      };
       
-      // ユーザーIDがある場合のみ記録（外部キー制約を満たすため）
-      if (userId) {
-        // ユーザーが存在するか確認
-        let userExists = null;
-        try {
-          userExists = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { id: true, email: true }
-          });
-        } catch (userCheckError) {
-          console.error('Error checking user existence:', userCheckError);
+      translationMonitor.logRequest(Date.now() - startTime, true);
+      return NextResponse.json(response);
+    }
+
+    // Use the enhanced translation service
+    try {
+      const translations = await translationService.translate(text, sourceLang);
+      
+      // Detect source language if not provided
+      let detectedLang = sourceLang || 'auto';
+      if (detectedLang === 'auto') {
+        const isJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+        const isEnglish = /^[A-Za-z0-9\s\-.,!?'"]+$/.test(text);
+        const isThai = /[\u0E00-\u0E7F]/.test(text);
+        detectedLang = isJapanese ? 'ja' : isEnglish ? 'en' : isThai ? 'th' : 'other';
+      }
+      
+      const response = {
+        success: true,
+        data: translations,
+        detectedLanguage: detectedLang,
+      };
+      
+      translationMonitor.logRequest(Date.now() - startTime, true);
+      return NextResponse.json(response);
+    } catch (translationError: any) {
+      console.error('Translation service error:', translationError);
+      translationMonitor.logRequest(Date.now() - startTime, false, translationError.message);
+      
+      // Fallback to original implementation if service fails
+    }
+    
+    // Check if Gemini API is configured
+    console.log('GEMINI_API_KEY exists:', !!GEMINI_API_KEY);
+    console.log('GEMINI_API_KEY length:', GEMINI_API_KEY?.length);
+    console.log('GEMINI_API_KEY first 10 chars:', GEMINI_API_KEY?.substring(0, 10) + '...');
+    if (!GEMINI_API_KEY) {
+      console.log('No Gemini API key configured, using simple mock translations');
+      // Return simple mock translations based on source language
+      const isJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+      const isEnglish = /^[A-Za-z0-9\s\-.,!?'"]+$/.test(text);
+      const isThai = /[\u0E00-\u0E7F]/.test(text);
+      
+      let detectedLang = sourceLang;
+      if (sourceLang === 'auto' || !sourceLang) {
+        detectedLang = isJapanese ? 'ja' : isEnglish ? 'en' : isThai ? 'th' : 'other';
+      }
+      
+      // Simple mock translations
+      const mockTranslations: any = {
+        ja: {
+          en: "Meeting room",
+          ja: text,
+          th: "ห้องประชุม"
+        },
+        en: {
+          en: text,
+          ja: "会議室",
+          th: "ห้องประชุม"
+        },
+        th: {
+          en: "Meeting room",
+          ja: "会議室",
+          th: text
         }
+      };
+      
+      // If we have predefined mock translation, use it, otherwise return different text for each language
+      const translations = mockTranslations[detectedLang] || {
+        en: detectedLang === 'en' ? text : `${text} (EN)`,
+        ja: detectedLang === 'ja' ? text : `${text} (JA)`,
+        th: detectedLang === 'th' ? text : `${text} (TH)`,
+      };
+      
+      return NextResponse.json({
+        success: true,
+        data: translations,
+        detectedLanguage: detectedLang,
+      });
+    }
+
+    // Retry logic for API calls
+    let retries = 3;
+    let lastError: any = null;
+    
+    while (retries > 0) {
+      try {
+        console.log(`=== Calling Gemini API (attempt ${4 - retries}) ===`);
         
-        if (userExists) {
-          await prisma.apiUsageLog.create({
-            data: {
-              userId,
-              apiType: translationMode,
-              provider,
-              model,
-              tokens,
-              cost,
-              inputText: text.substring(0, 500),
-              result: JSON.stringify(result).substring(0, 1000),
-            }
-          });
-          console.log('✅ API usage logged for user:', userId);
-        } else {
-          console.warn('ユーザーが存在しないため履歴記録をスキップ:', userId);
+        // Prepare the prompt - escape the text properly to handle special characters
+        const escapedText = text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+        
+        const prompt = `You are a professional translator. Your task is to translate the given text into THREE DIFFERENT languages.
+
+${sourceLang && sourceLang !== 'auto' ? `The source language is: ${sourceLang}` : 'First, detect the language of the input text.'}
+
+CRITICAL TRANSLATION RULES:
+1. You MUST provide translations in ALL THREE languages: English, Japanese, and Thai
+2. Each translation MUST be different and accurate in its target language
+3. If the source text is already in one of these languages, translate it to the other two languages
+4. NEVER return the same text for all three languages
+
+IMPORTANT RULES:
+1. Return ONLY a valid JSON object with no additional text before or after
+2. The JSON must have exactly four keys: 
+   - "detectedLang": the detected or specified language code ("en", "ja", "th", or "other")
+   - "en": English translation (MUST be in English)
+   - "ja": Japanese translation (MUST be in Japanese using appropriate hiragana, katakana, and kanji)
+   - "th": Thai translation (MUST be in Thai script)
+3. Do not include any markdown formatting, code blocks, or explanations
+4. If the text contains product codes or technical terms (like NRT096), keep them as-is in the translation
+5. SPECIAL RULE: When you see the exact Japanese character "盤" (U+76E4), translate it as "SWGR" in English and Thai
+6. PRESERVE LINE BREAKS: If the input text contains line breaks (\\n), maintain them in all translations
+
+Text to translate: "${escapedText}"
+
+Example 1 - Japanese input "会議室":
+{"detectedLang": "ja", "en": "Meeting room", "ja": "会議室", "th": "ห้องประชุม"}
+
+Example 2 - English input "Hello":
+{"detectedLang": "en", "en": "Hello", "ja": "こんにちは", "th": "สวัสดี"}
+
+Example 3 - Thai input "สวัสดี":
+{"detectedLang": "th", "en": "Hello", "ja": "こんにちは", "th": "สวัสดี"}`;
+      
+      console.log('Prompt being sent to Gemini:', prompt);
+      
+      // Call Gemini API for translation - using configuration from working GGMTS project
+      const modelName = 'gemini-1.5-flash'; // or 'gemini-1.5-pro' or 'gemini-pro'
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY || ''}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.2,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 2000,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Gemini API HTTP error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
+        
+        // Specific error handling based on status code
+        if (response.status === 503) {
+          console.error('503 Service Unavailable - Gemini API is temporarily down');
+          throw new Error(`Gemini API temporarily unavailable (503). This usually indicates the service is overloaded or under maintenance. Please try again in a few minutes.`);
+        } else if (response.status === 401) {
+          console.error('401 Unauthorized - Invalid API key');
+          throw new Error(`Gemini API authentication failed (401). Please check your API key is valid and has proper permissions.`);
+        } else if (response.status === 429) {
+          console.error('429 Too Many Requests - Rate limit exceeded');
+          throw new Error(`Gemini API rate limit exceeded (429). Please wait a moment and try again.`);
+        } else if (response.status === 400) {
+          console.error('400 Bad Request - Invalid request format');
+          throw new Error(`Gemini API bad request (400). The request format may be invalid: ${errorText}`);
+        }
+        throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('=== Gemini API Response ===');
+      console.log('Full response:', JSON.stringify(result, null, 2));
+      
+      // Check for API errors
+      if (result.error) {
+        console.error('Gemini API returned error:', result.error);
+        throw new Error(result.error.message || 'Gemini API error');
+      }
+      
+      const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      console.log('Generated text from Gemini:', generatedText);
+      console.log('Generated text length:', generatedText.length);
+      
+      if (!generatedText) {
+        console.error('No text generated from Gemini API:', result);
+        throw new Error('No translation generated');
+      }
+      
+      // Parse the JSON response from Gemini
+      let translations = { detectedLang: 'auto', en: text, ja: text, th: text };
+      console.log('=== Parsing Translation Response ===');
+      
+      try {
+        // Extract JSON from the response - handle multiline JSON with improved regex
+        // This regex looks for a JSON object that starts with { and ends with the matching }
+        const jsonMatch = generatedText.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
+        console.log('JSON regex match result:', jsonMatch ? jsonMatch[0] : 'No match');
+        
+        if (jsonMatch) {
+          translations = JSON.parse(jsonMatch[0]);
+          console.log('Successfully parsed JSON from regex match:', translations);
           
-          // セッションからユーザー情報を取得して作成を試行
-          if (session?.user?.email) {
-            try {
-              console.log('Attempting to create missing user for logging:', userId, session.user.email);
-              const newUser = await prisma.user.create({
-                data: {
-                  id: userId,
-                  email: session.user.email,
-                  name: session.user.name || `User_${userId.slice(-8)}`,
-                  image: session.user.image || null,
-                  role: 'free'
-                }
-              });
-              
-              // ユーザー作成後、再度ログ記録を試行
-              await prisma.apiUsageLog.create({
-                data: {
-                  userId,
-                  apiType: translationMode,
-                  provider,
-                  model,
-                  tokens,
-                  cost,
-                  inputText: text.substring(0, 500),
-                  result: JSON.stringify(result).substring(0, 1000),
-                }
-              });
-              console.log('✅ Created user and logged API usage:', newUser.id);
-            } catch (createError) {
-              console.error('Failed to create user for logging:', createError);
-            }
+          // Validate the parsed object has required fields
+          if (!translations.detectedLang || translations.detectedLang === undefined) {
+            console.warn('Missing detectedLang in parsed JSON, setting to "auto"');
+            translations.detectedLang = 'auto';
+          }
+        } else {
+          // Try to parse the entire response as JSON
+          translations = JSON.parse(generatedText);
+          console.log('Successfully parsed entire response as JSON:', translations);
+          
+          // Validate the parsed object has required fields
+          if (!translations.detectedLang || translations.detectedLang === undefined) {
+            console.warn('Missing detectedLang in parsed JSON, setting to "auto"');
+            translations.detectedLang = 'auto';
           }
         }
-      } else {
-        console.warn('未認証ユーザーのため履歴記録をスキップ');
+      } catch (parseError) {
+        console.error('Failed to parse Gemini translation response:', generatedText);
+        console.error('Parse error:', parseError);
+        
+        // Try alternative parsing methods
+        try {
+          // Remove markdown code blocks if present
+          const cleanedText = generatedText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+          console.log('Cleaned text for parsing:', cleanedText);
+          translations = JSON.parse(cleanedText);
+          console.log('Successfully parsed cleaned text:', translations);
+        } catch (secondError) {
+          console.error('Second parse attempt failed:', secondError);
+          console.log('Attempting manual extraction from text:', generatedText);
+          
+          // Last resort: try to extract translations manually
+          const detectedMatch = generatedText.match(/"detectedLang"\s*:\s*"([^"]+)"/);
+          const enMatch = generatedText.match(/"en"\s*:\s*"([^"]+)"/);
+          const jaMatch = generatedText.match(/"ja"\s*:\s*"([^"]+)"/);
+          const thMatch = generatedText.match(/"th"\s*:\s*"([^"]+)"/);
+          
+          console.log('Manual extraction results:', {
+            detectedMatch: detectedMatch ? detectedMatch[1] : null,
+            enMatch: enMatch ? enMatch[1] : null,
+            jaMatch: jaMatch ? jaMatch[1] : null,
+            thMatch: thMatch ? thMatch[1] : null
+          });
+          
+          if (enMatch || jaMatch || thMatch) {
+            translations = {
+              detectedLang: detectedMatch ? detectedMatch[1] : 'auto',
+              en: enMatch ? enMatch[1] : text,
+              ja: jaMatch ? jaMatch[1] : text,
+              th: thMatch ? thMatch[1] : text
+            };
+            console.log('Manual extraction successful:', translations);
+          }
+        }
       }
-    } catch (logErr) {
-      console.error('履歴記録エラー', logErr);
-    }
-    // ---
 
-    return NextResponse.json(result)
-  } catch (error) {
-    console.error('Translation API error:', error)
+      console.log('=== Final Translation Result ===');
+      console.log('Translations object:', translations);
+      console.log('Detected language:', translations.detectedLang);
+      
+      // If the text is Japanese and detectedLang is still 'auto', try to detect it
+      if (translations.detectedLang === 'auto' && /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text)) {
+        console.log('Text contains Japanese characters but detectedLang is auto, setting to "ja"');
+        translations.detectedLang = 'ja';
+      }
+      
+      // Ensure we have valid translations for all languages
+      const enTranslation = translations.en || (translations.detectedLang === 'en' ? text : '[Translation Error]');
+      const thTranslation = translations.th || (translations.detectedLang === 'th' ? text : '[Translation Error]');
+      
+      const finalResponse = {
+        success: true,
+        data: {
+          en: enTranslation,
+          ja: translations.ja || (translations.detectedLang === 'ja' ? text : '[Translation Error]'),
+          th: thTranslation,
+        },
+        detectedLanguage: translations.detectedLang || 'auto',
+      };
+      
+      console.log('Final API response:', finalResponse);
+      console.log('Final response JSON:', JSON.stringify(finalResponse, null, 2));
+      
+      translationMonitor.logRequest(Date.now() - startTime, true);
+      return NextResponse.json(finalResponse);
+        } catch (apiError: any) {
+        console.error('=== Gemini API Error ===');
+        console.error('Error details:', apiError);
+        console.error('Error message:', apiError.message);
+        console.error('Error stack:', apiError.stack);
+      
+        // Check if text is Japanese for better fallback
+        const isJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+        const detectedLang = isJapanese ? 'ja' : 'en';
+        
+        // Return fallback response
+        const fallbackResponse = {
+          success: true,
+          data: {
+            en: detectedLang === 'en' ? text : `[API Error] ${text}`,
+            ja: detectedLang === 'ja' ? text : `[API Error] ${text}`,
+            th: `[API Error] ${text}`,
+          },
+          detectedLanguage: detectedLang,
+        };
+        
+        console.log('Returning fallback response:', fallbackResponse);
+        
+        translationMonitor.logRequest(Date.now() - startTime, false, apiError.message);
+        return NextResponse.json(fallbackResponse);
+      }
+    }
+  } catch (error: any) {
+    console.error('Error translating text:', error);
+    translationMonitor.logRequest(Date.now() - startTime, false, error.message);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Failed to translate text' },
       { status: 500 }
-    )
+    );
   }
-} 
+}

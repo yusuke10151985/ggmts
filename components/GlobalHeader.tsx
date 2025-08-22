@@ -113,6 +113,9 @@ function HeaderContent() {
             <a href="/about" className="hover:underline">About</a>
             <a href="/contact" className="hover:underline">Contact</a>
             <a href="/release-notes" className="hover:underline whitespace-nowrap">Release Notes</a>
+            {session?.user && (session.user as any).role === 'admin' && (
+              <a href="/mom" className="hover:underline text-red-600 dark:text-red-400 font-semibold">MoM Manager</a>
+            )}
           </nav>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">

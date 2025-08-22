@@ -123,7 +123,16 @@ function cleanSummaryText(summaryArray: string[]): string {
   return lines.join('\n');
 }
 
-// These functions are now imported from summaryFormatter module\n\n// Multi-language notice text definitions
+// These functions are now imported from summaryFormatter module
+
+// Development logging helper
+const devLog = (...args: any[]) => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(...args)
+  }
+}
+
+// Multi-language notice text definitions
 const NOTICE_TEXTS: Record<string, string> = {
   ja: '【ご注意】本出力はAIによる機械翻訳・要約です。内容の正確性は保証されません。ご自身で必ずご確認ください。',
   en: '[Notice] This output is machine-translated/summarized by AI. Accuracy is not guaranteed. Please verify the content yourself.',
@@ -139,10 +148,6 @@ export const TranslatorApp: React.FC = () => {
   
   // Wrap setResult to add debugging
   const setResult = (newResult: TranslationResult | null) => {
-    console.trace('🔍 setResult called with:', newResult ? 'TranslationResult' : 'null')
-    if (newResult === null) {
-      console.error('⚠️ WARNING: Setting result to null!')
-    }
     setResultInternal(newResult)
   }
   const [isLoading, setIsLoading] = useState(false)
@@ -178,8 +183,8 @@ export const TranslatorApp: React.FC = () => {
 
   // Debug: Component initialization log
   useEffect(() => {
-    console.log('🚀 TranslatorApp initialized');
-    console.log('📊 Initial state:', {
+    devLog('🚀 TranslatorApp initialized');
+    devLog('📊 Initial state:', {
       inputText: inputText.substring(0, 20) + (inputText.length > 20 ? '...' : ''),
       sourceLang,
       targetLangs,
@@ -192,12 +197,12 @@ export const TranslatorApp: React.FC = () => {
   
   // Debug: Track mode changes
   useEffect(() => {
-    console.log('🔄 Mode changed to:', mode)
+    devLog('🔄 Mode changed to:', mode)
   }, [mode])
 
   // Debug: Important state change log
   useEffect(() => {
-    console.log('🔄 State changed:', {
+    devLog('🔄 State changed:', {
       inputTextLength: inputText.length,
       targetLangs,
       isLoading,
@@ -223,9 +228,9 @@ export const TranslatorApp: React.FC = () => {
   }, [])
 
   const executeTranslation = async (text: string, source: string, targets: string[]) => {
-    console.log('🚀 executeTranslation called with:', { text: text.substring(0, 50), source, targets })
+    devLog('🚀 executeTranslation called with:', { text: text.substring(0, 50), source, targets })
     if (!text.trim()) {
-      console.log('❌ Empty text, returning')
+      devLog('❌ Empty text, returning')
       return
     }
 
@@ -249,7 +254,7 @@ export const TranslatorApp: React.FC = () => {
           targetLanguages: targets,
         }
         apiEndpoint = '/api/generate'
-        console.log('Sending generation request:', requestBody)
+        devLog('Sending generation request:', requestBody)
       } else {
         requestBody = {
           text,
@@ -259,7 +264,7 @@ export const TranslatorApp: React.FC = () => {
           apiProvider,
         }
         apiEndpoint = '/api/translate'
-        console.log('Sending translation request:', requestBody)
+        devLog('Sending translation request:', requestBody)
       }
       
       const fetchOptions: RequestInit = {
@@ -306,12 +311,12 @@ export const TranslatorApp: React.FC = () => {
         throw new Error('Invalid response format from server')
       }
 
-      console.log('📊 About to set result:', translationResult)
+      devLog('📊 About to set result:', translationResult)
       console.trace('📊 Setting result from executeTranslation')
       setResult(translationResult)
-      console.log('📊 About to set loading false')
+      devLog('📊 About to set loading false')
       setIsLoading(false)
-      console.log('✅ Result state updated:', translationResult)
+      devLog('✅ Result state updated:', translationResult)
       
       // State update is complete at this point
       
@@ -332,7 +337,7 @@ export const TranslatorApp: React.FC = () => {
 
       setHistory(prev => [newHistoryItem, ...prev.slice(0, 9)])
       setSelectedForCopy({})
-      console.log('✅ History updated with new item')
+      devLog('✅ History updated with new item')
     } catch (e: unknown) {
       if (e instanceof Error && e.name === 'AbortError') {
         return
@@ -349,15 +354,11 @@ export const TranslatorApp: React.FC = () => {
 
   // Debug logging for result state
   useEffect(() => {
-    console.log('🔄 Result state changed:', result)
-    console.log('🔄 isLoading:', isLoading)
-    console.log('🔄 isRealTimeMode:', isRealTimeMode)
-    console.log('🔄 Display condition met:', result && !isLoading && !isRealTimeMode)
+    devLog('🔄 Result state changed:', result)
+    devLog('🔄 isLoading:', isLoading)
+    devLog('🔄 isRealTimeMode:', isRealTimeMode)
+    devLog('🔄 Display condition met:', result && !isLoading && !isRealTimeMode)
     
-    // Stack trace to find what's clearing the result
-    if (result === null && !isLoading) {
-      console.trace('⚠️ Result was set to null')
-    }
     
     // Regression prevention: Warn if results exist but might not be displayed
     if (result && result.translations && result.translations.length > 0 && !isLoading && !isRealTimeMode) {
@@ -443,7 +444,7 @@ export const TranslatorApp: React.FC = () => {
 
   // Handle real-time mode change
   const handleRealTimeModeChange = useCallback((isRealTime: boolean) => {
-    console.log('🔄 Real-time mode change:', isRealTime)
+    devLog('🔄 Real-time mode change:', isRealTime)
     setIsRealTimeMode(isRealTime)
     // Don't clear results when switching modes - users should keep their results
   }, [])
@@ -461,8 +462,8 @@ export const TranslatorApp: React.FC = () => {
 
   // Execute button handler
   const handleExecute = () => {
-    console.log('🔘 Execute button clicked');
-    console.log('🔍 Current state:', {
+    devLog('🔘 Execute button clicked');
+    devLog('🔍 Current state:', {
       session: !!session,
       status,
       inputText: inputText.substring(0, 50) + (inputText.length > 50 ? '...' : ''),
@@ -475,20 +476,20 @@ export const TranslatorApp: React.FC = () => {
       isLoading
     });
     if (status === 'loading') {
-      console.log('⏳ Session loading, wait...');
+      devLog('⏳ Session loading, wait...');
       return;
     }
     if (!session) {
-      console.log('🔐 No session, redirecting to sign in');
+      devLog('🔐 No session, redirecting to sign in');
       signIn('google');
       return;
     }
     if (!inputText.trim()) {
-      console.log('❌ No input text');
+      devLog('❌ No input text');
       return;
     }
     if (targetLangs.length === 0) {
-      console.log('❌ No target languages selected');
+      devLog('❌ No target languages selected');
       return;
     }
     
@@ -496,7 +497,7 @@ export const TranslatorApp: React.FC = () => {
     const characterLimits = { translate: 8000, summarize: 12000, generate: 5000 };
     const currentLimit = characterLimits[mode];
     if (inputText.length > currentLimit) {
-      console.log('❌ Text exceeds character limit:', inputText.length, '>', currentLimit);
+      devLog('❌ Text exceeds character limit:', inputText.length, '>', currentLimit);
       setError(UI_TEXT.messages.characterLimitMessage
         .replace('{mode}', UI_TEXT.modes[mode])
         .replace('{limit}', currentLimit.toLocaleString())
@@ -504,7 +505,7 @@ export const TranslatorApp: React.FC = () => {
       return;
     }
     
-    console.log('✅ Starting translation execution');
+    devLog('✅ Starting translation execution');
     // Call executeTranslation directly instead of using ref
     executeTranslation(inputText, sourceLang, targetLangs);
   };
@@ -637,7 +638,7 @@ ${UI_TEXT.template.time}:`;
   const showAds = shouldShowAds(userRole)
 
   return (
-    <div className={`relative w-full min-h-screen ${mode === 'summarize' ? 'bg-green-50' : mode === 'generate' ? 'bg-purple-50' : 'bg-blue-50'}`}>
+    <div className={`relative w-full ${mode === 'summarize' ? 'bg-green-50' : mode === 'generate' ? 'bg-purple-50' : 'bg-blue-50'}`}>
       <div className="flex-grow w-full pt-4 sm:pt-6 md:pt-8">
         <div className={cn(
           "w-full px-2 sm:px-4 md:px-8",
@@ -786,8 +787,8 @@ ${UI_TEXT.template.time}:`;
                       <div className="mt-4">
                         <Button
                           onClick={(e) => {
-                            console.log('🔘 Button clicked!', e);
-                            console.log('🔍 Button state:', {
+                            devLog('🔘 Button clicked!', e);
+                            devLog('🔍 Button state:', {
                               isLoading,
                               inputTextLength: inputText.length,
                               inputTextTrimmed: inputText.trim().length,
@@ -832,7 +833,7 @@ ${UI_TEXT.template.time}:`;
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="bg-card p-6 rounded-lg border border-border shadow-sm mt-4"
-                      onAnimationStart={() => console.log('🎬 Result animation started')}
+                      onAnimationStart={() => devLog('🎬 Result animation started')}
                     >
                       <div className="flex justify-between items-center mb-4">
                         <p className="text-sm text-muted-foreground">
@@ -1126,11 +1127,6 @@ ${UI_TEXT.template.time}:`;
         </div>
       </div>
 
-      <footer className="bg-card border-t border-border">
-        <div className="container mx-auto p-4 md:p-6 max-w-4xl space-y-4">
-          <p className="text-center text-xs text-muted-foreground">© 2025 Multi Translator. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   )
 }

@@ -340,10 +340,18 @@ export default function AdminDashboardPage() {
                         </td>
                         <td className="border px-2 py-1">{m.model || <span className="text-gray-400">不明</span>}</td>
                         <td className="border px-2 py-1">{
-                          m.model === 'gpt-4o-mini' ? '0.001' :
-                          m.model === 'gpt-4.1-nano' ? '0.002' :
+                          m.model === 'gpt-4o-mini' ? '0.0006' :
+                          m.model === 'gpt-4o' ? '0.0025' :
+                          m.model === 'gpt-4-turbo' ? '0.01' :
+                          m.model === 'gpt-4' ? '0.03' :
+                          m.model === 'gpt-5' ? '0.05' :
+                          m.model === 'o1-mini' ? '0.0011' :
+                          m.model === 'o1' ? '0.015' :
                           m.model === 'gemini-1.5-flash' ? '0.0004' :
+                          m.model === 'gemini-1.5-flash-8b' ? '0.0004' :
                           m.model === 'gemini-1.5-pro' ? '0.0008' :
+                          m.model === 'gemini-2.0-flash' ? '0.0004' :
+                          m.model === 'gemini-2.5-flash-lite' ? '0.0001' :
                           <span className="text-gray-400">-</span>
                         }</td>
                         <td className="border px-2 py-1">{m._count._all}</td>
@@ -405,10 +413,18 @@ export default function AdminDashboardPage() {
                       <td className="border px-2 py-1">{log.apiType}</td>
                       <td className="border px-2 py-1">{log.model || <span className="text-gray-400">不明</span>}</td>
                       <td className="border px-2 py-1">{
-                        log.model === 'gpt-4o-mini' ? '0.001' :
-                        log.model === 'gpt-4.1-nano' ? '0.002' :
+                        log.model === 'gpt-4o-mini' ? '0.0006' :
+                        log.model === 'gpt-4o' ? '0.0025' :
+                        log.model === 'gpt-4-turbo' ? '0.01' :
+                        log.model === 'gpt-4' ? '0.03' :
+                        log.model === 'gpt-5' ? '0.05' :
+                        log.model === 'o1-mini' ? '0.0011' :
+                        log.model === 'o1' ? '0.015' :
                         log.model === 'gemini-1.5-flash' ? '0.0004' :
+                        log.model === 'gemini-1.5-flash-8b' ? '0.0004' :
                         log.model === 'gemini-1.5-pro' ? '0.0008' :
+                        log.model === 'gemini-2.0-flash' ? '0.0004' :
+                        log.model === 'gemini-2.5-flash-lite' ? '0.0001' :
                         <span className="text-gray-400">-</span>
                       }</td>
                       <td className="border px-2 py-1">{log.tokens}</td>
@@ -485,10 +501,18 @@ export default function AdminDashboardPage() {
                         <td className="border px-2 py-1">{userObj ? `${userObj.name || ''} ${userObj.email ? `<${userObj.email}>` : ''}` : <span className="text-gray-400">不明</span>}</td>
                         <td className="border px-2 py-1">{u.model || <span className="text-gray-400">不明</span>}</td>
                         <td className="border px-2 py-1">{
-                          u.model === 'gpt-4o-mini' ? '0.001' :
-                          u.model === 'gpt-4.1-nano' ? '0.002' :
+                          u.model === 'gpt-4o-mini' ? '0.0006' :
+                          u.model === 'gpt-4o' ? '0.0025' :
+                          u.model === 'gpt-4-turbo' ? '0.01' :
+                          u.model === 'gpt-4' ? '0.03' :
+                          u.model === 'gpt-5' ? '0.05' :
+                          u.model === 'o1-mini' ? '0.0011' :
+                          u.model === 'o1' ? '0.015' :
                           u.model === 'gemini-1.5-flash' ? '0.0004' :
+                          u.model === 'gemini-1.5-flash-8b' ? '0.0004' :
                           u.model === 'gemini-1.5-pro' ? '0.0008' :
+                          u.model === 'gemini-2.0-flash' ? '0.0004' :
+                          u.model === 'gemini-2.5-flash-lite' ? '0.0001' :
                           <span className="text-gray-400">-</span>
                         }</td>
                         <td className="border px-2 py-1">{u._count._all}</td>
@@ -544,33 +568,53 @@ export default function AdminDashboardPage() {
 
       {/* --- APIモデル設定 */}
       <h2 className="mt-8 mb-2 font-bold">APIモデル設定</h2>
+      <p className="text-sm text-gray-600 mb-4">※ 価格は1Mトークンあたりの参考価格です。実際の課金は使用量に基づきます。</p>
       <form className="space-y-4">
-        {[{ key: "translate_api_model", label: "翻訳APIモデル", options: ["gpt-4o-mini", "gpt-4.1-nano", "gemini-1.5-flash", "gemini-1.5-pro"] },
-          { key: "summarize_api_model", label: "要約APIモデル", options: ["gpt-4o-mini", "gpt-4.1-nano", "gemini-1.5-flash", "gemini-1.5-pro"] },
-          { key: "generate_api_model", label: "Generate for SNS APIモデル", options: ["gpt-4o-mini", "gpt-4.1-nano", "gemini-1.5-flash", "gemini-1.5-pro"] }].map(({ key, label, options }) => {
-          const setting = settings.find((s) => s.key === key);
-          if (!setting) return null;
-          return (
-            <div key={key} className="flex items-center gap-2">
-              <label className="w-56 font-mono">{label}</label>
-              <select
-                value={setting.value}
-                onChange={e => handleChange(key, e.target.value)}
-                className="border px-2 py-1 rounded w-60"
-                disabled={loading}
-              >
-                {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-              </select>
-              <button
-                type="button"
-                onClick={() => handleSave(key, setting.value)}
-                className="px-3 py-1 bg-blue-600 text-white rounded disabled:opacity-50"
-                disabled={loading}
-              >保存</button>
-              <span className="text-gray-500 text-xs ml-2">{setting.description}</span>
-            </div>
-          );
-        })}
+        {(() => {
+          // 価格情報マップ
+          const modelPricing: { [key: string]: string } = {
+            'gpt-4o-mini': '$0.60/1M tokens',
+            'gpt-4o': '$2.50/1M tokens', 
+            'gpt-4-turbo': '$10/1M tokens',
+            'gpt-4': '$30/1M tokens',
+            'gpt-5': '$50/1M tokens (推定)',
+            'o1-mini': '$1.10/1M tokens',
+            'o1': '$15/1M tokens',
+            'gemini-1.5-flash': '$0.40/1M tokens',
+            'gemini-1.5-flash-8b': '$0.40/1M tokens',
+            'gemini-1.5-pro': '$0.80/1M tokens',
+            'gemini-2.0-flash': '$0.40/1M tokens',
+            'gemini-2.5-flash-lite': '$0.10/1M tokens'
+          };
+
+          return [{ key: "translate_api_model", label: "翻訳APIモデル", options: ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-5", "o1-mini", "o1", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.5-pro", "gemini-2.0-flash", "gemini-2.5-flash-lite"] },
+            { key: "summarize_api_model", label: "要約APIモデル", options: ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-5", "o1-mini", "o1", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.5-pro", "gemini-2.0-flash", "gemini-2.5-flash-lite"] },
+            { key: "generate_api_model", label: "Generate for SNS APIモデル", options: ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-4", "gpt-5", "o1-mini", "o1", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.5-pro", "gemini-2.0-flash", "gemini-2.5-flash-lite"] }].map(({ key, label, options }) => {
+            const setting = settings.find((s) => s.key === key);
+            if (!setting) return null;
+            return (
+              <div key={key} className="flex items-center gap-2">
+                <label className="w-56 font-mono">{label}</label>
+                <select
+                  value={setting.value}
+                  onChange={e => handleChange(key, e.target.value)}
+                  className="border px-2 py-1 rounded w-60"
+                  disabled={loading}
+                >
+                  {options.map(opt => <option key={opt} value={opt}>{opt} {modelPricing[opt] ? `(${modelPricing[opt]})` : ''}</option>)}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => handleSave(key, setting.value)}
+                  className="px-3 py-1 bg-blue-600 text-white rounded disabled:opacity-50"
+                  disabled={loading}
+                >保存</button>
+                <span className="text-sm ml-2 font-semibold text-blue-600">{modelPricing[setting.value] || ''}</span>
+                <span className="text-gray-500 text-xs ml-2">{setting.description}</span>
+              </div>
+            );
+          });
+        })()}
       </form>
 
       {/* --- ユーザー一覧・会員種別管理 --- */}
