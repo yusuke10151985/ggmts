@@ -111,7 +111,7 @@ export default function Header({ onShowSpreadsheet, onShowTasks, onShowList }: H
       });
       
       // Mark as saved
-      dispatch({ type: 'SET_HAS_UNSAVED_CHANGES', payload: false });
+      dispatch({ type: 'SET_UNSAVED_CHANGES', payload: false });
       
       // Update the MOM list to reflect the new draft
       const listResponse = await getMOMList();
@@ -161,7 +161,7 @@ export default function Header({ onShowSpreadsheet, onShowTasks, onShowList }: H
       });
       
       // Mark as saved
-      dispatch({ type: 'SET_HAS_UNSAVED_CHANGES', payload: false });
+      dispatch({ type: 'SET_UNSAVED_CHANGES', payload: false });
       
       // Update the MOM list
       const listResponse = await getMOMList();
