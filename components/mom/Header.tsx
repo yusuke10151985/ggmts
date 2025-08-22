@@ -177,10 +177,10 @@ export default function Header({ onShowSpreadsheet, onShowTasks, onShowList }: H
     dispatch({ type: 'SET_SAVING', payload: false });
   };
 
-  const openSpreadsheet = () => {
-    const url = getSpreadsheetUrl();
-    if (url) {
-      window.open(url, '_blank');
+  const openSpreadsheet = async () => {
+    const response = await getSpreadsheetUrl();
+    if (response.success && response.data?.url) {
+      window.open(response.data.url, '_blank');
     }
   };
 

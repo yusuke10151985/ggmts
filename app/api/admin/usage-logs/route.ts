@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
   // ユーザー情報を付加してuserStatsを拡張
   const userStatsWithDetails = await Promise.all(
-    userStats.map(async (stat) => {
+    userStats.map(async (stat: any) => {
       let userDetails = null;
       if (stat.userId) {
         try {

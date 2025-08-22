@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     // Parse target languages from results and count usage
     const languageCounts: Record<string, number> = {}
     
-    apiUsageLogs.forEach(log => {
+    apiUsageLogs.forEach((log: any) => {
       try {
         const result = JSON.parse(log.result || '{}')
         if (result.translations && Array.isArray(result.translations)) {

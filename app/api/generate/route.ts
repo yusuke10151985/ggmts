@@ -120,7 +120,7 @@ JSONレスポンス形式:
 
     // 管理画面設定からAPIモデル設定を取得
     const settings = await prisma.settings.findMany();
-    const getSetting = (key: string) => settings.find(s => s.key === key)?.value;
+    const getSetting = (key: string) => settings.find((s: any) => s.key === key)?.value;
     
     // 生成モード用のモデル設定を取得
     let model = getSetting('generate_api_model') || 'gemini-1.5-flash';
