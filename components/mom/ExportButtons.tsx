@@ -64,25 +64,34 @@ export default function ExportButtons() {
       
       <div className="flex gap-4 flex-wrap">
         <button
-          className="btn btn-primary"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={handleExportPDF}
           disabled={isExportingPDF}
         >
-          {isExportingPDF ? 'Generating PDF...' : 'Export as PDF'}
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+          <span>{isExportingPDF ? 'Generating PDF...' : 'Export as PDF'}</span>
         </button>
         
         <button
-          className="btn btn-secondary"
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border-2 border-purple-500 dark:border-purple-400 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md font-medium"
           onClick={handleViewAsHTML}
         >
-          View as HTML
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
+          <span>View as HTML</span>
         </button>
         
         <button
-          className="btn btn-secondary"
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border-2 border-green-500 dark:border-green-400 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md font-medium"
           onClick={handleCopyMarkdown}
         >
-          Copy Markdown
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <span>Copy Markdown</span>
         </button>
       </div>
       

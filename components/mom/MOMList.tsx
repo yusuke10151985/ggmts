@@ -4,7 +4,17 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useMOM } from '@/contexts/mom/MOMContext';
 import { loadMOM, deleteMOM, getMOMList } from '@/services/mom/api';
 import { MOMListItem, MOM } from '@/types/mom';
-import { FaListAlt } from 'react-icons/fa';
+import { 
+  List, 
+  RefreshCw, 
+  Search, 
+  Edit, 
+  Copy, 
+  Trash2,
+  FileText,
+  Calendar,
+  Filter
+} from 'lucide-react';
 
 export default function MOMList() {
   const { state, dispatch } = useMOM();
@@ -154,20 +164,20 @@ export default function MOMList() {
     
     if (filters.title) {
       filtered = filtered.filter(mom => {
+        const title = mom.title || '';
+        const enTitle = mom.titleTranslations?.en || '';
+        const jaTitle = mom.titleTranslations?.ja || '';
+        const thTitle = mom.titleTranslations?.th || '';
         const searchLower = filters.title.toLowerCase();
-        return (
-          (mom.title || '').toLowerCase().includes(searchLower) ||
-          (mom.titleTranslations?.en || '').toLowerCase().includes(searchLower) ||
-          (mom.titleTranslations?.ja || '').toLowerCase().includes(searchLower) ||
-          (mom.titleTranslations?.th || '').toLowerCase().includes(searchLower)
-        );
+        return title.toLowerCase().includes(searchLower) ||
+               enTitle.toLowerCase().includes(searchLower) ||
+               jaTitle.toLowerCase().includes(searchLower) ||
+               thTitle.toLowerCase().includes(searchLower);
       });
     }
     
     if (filters.date) {
-      filtered = filtered.filter(mom => 
-        (mom.date || '').includes(filters.date)
-      );
+      filtered = filtered.filter(mom => mom.date === filters.date);
     }
     
     if (filters.status !== 'all') {
@@ -176,27 +186,35 @@ export default function MOMList() {
 
     // Apply global search
     if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(mom => {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-          mom.momId.toLowerCase().includes(searchLower) ||
-          mom.revision.toString().includes(searchLower) ||
-          (mom.title || '').toLowerCase().includes(searchLower) ||
-          (mom.titleTranslations?.en || '').toLowerCase().includes(searchLower) ||
-          (mom.titleTranslations?.ja || '').toLowerCase().includes(searchLower) ||
-          (mom.titleTranslations?.th || '').toLowerCase().includes(searchLower) ||
-          (mom.date || '').toLowerCase().includes(searchLower) ||
-          mom.status.toLowerCase().includes(searchLower)
-        );
+        const title = mom.title || '';
+        const enTitle = mom.titleTranslations?.en || '';
+        const jaTitle = mom.titleTranslations?.ja || '';
+        const thTitle = mom.titleTranslations?.th || '';
+        return mom.momId.toLowerCase().includes(searchLower) ||
+               mom.revision.toString().includes(searchLower) ||
+               title.toLowerCase().includes(searchLower) ||
+               enTitle.toLowerCase().includes(searchLower) ||
+               jaTitle.toLowerCase().includes(searchLower) ||
+               thTitle.toLowerCase().includes(searchLower) ||
+               (mom.date || '').includes(searchLower) ||
+               mom.status.toLowerCase().includes(searchLower);
       });
     }
 
+    // Sort by MOM ID (desc) and revision (desc)
+    filtered.sort((a, b) => {
+      const idCompare = b.momId.localeCompare(a.momId);
+      if (idCompare !== 0) return idCompare;
+      return b.revision - a.revision;
+    });
+
     return filtered;
-  }, [momList, filters, searchTerm]);
+  }, [momList, searchTerm, filters]);
 
   const handleEdit = async (momId: string, revision: number) => {
     dispatch({ type: 'SET_LOADING', payload: true });
-    
     const response = await loadMOM(momId, revision);
     
     if (response.success && response.data) {
@@ -207,98 +225,76 @@ export default function MOMList() {
     
     dispatch({ type: 'SET_LOADING', payload: false });
   };
-
-  // **COPY NEW MOM**: Handle duplication of MOM as new entry
+  
+  // **COPY NEW MOM**: Duplicate MOM as a new entry with new ID
   const handleCopyNewMOM = async (momId: string, revision: number) => {
     dispatch({ type: 'SET_LOADING', payload: true });
+    const response = await loadMOM(momId, revision);
     
-    try {
-      // Load the source MOM
-      const response = await loadMOM(momId, revision);
+    if (response.success && response.data) {
+      const originalMOM = response.data;
       
-      if (response.success && response.data) {
-        // Generate new MOM ID
-        const newMomId = generateNewMOMId();
-        
-        // Create a copy with new ID, revision 0, and Draft status
-        const copiedMOM: MOM = {
-          ...response.data,
-          momId: newMomId,
-          revision: 0,
-          status: 'Draft',
-          previousRevisionData: undefined // Clear previous revision data
-        };
-        
-        // Set as current MOM with "New MOM" marker
-        const newMOM: MOM = {
-          ...copiedMOM,
-          momId: 'New MOM', // This triggers new MOM mode in MOMEditor
-          revision: 0
-        };
-        
-        // Store the intended new MOM ID for when it's saved
-        (window as any).__newMOMId = newMomId;
-        
-        dispatch({ type: 'SET_CURRENT_MOM', payload: newMOM });
-      } else {
-        dispatch({ type: 'SET_ERROR', payload: response.error || 'Failed to load MOM for copying' });
-      }
-    } catch (error) {
-      console.error('Error copying MOM:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to copy MOM' });
+      // Generate a unique new MOM ID
+      const newMOMId = generateNewMOMId();
+      
+      // Store the new ID temporarily for use during save
+      (window as any).__newMOMId = newMOMId;
+      
+      // Create a new MOM with Rev.0 and Draft status
+      const newMOM: MOM = {
+        ...originalMOM,
+        momId: 'New MOM', // Display as "New MOM" in UI
+        revision: 0,
+        status: 'Draft',
+        // Keep all other data from the original
+      };
+      
+      // Set as current MOM for editing
+      dispatch({ type: 'SET_CURRENT_MOM', payload: newMOM });
+      
+      // Mark as having unsaved changes
+      dispatch({ type: 'SET_HAS_UNSAVED_CHANGES', payload: true });
+      
+      alert(`Copied from ${momId} Rev.${revision}. This will be saved as a new MOM when you click "Save Draft".`);
+    } else {
+      dispatch({ type: 'SET_ERROR', payload: response.error || 'Failed to copy MOM' });
     }
     
     dispatch({ type: 'SET_LOADING', payload: false });
   };
 
-  // **DELETE MOM**: Handle deletion of MOM records
   const handleDelete = async (momId: string, revision: number) => {
-    if (!confirm(`Are you sure you want to delete ${momId} Rev.${revision}? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to delete ${momId} Rev.${revision}?\n\nThis will mark it as deleted in the spreadsheet.`)) {
       return;
     }
-
-    setIsRefreshing(true);
     
+    setIsRefreshing(true);
     const response = await deleteMOM(momId, revision);
     
     if (response.success) {
-      // **即座にUIを更新**: Google Sheetsの更新を待たずに、まずUIから削除
-      const updatedList = momList.filter(m => !(m.momId === momId && m.revision === revision));
-      dispatch({ type: 'SET_MOM_LIST', payload: updatedList });
+      // **削除後の自動更新**: Spreadsheetのデータが更新されるまで少し待機してから更新
+      alert(`Successfully deleted ${momId} Rev.${revision}`);
       
-      // Show success message immediately
-      alert('MOM deleted successfully');
-      
-      // Add multiple retry attempts with increasing delays for Google Sheets propagation
+      // Wait for Google Sheets to propagate changes with exponential backoff
       const refreshWithRetry = async () => {
-        for (let i = 0; i < 5; i++) {
-          await new Promise(resolve => setTimeout(resolve, 1500 * (i + 1))); // 1.5s, 3s, 4.5s, 6s, 7.5s
+        const maxAttempts = 5;
+        const baseDelay = 1000; // Start with 1 second
+        
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+          await new Promise(resolve => setTimeout(resolve, delay));
           
-          const response = await fetch(`/api/mom/list?t=${Date.now()}&retry=${i}`, {
-            method: 'GET',
-            headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
-              'Expires': '0'
-            }
-          });
+          // Try to refresh the list
+          const beforeCount = momList.length;
+          await refreshMOMList(true);
           
-          const result = await response.json();
+          // Check if the item was actually removed
+          const afterList = state.momList;
+          const stillExists = afterList.some(m => m.momId === momId && m.revision === revision);
           
-          if (result.success && result.data) {
-            const filteredData = result.data.filter((item: any) => !item.status.includes('Deleted'));
-            
-            // Check if the deleted item is actually gone
-            const deletedItemStillExists = filteredData.some((item: any) => 
-              item.momId === momId && item.revision === revision
-            );
-            
-            if (!deletedItemStillExists) {
-              // Successfully deleted, update the list
-              dispatch({ type: 'SET_MOM_LIST', payload: filteredData });
-              console.log(`MOM deleted and confirmed after ${i + 1} attempts`);
-              break;
-            }
+          if (!stillExists) {
+            console.log(`Delete confirmed after ${attempt + 1} attempts`);
+            break;
           }
         }
       };
@@ -320,212 +316,233 @@ export default function MOMList() {
   if (!loading && momList.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 mb-4">No MOMs found. Click &quot;Create MOM&quot; to start.</p>
+        <p className="text-gray-500 dark:text-gray-400 mb-4">No MOMs found. Click "New MOM" to start.</p>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="flex items-center gap-2">
-          <FaListAlt className="text-2xl text-blue-600" />
+    <div className="space-y-6">
+      {/* Header with Title and Refresh Button */}
+      <div className="flex justify-between items-center">
+        <h2 className="flex items-center gap-3 text-2xl font-bold text-gray-800 dark:text-gray-200">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+            <List className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          </div>
           MOM List
         </h2>
-        {/* **REFRESH BUTTON**: Manually refresh MOM List data */}
+        
         <button 
-          className="btn btn-primary flex items-center gap-2"
+          className={`flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border-2 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md font-medium ${
+            isRefreshing ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
           onClick={() => refreshMOMList(true)}
           disabled={isRefreshing}
         >
-          <svg className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
         </button>
       </div>
       
-      {/* **MOM LIST SEARCH**: Global search bar */}
-      <div className="mb-4">
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
         <input
           type="text"
-          className="form-control"
+          className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
           placeholder="Search all fields..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-
-      {/* **MOM LIST FILTERS**: Column-specific filters */}
-      <div className="mb-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-        <input
-          type="text"
-          className="form-control text-sm"
-          placeholder="Filter MOM ID"
-          value={filters.momId}
-          onChange={(e) => setFilters({...filters, momId: e.target.value})}
-        />
-        {/* **REVISION FILTER WITH LABELS**: Show "All Revision" and "Latest Revision" */}
-        <select
-          className="form-control text-sm"
-          value={filters.revision}
-          onChange={(e) => setFilters({...filters, revision: e.target.value})}
-        >
-          <option value="">All Revision</option>
-          <option value="latest">Latest Revision</option>
-        </select>
-        <input
-          type="text"
-          className="form-control text-sm"
-          placeholder="Filter Title"
-          value={filters.title}
-          onChange={(e) => setFilters({...filters, title: e.target.value})}
-        />
-        <input
-          type="date"
-          className="form-control text-sm"
-          placeholder="Filter Date"
-          value={filters.date}
-          onChange={(e) => setFilters({...filters, date: e.target.value})}
-        />
-        <select
-          className="form-control text-sm"
-          value={filters.status}
-          onChange={(e) => setFilters({...filters, status: e.target.value})}
-        >
-          <option value="all">All Status</option>
-          <option value="Draft">Draft</option>
-          <option value="Officially Issued">Officially Issued</option>
-        </select>
-        <button
-          className="btn btn-sm btn-secondary"
-          onClick={() => {
-            setSearchTerm('');
-            setFilters({
-              momId: '',
-              revision: 'latest', // **RESET TO DEFAULT**: Keep Latest as default when clearing
-              title: '',
-              date: '',
-              status: 'all',
-            });
-          }}
-        >
-          Clear Filters
-        </button>
+      {/* Filters */}
+      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2 mb-3">
+          <Filter className="w-4 h-4 text-gray-500" />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters</span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <input
+            type="text"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Filter MOM ID"
+            value={filters.momId}
+            onChange={(e) => setFilters({...filters, momId: e.target.value})}
+          />
+          <select
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={filters.revision}
+            onChange={(e) => setFilters({...filters, revision: e.target.value})}
+          >
+            <option value="">All Revisions</option>
+            <option value="latest">Latest Revision</option>
+          </select>
+          <input
+            type="text"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Filter Title"
+            value={filters.title}
+            onChange={(e) => setFilters({...filters, title: e.target.value})}
+          />
+          <input
+            type="date"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={filters.date}
+            onChange={(e) => setFilters({...filters, date: e.target.value})}
+          />
+          <select
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={filters.status}
+            onChange={(e) => setFilters({...filters, status: e.target.value})}
+          >
+            <option value="all">All Status</option>
+            <option value="Draft">Draft</option>
+            <option value="Officially Issued">Officially Issued</option>
+          </select>
+          <button
+            className="px-3 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+            onClick={() => {
+              setFilters({
+                momId: '',
+                revision: 'latest',
+                title: '',
+                date: '',
+                status: 'all',
+              });
+              setSearchTerm('');
+            }}
+          >
+            Clear Filters
+          </button>
+        </div>
       </div>
 
-      {/* Results count */}
-      <div className="mb-2 text-sm text-gray-600">
-        Showing {filteredMOMList.length} of {momList.length} MOMs
-      </div>
-      
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                MOM ID
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Rev
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Title
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredMOMList.map((mom: MOMListItem) => {
-              // **DISABLE OLD REVISION ACTIONS**: Check if this is the latest revision
-              const latestRevision = Math.max(
-                ...momList
-                  .filter(m => m.momId === mom.momId)
-                  .map(m => m.revision)
-              );
-              const isLatestRevision = mom.revision === latestRevision;
-              
-              return (
-              <tr key={`${mom.momId}-${mom.revision}`} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-blue-600 font-mono">
-                    {mom.momId}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {mom.revision}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">
-                    {mom.titleTranslations ? (
-                      <div>
-                        <div><span className="font-semibold text-blue-600">EN:</span> {mom.titleTranslations.en || mom.title || 'Untitled'}</div>
-                        <div><span className="font-semibold text-green-600">JA:</span> {mom.titleTranslations.ja || '-'}</div>
-                        <div><span className="font-semibold text-purple-600">TH:</span> {mom.titleTranslations.th || '-'}</div>
-                      </div>
-                    ) : (
-                      mom.title || 'Untitled'
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500 font-mono">
-                    {mom.date || 'N/A'}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={mom.status === 'Draft' ? 'status-draft' : 'status-official'}>
-                    {mom.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex gap-2">
-                    <button
-                      className={`btn btn-sm ${isLatestRevision ? 'btn-primary' : 'btn-disabled'}`}
-                      onClick={() => isLatestRevision && handleEdit(mom.momId, mom.revision)}
-                      disabled={!isLatestRevision}
-                      title={!isLatestRevision ? 'Only the latest revision can be edited' : ''}
-                    >
-                      Edit
-                    </button>
-                    {/* **COPY NEW MOM**: Button to duplicate MOM as new entry */}
-                    <button
-                      className="btn btn-sm btn-secondary"
-                      onClick={() => handleCopyNewMOM(mom.momId, mom.revision)}
-                      title="Copy as new MOM"
-                    >
-                      Copy MOM
-                    </button>
-                    {/* **DELETE ACTION**: Button to delete MOM records - only for latest revision */}
-                    <button
-                      className={`btn btn-sm ${isLatestRevision ? 'btn-danger' : 'btn-disabled'}`}
-                      onClick={() => isLatestRevision && handleDelete(mom.momId, mom.revision)}
-                      disabled={!isLatestRevision}
-                      title={!isLatestRevision ? 'Only the latest revision can be deleted' : ''}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
+      {/* MOM Table */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  MOM ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Rev
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Title
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
-              );
-            })}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredMOMList.map((mom) => {
+                // Check if this is the latest revision
+                const latestRevision = Math.max(
+                  ...momList
+                    .filter(m => m.momId === mom.momId)
+                    .map(m => m.revision)
+                );
+                const isLatestRevision = mom.revision === latestRevision;
+                
+                return (
+                <tr key={`${mom.momId}-${mom.revision}`} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-blue-600 dark:text-blue-400 font-mono">
+                      {mom.momId}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {mom.revision}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900 dark:text-gray-100">
+                      {mom.titleTranslations ? (
+                        <div className="space-y-1">
+                          <div><span className="font-semibold text-blue-600 dark:text-blue-400">EN:</span> {mom.titleTranslations.en || mom.title || 'Untitled'}</div>
+                          <div><span className="font-semibold text-green-600 dark:text-green-400">JA:</span> {mom.titleTranslations.ja || '-'}</div>
+                          <div><span className="font-semibold text-purple-600 dark:text-purple-400">TH:</span> {mom.titleTranslations.th || '-'}</div>
+                        </div>
+                      ) : (
+                        mom.title || 'Untitled'
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 font-mono">
+                      <Calendar className="w-4 h-4" />
+                      {mom.date || 'N/A'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      mom.status === 'Draft' 
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' 
+                        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    }`}>
+                      {mom.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex gap-2">
+                      <button
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          isLatestRevision 
+                            ? 'bg-blue-500 text-white hover:bg-blue-600 shadow-sm hover:shadow-md' 
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        }`}
+                        onClick={() => isLatestRevision && handleEdit(mom.momId, mom.revision)}
+                        disabled={!isLatestRevision}
+                        title={!isLatestRevision ? 'Only the latest revision can be edited' : 'Edit this MOM'}
+                      >
+                        <Edit className="w-3 h-3" />
+                        Edit
+                      </button>
+                      
+                      <button
+                        className="flex items-center gap-1 px-3 py-1.5 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                        onClick={() => handleCopyNewMOM(mom.momId, mom.revision)}
+                        title="Copy as new MOM"
+                      >
+                        <Copy className="w-3 h-3" />
+                        Copy
+                      </button>
+                      
+                      <button
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          isLatestRevision 
+                            ? 'bg-red-500 text-white hover:bg-red-600 shadow-sm hover:shadow-md' 
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        }`}
+                        onClick={() => isLatestRevision && handleDelete(mom.momId, mom.revision)}
+                        disabled={!isLatestRevision}
+                        title={!isLatestRevision ? 'Only the latest revision can be deleted' : 'Delete this MOM'}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
         
         {filteredMOMList.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
             No MOMs found matching your filters
           </div>
         )}

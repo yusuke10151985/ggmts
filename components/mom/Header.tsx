@@ -4,7 +4,16 @@ import React from 'react';
 import { useMOM } from '@/contexts/mom/MOMContext';
 import { saveMOM, getSpreadsheetUrl, loadMOM, getMOMList } from '@/services/mom/api';
 import { validateRequiredFields, formatValidationErrors } from '@/lib/mom/validation-utils';
-import { FaClipboardList, FaListAlt, FaPlusCircle, FaTable, FaTasks, FaSave, FaStamp } from 'react-icons/fa';
+import { 
+  FileText, 
+  List, 
+  PlusCircle, 
+  Table, 
+  CheckSquare, 
+  Save, 
+  Stamp,
+  Loader2 
+} from 'lucide-react';
 
 interface HeaderProps {
   onShowSpreadsheet?: () => void;
@@ -98,186 +107,191 @@ export default function Header({ onShowSpreadsheet, onShowTasks, onShowList }: H
       
       dispatch({ 
         type: 'SET_CURRENT_MOM', 
-        payload: updatedMOM
+        payload: updatedMOM 
       });
       
-      alert(response.data.message || 'MOM saved as draft');
+      // Mark as saved
+      dispatch({ type: 'SET_HAS_UNSAVED_CHANGES', payload: false });
       
-      // **UNSAVED CHANGES**: Mark as saved
-      dispatch({ type: 'SET_UNSAVED_CHANGES', payload: false });
-      
-      // **MOM LIST REFRESH**: Refresh MOM list after save
+      // Update the MOM list to reflect the new draft
       const listResponse = await getMOMList();
       if (listResponse.success && listResponse.data) {
         dispatch({ type: 'SET_MOM_LIST', payload: listResponse.data });
       }
       
-      // If this was a new MOM, reload the full MOM data
-      if (currentMOM.momId === 'New MOM') {
-        const reloadResponse = await loadMOM(response.data.momId, response.data.revision);
-        if (reloadResponse.success && reloadResponse.data) {
-          dispatch({ type: 'SET_CURRENT_MOM', payload: reloadResponse.data });
-        }
-      }
+      alert(`Saved as Draft: ${response.data.momId} Rev.${response.data.revision}`);
     } else {
-      dispatch({ type: 'SET_ERROR', payload: response.error || 'Failed to save MOM' });
+      alert('Failed to save: ' + (response.error || 'Unknown error'));
     }
     
     dispatch({ type: 'SET_SAVING', payload: false });
   };
 
-  const handleOfficiallyIssue = async () => {
+  const handleOfficialIssue = async () => {
     if (!currentMOM || saving) return;
     
-    // **VALIDATION**: Check required fields
+    // Validation before official issue
     const validationErrors = validateRequiredFields(currentMOM);
     if (validationErrors.length > 0) {
       alert(formatValidationErrors(validationErrors));
       return;
     }
     
-    if (!confirm('Are you sure you want to officially issue this MOM? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to officially issue this MOM?\n\nOnce issued, it cannot be edited. A new revision will be created for any future changes.')) {
       return;
     }
     
     dispatch({ type: 'SET_SAVING', payload: true });
     
-    // Check if we have a pre-generated MOM ID for copy operation
-    let momToSave = currentMOM;
-    if (currentMOM.momId === 'New MOM' && (window as any).__newMOMId) {
-      momToSave = {
-        ...currentMOM,
-        momId: (window as any).__newMOMId
-      };
-      // Clear the stored ID after use
-      delete (window as any).__newMOMId;
-    }
-    
-    const response = await saveMOM(momToSave, false);
+    const response = await saveMOM(currentMOM, false); // false = official issue
     
     if (response.success && response.data) {
-      // Update current MOM with saved data - IMPORTANT: Use the response data
+      // Update current MOM with saved data
       const updatedMOM = {
         ...currentMOM,
         momId: response.data.momId,
         revision: response.data.revision,
         status: response.data.status as 'Draft' | 'Officially Issued',
+        // Keep all other fields unchanged
       };
       
       dispatch({ 
         type: 'SET_CURRENT_MOM', 
-        payload: updatedMOM
+        payload: updatedMOM 
       });
       
-      alert(response.data.message || 'MOM officially issued');
+      // Mark as saved
+      dispatch({ type: 'SET_HAS_UNSAVED_CHANGES', payload: false });
       
-      // **UNSAVED CHANGES**: Mark as saved
-      dispatch({ type: 'SET_UNSAVED_CHANGES', payload: false });
-      
-      // **MOM LIST REFRESH**: Refresh MOM list after official issue
+      // Update the MOM list
       const listResponse = await getMOMList();
       if (listResponse.success && listResponse.data) {
         dispatch({ type: 'SET_MOM_LIST', payload: listResponse.data });
       }
       
-      // If this was a new MOM or revision changed, reload the full MOM data
-      if (currentMOM.momId === 'New MOM' || response.data.revision !== currentMOM.revision) {
-        // Reload the MOM to get the updated data
-        const reloadResponse = await loadMOM(response.data.momId, response.data.revision);
-        if (reloadResponse.success && reloadResponse.data) {
-          dispatch({ type: 'SET_CURRENT_MOM', payload: reloadResponse.data });
-        }
-      }
+      alert(`Officially Issued: ${response.data.momId} Rev.${response.data.revision}`);
     } else {
-      dispatch({ type: 'SET_ERROR', payload: response.error || 'Failed to issue MOM' });
+      alert('Failed to issue: ' + (response.error || 'Unknown error'));
     }
     
     dispatch({ type: 'SET_SAVING', payload: false });
   };
 
-  const handleOpenSpreadsheet = async () => {
-    if (onShowSpreadsheet) {
-      onShowSpreadsheet();
-    } else {
-      // Fallback to opening in new tab
-      const response = await getSpreadsheetUrl();
-      if (response.success && response.data?.url) {
-        window.open(response.data.url, '_blank');
-      }
+  const openSpreadsheet = () => {
+    const url = getSpreadsheetUrl();
+    if (url) {
+      window.open(url, '_blank');
     }
   };
 
   return (
-    /* **FIXED HEADER**: The header uses 'sticky top-0 z-50' classes to remain fixed at the top when scrolling.
-       - sticky: Makes the element stick to its container
-       - top-0: Positions it at the top
-       - z-50: Ensures it stays above other content
-       - bg-white: Solid background to prevent content showing through
-       - shadow-sm: Adds subtle shadow for depth */
-    <header className="border-b-2 border-gray-200 p-4 bg-white sticky top-0 z-50 shadow-sm">
-      <div className="flex justify-between items-center">
-        <h1 className="text-gray-800 flex items-center gap-2">
-          <FaClipboardList className="text-3xl text-blue-600" />
-          MOM Manager
-        </h1>
-        
-        <div className="flex gap-2 flex-wrap">
+    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        {/* Left side - Navigation buttons */}
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            className={`btn btn-secondary flex items-center gap-1 ${!currentMOM ? 'opacity-50' : ''}`}
             onClick={handleShowList}
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border-2 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md font-medium"
           >
-            <FaListAlt />
-            MOM List
+            <List className="w-4 h-4" />
+            <span>MOM List</span>
           </button>
           
           <button
-            className="btn btn-secondary flex items-center gap-1"
             onClick={handleCreateMOM}
+            className="flex items-center gap-2 px-4 py-2 bg-green-500 dark:bg-green-600 text-white rounded-lg hover:bg-green-600 dark:hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md font-medium"
           >
-            <FaPlusCircle />
-            Create MOM
+            <PlusCircle className="w-4 h-4" />
+            <span>New MOM</span>
           </button>
-          
+
+          {onShowSpreadsheet && (
+            <button
+              onClick={onShowSpreadsheet}
+              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border-2 border-purple-500 dark:border-purple-400 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md font-medium"
+            >
+              <Table className="w-4 h-4" />
+              <span>Spreadsheet</span>
+            </button>
+          )}
+
+          {onShowTasks && (
+            <button
+              onClick={onShowTasks}
+              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border-2 border-orange-500 dark:border-orange-400 text-orange-600 dark:text-orange-400 rounded-lg hover:bg-orange-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md font-medium"
+            >
+              <CheckSquare className="w-4 h-4" />
+              <span>Task List</span>
+            </button>
+          )}
+        </div>
+
+        {/* Right side - Action buttons */}
+        <div className="flex items-center gap-2">
           {currentMOM && (
             <>
+              {/* Current MOM Info */}
+              <div className="px-3 py-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 text-sm">
+                <span className="font-medium text-gray-700 dark:text-gray-300">
+                  {currentMOM.momId === 'New MOM' ? 'New MOM' : `${currentMOM.momId} Rev.${currentMOM.revision}`}
+                </span>
+                {currentMOM.status && (
+                  <span className={`ml-2 px-2 py-0.5 rounded text-xs font-medium ${
+                    currentMOM.status === 'Draft' 
+                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' 
+                      : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                  }`}>
+                    {currentMOM.status}
+                  </span>
+                )}
+                {hasUnsavedChanges && (
+                  <span className="ml-2 text-xs text-red-600 dark:text-red-400 font-medium">
+                    ● Unsaved Changes
+                  </span>
+                )}
+              </div>
+
+              {/* Save as Draft button */}
               <button
-                className={`btn btn-success flex items-center gap-1 ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={handleSaveDraft}
-                disabled={saving}
+                disabled={saving || !hasUnsavedChanges}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md ${
+                  saving || !hasUnsavedChanges
+                    ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-700'
+                }`}
               >
-                <FaSave />
-                {saving ? 'Saving...' : 'Save Draft'}
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>Save Draft</span>
               </button>
-              
-              <button
-                className={`btn btn-warning flex items-center gap-1 ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
-                onClick={handleOfficiallyIssue}
-                disabled={saving}
-              >
-                <FaStamp />
-                {saving ? 'Saving...' : 'Officially Issue'}
-              </button>
+
+              {/* Official Issue button - only show if MOM is a draft */}
+              {currentMOM.status !== 'Officially Issued' && (
+                <button
+                  onClick={handleOfficialIssue}
+                  disabled={saving}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow-md ${
+                    saving
+                      ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                      : 'bg-red-500 dark:bg-red-600 text-white hover:bg-red-600 dark:hover:bg-red-700'
+                  }`}
+                >
+                  {saving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Stamp className="w-4 h-4" />
+                  )}
+                  <span>Official Issue</span>
+                </button>
+              )}
             </>
           )}
-          
-          <button
-            className="btn btn-secondary flex items-center gap-1"
-            onClick={handleOpenSpreadsheet}
-          >
-            <FaTable />
-            Spreadsheet
-          </button>
-          
-          {/* **TASK MANAGEMENT**: Button to view all tasks */}
-          <button
-            className="btn btn-secondary flex items-center gap-1"
-            onClick={onShowTasks}
-          >
-            <FaTasks />
-            Tasks
-          </button>
         </div>
       </div>
-    </header>
+    </div>
   );
 }
