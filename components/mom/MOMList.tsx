@@ -316,7 +316,7 @@ export default function MOMList() {
   if (!loading && momList.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500 dark:text-gray-400 mb-4">No MOMs found. Click "New MOM" to start.</p>
+        <p className="text-gray-500 dark:text-gray-400 mb-4">No MOMs found. Click &quot;New MOM&quot; to start.</p>
       </div>
     );
   }
