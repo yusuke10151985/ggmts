@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { translationQueue } from '@/services/translationQueue';
+import { translationQueue } from '@/services/mom/translationQueue';
 
 export default function TranslationStatus() {
   const [status, setStatus] = useState<{

@@ -5,7 +5,7 @@
 
 import { MOM } from '@/types/mom';
 import { renumberStructure } from './renumber-structure';
-import { getMOMList, loadMOM, saveMOM } from '@/services/api';
+import { getMOMList, loadMOM, saveMOM } from '@/services/mom/api';
 
 /**
  * Migrates a single MOM to use correct hierarchical numbering

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { TranslationSet } from '@/types';
-import { translationService } from '@/services/translationService';
+import { TranslationSet } from '@/types/mom';
+import { translationService } from '@/services/mom/translationService';
 
 interface UseTranslationReturn {
   translate: (text: string, sourceLang?: string) => Promise<TranslationSet | null>;
