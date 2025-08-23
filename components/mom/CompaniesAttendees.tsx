@@ -80,12 +80,13 @@ export default function CompaniesAttendees() {
   useEffect(() => {
     // Initialize cards only once per MOM
     if (currentMOM?.momId && !isInitialized) {
-      console.log('[CompaniesAttendees] Initializing with MOM:', {
-        momId: currentMOM.momId,
-        companiesCount: currentMOM.companies?.length || 0,
-        attendeesCount: currentMOM.attendees?.length || 0,
-        companies: currentMOM.companies
-      });
+      // Disabled debug logging to prevent Windows issues
+      // console.log('[CompaniesAttendees] Initializing with MOM:', {
+      //   momId: currentMOM.momId,
+      //   companiesCount: currentMOM.companies?.length || 0,
+      //   attendeesCount: currentMOM.attendees?.length || 0,
+      //   companies: currentMOM.companies
+      // });
       
       if (currentMOM.companies && currentMOM.companies.length > 0) {
         const cards = currentMOM.companies.map((company, index) => ({
@@ -97,7 +98,7 @@ export default function CompaniesAttendees() {
           order: index,
         }));
         setCompanyCards(cards);
-        console.log('[CompaniesAttendees] Created company cards:', cards);
+        // console.log('[CompaniesAttendees] Created company cards:', cards);
         
         // Load attendees for each selected company
         cards.forEach(card => {
@@ -107,7 +108,7 @@ export default function CompaniesAttendees() {
         });
       } else {
         // Add one empty card for new MOMs or MOMs without companies
-        console.log('[CompaniesAttendees] No companies found, creating empty card');
+        // console.log('[CompaniesAttendees] No companies found, creating empty card');
         setCompanyCards([{ id: 'card-0', companyId: '', attendees: [], order: 0 }]);
       }
       

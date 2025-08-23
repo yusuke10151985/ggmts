@@ -18,24 +18,21 @@ export default function MeetingDetails() {
   // Temporarily disabled for Windows compatibility
   // const logger = useClientLogger('MeetingDetails');
   
-  // Debug logging
-  React.useEffect(() => {
-    if (currentMOM) {
-      // logger.log('Current MOM data:', {
-      console.log('[MeetingDetails] Current MOM data:', {
-        title: currentMOM.title,
-        titleTranslations: currentMOM.titleTranslations,
-        goal: currentMOM.goal,
-        goalTranslations: currentMOM.goalTranslations,
-        date: currentMOM.date,
-        mainTimeSlot: currentMOM.mainTimeSlot,
-        urls: currentMOM.urls,
-        meetingAttachments: currentMOM.meetingAttachments
-      });
-      // });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMOM]);
+  // Debug logging - disabled to prevent Windows issues
+  // React.useEffect(() => {
+  //   if (currentMOM) {
+  //     console.log('[MeetingDetails] Current MOM data:', {
+  //       title: currentMOM.title,
+  //       titleTranslations: currentMOM.titleTranslations,
+  //       goal: currentMOM.goal,
+  //       goalTranslations: currentMOM.goalTranslations,
+  //       date: currentMOM.date,
+  //       mainTimeSlot: currentMOM.mainTimeSlot,
+  //       urls: currentMOM.urls,
+  //       meetingAttachments: currentMOM.meetingAttachments
+  //     });
+  //   }
+  // }, [currentMOM]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch({ type: 'UPDATE_MOM_FIELD', field: 'date', value: e.target.value });
@@ -54,7 +51,7 @@ export default function MeetingDetails() {
   };
 
   if (!currentMOM) {
-    console.log('[MeetingDetails] No currentMOM available');
+    // console.log('[MeetingDetails] No currentMOM available');
     return null;
   }
 

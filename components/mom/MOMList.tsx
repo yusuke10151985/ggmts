@@ -97,15 +97,15 @@ export default function MOMList() {
         }
         
         dispatch({ type: 'SET_MOM_LIST', payload: filteredData });
-        // **デバッグ用**: リフレッシュ成功をコンソールに出力
-        console.log('[MOMList] Refreshed successfully:', filteredData.length, 'items', `(retry: ${retryCount})`);
+        // **デバッグ用**: リフレッシュ成功をコンソールに出力 - disabled to prevent Windows issues
+        // console.log('[MOMList] Refreshed successfully:', filteredData.length, 'items', `(retry: ${retryCount})`);
         // Temporarily disabled
         // if (logger && logger.log) {
         //   logger.log('MOM list loaded', { count: filteredData.length });
         // }
       } else {
         if (retryCount < MAX_RETRIES) {
-          console.log(`API error, retrying... (${retryCount + 1}/${MAX_RETRIES})`);
+          // console.log(`API error, retrying... (${retryCount + 1}/${MAX_RETRIES})`);
           setTimeout(() => {
             refreshMOMList(force, retryCount + 1);
           }, RETRY_DELAY);

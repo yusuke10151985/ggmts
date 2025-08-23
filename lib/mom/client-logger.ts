@@ -30,11 +30,12 @@ class ClientLogger {
       const urlParams = new URLSearchParams(window.location.search);
       this.debugMode = this.isWindows || urlParams.get('debug') === 'true';
       
-      if (this.debugMode) {
-        console.log('%c🔍 MOM Debug Mode Enabled', 'background: #ff0; color: #000; padding: 5px;');
-        console.log('Platform:', navigator.platform);
-        console.log('User Agent:', navigator.userAgent);
-      }
+      // Disabled all console output to prevent infinite loop
+      // if (this.debugMode) {
+      //   console.log('%c🔍 MOM Debug Mode Enabled', 'background: #ff0; color: #000; padding: 5px;');
+      //   console.log('Platform:', navigator.platform);
+      //   console.log('User Agent:', navigator.userAgent);
+      // }
     }
 
     // Intercept console methods
@@ -61,47 +62,8 @@ class ClientLogger {
   }
 
   private interceptConsole() {
-    if (typeof window === 'undefined') return;
-
-    try {
-      const originalLog = console.log;
-      const originalError = console.error;
-      const originalWarn = console.warn;
-
-      // Override console.log
-      console.log = (...args) => {
-        originalLog.apply(console, args);
-        try {
-          if (args[0]?.toString().includes('[') || this.debugMode) {
-            this.log('Console', args.join(' '), { args });
-          }
-        } catch (e) {
-          // Ignore logging errors
-        }
-      };
-
-      // Override console.error
-      console.error = (...args) => {
-        originalError.apply(console, args);
-        try {
-          this.error('Console', args.join(' '), { args });
-        } catch (e) {
-          // Ignore logging errors
-        }
-      };
-
-      // Override console.warn
-      console.warn = (...args) => {
-        originalWarn.apply(console, args);
-        try {
-          this.warn('Console', args.join(' '), { args });
-        } catch (e) {
-          // Ignore logging errors
-        }
-      };
-    } catch (error) {
-      console.error('Failed to intercept console:', error);
-    }
+    // DISABLED: This causes infinite loops on Windows
+    return;
   }
 
   private addLog(entry: LogEntry) {
@@ -140,9 +102,10 @@ class ClientLogger {
 
     this.addLog(entry);
 
-    if (this.debugMode) {
-      console.log(`%c[${component}]`, 'color: #0066cc', message, data || '');
-    }
+    // Disabled to prevent infinite loop
+    // if (this.debugMode) {
+    //   console.log(`%c[${component}]`, 'color: #0066cc', message, data || '');
+    // }
   }
 
   warn(component: string, message: string, data?: any) {
@@ -158,9 +121,10 @@ class ClientLogger {
 
     this.addLog(entry);
 
-    if (this.debugMode) {
-      console.warn(`%c[${component}]`, 'color: #ff9900', message, data || '');
-    }
+    // Disabled to prevent infinite loop
+    // if (this.debugMode) {
+    //   console.warn(`%c[${component}]`, 'color: #ff9900', message, data || '');
+    // }
   }
 
   error(component: string, message: string, data?: any) {
@@ -176,9 +140,10 @@ class ClientLogger {
 
     this.addLog(entry);
 
-    if (this.debugMode || entry.level === 'error') {
-      console.error(`%c[${component}]`, 'color: #ff0000', message, data || '');
-    }
+    // Disabled to prevent infinite loop
+    // if (this.debugMode || entry.level === 'error') {
+    //   console.error(`%c[${component}]`, 'color: #ff0000', message, data || '');
+    // }
   }
 
   debug(component: string, message: string, data?: any) {
@@ -195,7 +160,8 @@ class ClientLogger {
     };
 
     this.addLog(entry);
-    console.log(`%c[DEBUG ${component}]`, 'background: #333; color: #0f0', message, data || '');
+    // Disabled to prevent infinite loop
+    // console.log(`%c[DEBUG ${component}]`, 'background: #333; color: #0f0', message, data || '');
   }
 
   getLogs(): LogEntry[] {
@@ -228,10 +194,12 @@ class ClientLogger {
       });
 
       if (response.ok) {
-        console.log('%c📤 Debug logs sent to server', 'color: #00ff00');
+        // Disabled to prevent infinite loop
+        // console.log('%c📤 Debug logs sent to server', 'color: #00ff00');
       }
     } catch (error) {
-      console.error('Failed to send logs to server:', error);
+      // Disabled to prevent infinite loop
+      // console.error('Failed to send logs to server:', error);
     }
   }
 
@@ -346,7 +314,8 @@ try {
     (window as any).momLogger = logger;
   }
 } catch (error) {
-  console.error('Failed to initialize ClientLogger:', error);
+  // Disabled to prevent infinite loop
+  // console.error('Failed to initialize ClientLogger:', error);
 }
 
 // Export for use in components

@@ -14,14 +14,14 @@ export default function TimeSlots() {
     { country: 'Japan', timezone: 'Asia/Tokyo', startTime: '', endTime: '' },
   ]);
   
-  // Debug logging
-  React.useEffect(() => {
-    console.log('[TimeSlots] Current MOM time data:', {
-      hasMainTimeSlot: !!currentMOM?.mainTimeSlot,
-      mainTimeSlot: currentMOM?.mainTimeSlot,
-      otherTimeSlots: currentMOM?.otherTimeSlots
-    });
-  }, [currentMOM]);
+  // Debug logging - disabled to prevent Windows issues
+  // React.useEffect(() => {
+  //   console.log('[TimeSlots] Current MOM time data:', {
+  //     hasMainTimeSlot: !!currentMOM?.mainTimeSlot,
+  //     mainTimeSlot: currentMOM?.mainTimeSlot,
+  //     otherTimeSlots: currentMOM?.otherTimeSlots
+  //   });
+  // }, [currentMOM]);
 
   const handleMainSlotChange = (field: keyof TimeSlot, value: string) => {
     const updatedSlot = {
