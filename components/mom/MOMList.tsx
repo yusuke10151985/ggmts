@@ -3,7 +3,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useMOM } from '@/contexts/mom/MOMContext';
 import { loadMOM, deleteMOM, getMOMList } from '@/services/mom/api';
-import { useClientLogger } from '@/hooks/mom/useClientLogger';
+// Temporarily disabled for Windows compatibility
+// import { useClientLogger } from '@/hooks/mom/useClientLogger';
 import { MOMListItem, MOM } from '@/types/mom';
 import { 
   List, 
@@ -21,7 +22,9 @@ export default function MOMList() {
   const { state, dispatch } = useMOM();
   const { momList, loading, user } = state;
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const logger = useClientLogger('MOMList');
+  // Temporarily disabled for Windows compatibility
+  // const logger = useClientLogger('MOMList');
+  const logger: any = null;
   
   // **GENERATE NEW MOM ID**: Create a unique MOM ID based on current date and time
   const generateNewMOMId = (): string => {
@@ -53,10 +56,10 @@ export default function MOMList() {
     const RETRY_DELAY = 1000; // 1 second
     
     try {
-      // Safe logging
-      if (logger && logger.log) {
-        logger.log(`Refreshing MOM list (force: ${force}, retry: ${retryCount})`);
-      }
+      // Safe logging - temporarily disabled
+      // if (logger && logger.log) {
+      //   logger.log(`Refreshing MOM list (force: ${force}, retry: ${retryCount})`);
+      // }
       // **リフレッシュ修正**: エラーハンドリングを改善し、確実にデータを取得
       setIsRefreshing(true);
       if (retryCount === 0) {
@@ -96,9 +99,10 @@ export default function MOMList() {
         dispatch({ type: 'SET_MOM_LIST', payload: filteredData });
         // **デバッグ用**: リフレッシュ成功をコンソールに出力
         console.log('[MOMList] Refreshed successfully:', filteredData.length, 'items', `(retry: ${retryCount})`);
-        if (logger && logger.log) {
-          logger.log('MOM list loaded', { count: filteredData.length });
-        }
+        // Temporarily disabled
+        // if (logger && logger.log) {
+        //   logger.log('MOM list loaded', { count: filteredData.length });
+        // }
       } else {
         if (retryCount < MAX_RETRIES) {
           console.log(`API error, retrying... (${retryCount + 1}/${MAX_RETRIES})`);

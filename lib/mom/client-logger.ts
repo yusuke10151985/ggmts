@@ -336,8 +336,11 @@ class ClientLogger {
 // Create singleton instance with error handling
 let logger: ClientLogger | null = null;
 
+// TEMPORARY: Disable logger to fix Windows issues
+const LOGGER_ENABLED = false;
+
 try {
-  if (typeof window !== 'undefined') {
+  if (LOGGER_ENABLED && typeof window !== 'undefined') {
     logger = new ClientLogger();
     // Make available globally for debugging
     (window as any).momLogger = logger;
