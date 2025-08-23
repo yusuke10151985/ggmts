@@ -8,24 +8,32 @@ export default function DebugButton() {
   const [errorCount, setErrorCount] = useState(0);
 
   useEffect(() => {
-    // Check if running on Windows
-    const isWin = navigator.platform.indexOf('Win') !== -1 || 
-                  navigator.userAgent.indexOf('Windows') !== -1;
-    setIsWindows(isWin);
+    try {
+      // Check if running on Windows
+      const isWin = navigator.platform.indexOf('Win') !== -1 || 
+                    navigator.userAgent.indexOf('Windows') !== -1;
+      setIsWindows(isWin);
 
-    // Update log counts
-    const updateCounts = () => {
-      if ((window as any).momLogger) {
-        const logs = (window as any).momLogger.getLogs();
-        setLogCount(logs.length);
-        setErrorCount(logs.filter((l: any) => l.level === 'error').length);
-      }
-    };
+      // Update log counts
+      const updateCounts = () => {
+        try {
+          if ((window as any).momLogger) {
+            const logs = (window as any).momLogger.getLogs();
+            setLogCount(logs.length);
+            setErrorCount(logs.filter((l: any) => l.level === 'error').length);
+          }
+        } catch (e) {
+          // Ignore errors in counting logs
+        }
+      };
 
-    updateCounts();
-    const interval = setInterval(updateCounts, 1000);
+      updateCounts();
+      const interval = setInterval(updateCounts, 1000);
 
-    return () => clearInterval(interval);
+      return () => clearInterval(interval);
+    } catch (e) {
+      console.warn('DebugButton initialization failed:', e);
+    }
   }, []);
 
   const showDebugPanel = () => {

@@ -53,6 +53,10 @@ export default function MOMList() {
     const RETRY_DELAY = 1000; // 1 second
     
     try {
+      // Safe logging
+      if (logger && logger.log) {
+        logger.log(`Refreshing MOM list (force: ${force}, retry: ${retryCount})`);
+      }
       // **リフレッシュ修正**: エラーハンドリングを改善し、確実にデータを取得
       setIsRefreshing(true);
       if (retryCount === 0) {
@@ -92,6 +96,9 @@ export default function MOMList() {
         dispatch({ type: 'SET_MOM_LIST', payload: filteredData });
         // **デバッグ用**: リフレッシュ成功をコンソールに出力
         console.log('[MOMList] Refreshed successfully:', filteredData.length, 'items', `(retry: ${retryCount})`);
+        if (logger && logger.log) {
+          logger.log('MOM list loaded', { count: filteredData.length });
+        }
       } else {
         if (retryCount < MAX_RETRIES) {
           console.log(`API error, retrying... (${retryCount + 1}/${MAX_RETRIES})`);

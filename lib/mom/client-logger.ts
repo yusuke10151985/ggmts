@@ -63,29 +63,45 @@ class ClientLogger {
   private interceptConsole() {
     if (typeof window === 'undefined') return;
 
-    const originalLog = console.log;
-    const originalError = console.error;
-    const originalWarn = console.warn;
+    try {
+      const originalLog = console.log;
+      const originalError = console.error;
+      const originalWarn = console.warn;
 
-    // Override console.log
-    console.log = (...args) => {
-      originalLog.apply(console, args);
-      if (args[0]?.toString().includes('[') || this.debugMode) {
-        this.log('Console', args.join(' '), { args });
-      }
-    };
+      // Override console.log
+      console.log = (...args) => {
+        originalLog.apply(console, args);
+        try {
+          if (args[0]?.toString().includes('[') || this.debugMode) {
+            this.log('Console', args.join(' '), { args });
+          }
+        } catch (e) {
+          // Ignore logging errors
+        }
+      };
 
-    // Override console.error
-    console.error = (...args) => {
-      originalError.apply(console, args);
-      this.error('Console', args.join(' '), { args });
-    };
+      // Override console.error
+      console.error = (...args) => {
+        originalError.apply(console, args);
+        try {
+          this.error('Console', args.join(' '), { args });
+        } catch (e) {
+          // Ignore logging errors
+        }
+      };
 
-    // Override console.warn
-    console.warn = (...args) => {
-      originalWarn.apply(console, args);
-      this.warn('Console', args.join(' '), { args });
-    };
+      // Override console.warn
+      console.warn = (...args) => {
+        originalWarn.apply(console, args);
+        try {
+          this.warn('Console', args.join(' '), { args });
+        } catch (e) {
+          // Ignore logging errors
+        }
+      };
+    } catch (error) {
+      console.error('Failed to intercept console:', error);
+    }
   }
 
   private addLog(entry: LogEntry) {
@@ -317,13 +333,18 @@ class ClientLogger {
   }
 }
 
-// Create singleton instance
-const logger = typeof window !== 'undefined' ? new ClientLogger() : null;
+// Create singleton instance with error handling
+let logger: ClientLogger | null = null;
+
+try {
+  if (typeof window !== 'undefined') {
+    logger = new ClientLogger();
+    // Make available globally for debugging
+    (window as any).momLogger = logger;
+  }
+} catch (error) {
+  console.error('Failed to initialize ClientLogger:', error);
+}
 
 // Export for use in components
 export default logger;
-
-// Make available globally for debugging
-if (typeof window !== 'undefined') {
-  (window as any).momLogger = logger;
-}
