@@ -136,6 +136,50 @@ export async function GET(
         }
       }
       
+      // Log the retrieved MOM data for debugging
+      console.log('Retrieved MOM data:', {
+        momId: momData.momId,
+        revision: momData.revision,
+        title: momData.title,
+        hasTitleTranslations: !!momData.titleTranslations,
+        hasGoalTranslations: !!momData.goalTranslations,
+        companiesCount: momData.companies?.length || 0,
+        attendeesCount: momData.attendees?.length || 0,
+        structureCount: momData.structure?.length || 0
+      });
+      
+      // **BACKWARD COMPATIBILITY**: Ensure titleTranslations and goalTranslations exist
+      // If old format data doesn't have translations, create them from existing fields
+      if (!momData.titleTranslations && momData.title) {
+        momData.titleTranslations = {
+          en: momData.title || '',
+          ja: '',
+          th: ''
+        };
+      }
+      
+      if (!momData.goalTranslations && momData.goal) {
+        momData.goalTranslations = {
+          en: momData.goal || '',
+          ja: '',
+          th: ''
+        };
+      }
+      
+      // Ensure companies and attendees arrays exist
+      if (!momData.companies) {
+        momData.companies = [];
+      }
+      
+      if (!momData.attendees) {
+        momData.attendees = [];
+      }
+      
+      // Ensure structure array exists
+      if (!momData.structure) {
+        momData.structure = [];
+      }
+      
       // **CRITICAL REQUIREMENT 2**: If no previous revision data is included,
       // try to load it for comparison
       if (!momData.previousRevisionData && momData.revision > 0) {

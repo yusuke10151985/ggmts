@@ -70,14 +70,14 @@ export default function CompaniesAttendees() {
   useEffect(() => {
     // **COMPANY DROPDOWN FIX**: Only initialize cards when MOM changes, not on every update
     // This prevents the dropdown from resetting after selection
-    if (companyCards.length === 0) {
-      if (currentMOM?.companies.length) {
+    if (currentMOM?.momId) {
+      if (currentMOM?.companies && currentMOM.companies.length > 0) {
         const cards = currentMOM.companies.map((company, index) => ({
           id: `card-${index}`,
           companyId: company.id,
           attendees: currentMOM.attendees
-            .filter(att => att.companyId === company.id)
-            .map(att => att.id),
+            ?.filter(att => att.companyId === company.id)
+            ?.map(att => att.id) || [],
           order: index,
         }));
         setCompanyCards(cards);
@@ -89,7 +89,7 @@ export default function CompaniesAttendees() {
           }
         });
       } else {
-        // Add one empty card
+        // Add one empty card for new MOMs or MOMs without companies
         setCompanyCards([{ id: 'card-0', companyId: '', attendees: [], order: 0 }]);
       }
     }

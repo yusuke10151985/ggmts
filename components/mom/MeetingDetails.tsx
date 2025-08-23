@@ -54,7 +54,7 @@ export default function MeetingDetails() {
         <MultilingualInput
           label="Meeting Title"
           required={true}
-          value={currentMOM.titleTranslations}
+          value={currentMOM.titleTranslations || { en: currentMOM.title || '', ja: '', th: '' }}
           onChange={handleTitleChange}
           disabled={isAnyLoading}
           className={differences?.titleChanged ? `border-2 ${titleColorClass}` : ''}
@@ -64,7 +64,7 @@ export default function MeetingDetails() {
         <MultilingualInput
           label="Meeting Goal"
           required={true}
-          value={currentMOM.goalTranslations}
+          value={currentMOM.goalTranslations || { en: currentMOM.goal || '', ja: '', th: '' }}
           onChange={handleGoalChange}
           multiline={true}
           rows={2}
