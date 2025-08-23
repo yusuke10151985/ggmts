@@ -18,23 +18,12 @@ export default function MeetingDetails() {
   // Temporarily disabled for Windows compatibility
   // const logger = useClientLogger('MeetingDetails');
   
-  // Debug logging - Re-enabled with detailed values
-  React.useEffect(() => {
-    if (currentMOM) {
-      console.log('[MeetingDetails] Current MOM data - DETAILED:', {
-        title: `"${currentMOM.title || ''}"`,
-        titleLength: currentMOM.title?.length || 0,
-        titleTranslations: currentMOM.titleTranslations,
-        goal: `"${currentMOM.goal || ''}"`,
-        goalLength: currentMOM.goal?.length || 0,
-        goalTranslations: currentMOM.goalTranslations,
-        date: `"${currentMOM.date || ''}"`,
-        mainTimeSlot: currentMOM.mainTimeSlot,
-        urls: currentMOM.urls,
-        meetingAttachments: currentMOM.meetingAttachments
-      });
-    }
-  }, [currentMOM]);
+  // Debug logging disabled
+  // React.useEffect(() => {
+  //   if (currentMOM) {
+  //     console.log('[MeetingDetails] Current MOM data:', currentMOM);
+  //   }
+  // }, [currentMOM]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch({ type: 'UPDATE_MOM_FIELD', field: 'date', value: e.target.value });
@@ -74,45 +63,8 @@ export default function MeetingDetails() {
     <section className="bg-gray-50 p-6 rounded-lg border border-gray-200">
       <h2 className="mb-4">Meeting Details</h2>
       
-      {/* Windows Diagnostic Display */}
-      {typeof window !== 'undefined' && navigator.platform.includes('Win') && (
-        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded">
-          <p className="font-bold text-sm">Windows Debug Info:</p>
-          <p className="text-xs">Title: &quot;{currentMOM.title}&quot; (len: {currentMOM.title?.length || 0})</p>
-          <p className="text-xs">Goal: &quot;{currentMOM.goal}&quot; (len: {currentMOM.goal?.length || 0})</p>
-          <p className="text-xs">Date: &quot;{currentMOM.date}&quot; (len: {currentMOM.date?.length || 0})</p>
-          <p className="text-xs">Title Trans EN: &quot;{currentMOM.titleTranslations?.en}&quot; (len: {currentMOM.titleTranslations?.en?.length || 0})</p>
-          <p className="text-xs">Goal Trans EN: &quot;{currentMOM.goalTranslations?.en}&quot; (len: {currentMOM.goalTranslations?.en?.length || 0})</p>
-        </div>
-      )}
-      
       <div className="space-y-6">
-        {/* Direct Display Test for Windows */}
-        {typeof window !== 'undefined' && navigator.platform.includes('Win') && (
-          <div className="p-3 border-2 border-blue-500 rounded mb-4">
-            <p className="font-bold">Direct HTML Display Test:</p>
-            <div className="mt-2">
-              <label className="block font-semibold">Meeting Title (Direct):</label>
-              <input 
-                type="text" 
-                value={currentMOM.title || ''} 
-                readOnly 
-                className="w-full p-2 border rounded"
-              />
-            </div>
-            <div className="mt-2">
-              <label className="block font-semibold">Meeting Goal (Direct):</label>
-              <input 
-                type="text" 
-                value={currentMOM.goal || ''} 
-                readOnly 
-                className="w-full p-2 border rounded"
-              />
-            </div>
-          </div>
-        )}
-        
-        {/* Meeting Title with Multilingual Support */}
+{/* Meeting Title with Multilingual Support */}
         <MultilingualInput
           label="Meeting Title"
           required={true}

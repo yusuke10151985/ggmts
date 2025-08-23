@@ -20,13 +20,6 @@ interface MultilingualInputProps {
   disabled?: boolean;
 }
 
-// Force re-render on Windows to handle state update delays
-const useForceUpdate = () => {
-  const [, setTick] = useState(0);
-  const update = () => setTick(tick => tick + 1);
-  return update;
-};
-
 export default function MultilingualInput({
   label,
   required = false,
@@ -54,8 +47,6 @@ export default function MultilingualInput({
   });
   const [isTranslating, setIsTranslating] = useState(false);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
-  const forceUpdate = useForceUpdate();
-  const isWindows = typeof window !== 'undefined' && navigator.platform.includes('Win');
 
   useEffect(() => {
     // Ensure we have valid values for all languages
@@ -66,22 +57,9 @@ export default function MultilingualInput({
     };
     setLocalValue(newValue);
     
-    // Force re-render on Windows to handle potential rendering delays
-    if (isWindows) {
-      setTimeout(() => {
-        forceUpdate();
-      }, 10);
-    }
-    
-    console.log(`[MultilingualInput - ${label}] Value updated:`, {
-      value: newValue,
-      rawValue: value,
-      hasEn: !!value?.en,
-      hasJa: !!value?.ja,
-      hasTh: !!value?.th,
-      isWindows
-    });
-  }, [value, label, isWindows, forceUpdate]);
+    // Debug logging disabled for production
+    // console.log(`[MultilingualInput - ${label}] Value updated:`, newValue);
+  }, [value, label]);
 
   useEffect(() => {
     if (editingLang && inputRef.current) {
@@ -211,28 +189,16 @@ export default function MultilingualInput({
     const displayValue = (localValue && localValue[lang]) ? String(localValue[lang]) : '';
     const placeholderText = placeholder?.[lang] || '';
     
-    // Debug: log what we're trying to render
-    if (isWindows && lang === 'en' && label === 'Meeting Title') {
-      console.log('[RENDER DEBUG]', {
-        label,
-        lang,
-        localValue,
-        displayValue,
-        displayValueLength: displayValue.length,
-        isEditing,
-        placeholderText
-      });
-    }
 
     return (
       <div
         key={lang}
-        className={`language-row flex items-start gap-2 py-2 px-3 rounded hover:bg-gray-50 cursor-pointer transition-colors ${
+        className={`language-row flex items-center gap-2 py-2 px-3 rounded hover:bg-gray-50 cursor-pointer transition-colors ${
           isEditing ? 'bg-blue-50 ring-2 ring-blue-500' : ''
-        }`}
+        } ${!displayValue && !isEditing ? 'text-gray-400' : 'text-gray-900'}`}
         onClick={() => !isEditing && handleEdit(lang)}
       >
-        <span className="lang-label font-semibold text-gray-600 w-8 flex-shrink-0 mt-1">
+        <span className="lang-label font-semibold text-gray-600 w-8 flex-shrink-0">
           {langLabel}:
         </span>
         {isEditing ? (
@@ -262,17 +228,9 @@ export default function MultilingualInput({
             />
           )
         ) : (
-          <>
-            <span className={`flex-1 ${!displayValue ? 'text-gray-400' : ''}`} data-testid={`display-${lang}`}>
-              {displayValue || placeholderText || ''}
-            </span>
-            {/* Windows diagnostic: Show raw value in a separate element */}
-            {isWindows && (
-              <span className="text-xs text-red-500 ml-2">
-                [DEBUG: &quot;{displayValue}&quot; len={displayValue.length}]
-              </span>
-            )}
-          </>
+          <div className="flex-1 min-h-[24px] py-1">
+            {displayValue || placeholderText || ''}
+          </div>
         )}
       </div>
     );
