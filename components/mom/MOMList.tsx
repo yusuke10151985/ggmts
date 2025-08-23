@@ -253,7 +253,7 @@ export default function MOMList() {
       dispatch({ type: 'SET_CURRENT_MOM', payload: newMOM });
       
       // Mark as having unsaved changes
-      dispatch({ type: 'SET_HAS_UNSAVED_CHANGES', payload: true });
+      dispatch({ type: 'SET_UNSAVED_CHANGES', payload: true });
       
       alert(`Copied from ${momId} Rev.${revision}. This will be saved as a new MOM when you click "Save Draft".`);
     } else {
