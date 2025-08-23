@@ -272,37 +272,28 @@ export default function MOMList() {
     const response = await deleteMOM(momId, revision);
     
     if (response.success) {
-      // **削除後の自動更新**: Spreadsheetのデータが更新されるまで少し待機してから更新
       alert(`Successfully deleted ${momId} Rev.${revision}`);
       
-      // Wait for Google Sheets to propagate changes with exponential backoff
-      const refreshWithRetry = async () => {
-        const maxAttempts = 5;
-        const baseDelay = 1000; // Start with 1 second
-        
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff: 1s, 2s, 4s, 8s, 16s
-          await new Promise(resolve => setTimeout(resolve, delay));
-          
-          // Try to refresh the list
-          const beforeCount = momList.length;
-          await refreshMOMList(true);
-          
-          // Check if the item was actually removed
-          const afterList = state.momList;
-          const stillExists = afterList.some(m => m.momId === momId && m.revision === revision);
-          
-          if (!stillExists) {
-            console.log(`Delete confirmed after ${attempt + 1} attempts`);
-            break;
-          }
-        }
-      };
+      // **即座にローカル状態を更新**: UIをすぐに更新するため、削除されたアイテムをフィルタ
+      const updatedList = momList.filter(item => 
+        !(item.momId === momId && item.revision === revision)
+      );
+      dispatch({ type: 'SET_MOM_LIST', payload: updatedList });
       
-      // Run the refresh in the background
-      refreshWithRetry().finally(() => {
-        setIsRefreshing(false);
-      });
+      // **バックグラウンドで同期**: サーバーの最新データと同期
+      // 少し待ってからサーバーと同期（Google Sheetsの更新を待つため）
+      setTimeout(async () => {
+        try {
+          await refreshMOMList(true);
+          console.log('MOM list synced with server after deletion');
+        } catch (error) {
+          console.error('Error syncing after delete:', error);
+          // エラーが発生してもUIは既に更新済みなので問題なし
+        } finally {
+          setIsRefreshing(false);
+        }
+      }, 2000); // 2秒後に同期
+      
     } else {
       alert(response.error || 'Failed to delete MOM');
       setIsRefreshing(false);
