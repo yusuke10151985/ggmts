@@ -13,6 +13,22 @@ export default function MeetingDetails() {
   const { state, dispatch } = useMOM();
   const { currentMOM } = state;
   const { isAnyLoading } = useLoadingState();
+  
+  // Debug logging
+  React.useEffect(() => {
+    if (currentMOM) {
+      console.log('[MeetingDetails] Current MOM data:', {
+        title: currentMOM.title,
+        titleTranslations: currentMOM.titleTranslations,
+        goal: currentMOM.goal,
+        goalTranslations: currentMOM.goalTranslations,
+        date: currentMOM.date,
+        mainTimeSlot: currentMOM.mainTimeSlot,
+        urls: currentMOM.urls,
+        meetingAttachments: currentMOM.meetingAttachments
+      });
+    }
+  }, [currentMOM]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch({ type: 'UPDATE_MOM_FIELD', field: 'date', value: e.target.value });
@@ -30,7 +46,10 @@ export default function MeetingDetails() {
     dispatch({ type: 'UPDATE_MOM_FIELD', field: 'goal', value: translations.en || '' });
   };
 
-  if (!currentMOM) return null;
+  if (!currentMOM) {
+    console.log('[MeetingDetails] No currentMOM available');
+    return null;
+  }
 
   // Check for differences from previous revision
   const differences = currentMOM.previousRevisionData 

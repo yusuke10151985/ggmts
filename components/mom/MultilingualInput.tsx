@@ -41,8 +41,10 @@ export default function MultilingualInput({
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    setLocalValue(value || { en: '', ja: '', th: '' });
-  }, [value]);
+    const newValue = value || { en: '', ja: '', th: '' };
+    setLocalValue(newValue);
+    console.log(`[MultilingualInput - ${label}] Value updated:`, newValue);
+  }, [value, label]);
 
   useEffect(() => {
     if (editingLang && inputRef.current) {

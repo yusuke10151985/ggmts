@@ -48,6 +48,7 @@ export default function CompaniesAttendees() {
   const { currentMOM, companies, attendees } = state;
   const [companyCards, setCompanyCards] = useState<CompanyCard[]>([]);
   const [attendeesByCompany, setAttendeesByCompany] = useState<Record<string, Attendee[]>>({});
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // **ADD NEW COMPANY**: State for company creation modal
   const [showAddCompany, setShowAddCompany] = useState(false);
@@ -68,13 +69,21 @@ export default function CompaniesAttendees() {
   }, []);
 
   useEffect(() => {
-    // **COMPANY DROPDOWN FIX**: Only initialize cards when MOM changes, not on every update
-    // This prevents the dropdown from resetting after selection
-    if (currentMOM?.momId) {
+    // **COMPANY DROPDOWN FIX**: Only initialize cards when MOM changes
+    // Reset initialization flag when MOM changes
+    if (currentMOM?.momId && currentMOM.momId !== 'New MOM') {
+      setIsInitialized(false);
+    }
+  }, [currentMOM?.momId, currentMOM?.revision]);
+  
+  useEffect(() => {
+    // Initialize cards only once per MOM
+    if (currentMOM?.momId && !isInitialized) {
       console.log('[CompaniesAttendees] Initializing with MOM:', {
         momId: currentMOM.momId,
         companiesCount: currentMOM.companies?.length || 0,
-        attendeesCount: currentMOM.attendees?.length || 0
+        attendeesCount: currentMOM.attendees?.length || 0,
+        companies: currentMOM.companies
       });
       
       if (currentMOM.companies && currentMOM.companies.length > 0) {
@@ -87,7 +96,7 @@ export default function CompaniesAttendees() {
           order: index,
         }));
         setCompanyCards(cards);
-        console.log('[CompaniesAttendees] Created', cards.length, 'company cards');
+        console.log('[CompaniesAttendees] Created company cards:', cards);
         
         // Load attendees for each selected company
         cards.forEach(card => {
@@ -100,8 +109,10 @@ export default function CompaniesAttendees() {
         console.log('[CompaniesAttendees] No companies found, creating empty card');
         setCompanyCards([{ id: 'card-0', companyId: '', attendees: [], order: 0 }]);
       }
+      
+      setIsInitialized(true);
     }
-  }, [currentMOM?.momId, currentMOM?.revision]); // Only reload when MOM changes
+  }, [currentMOM, isInitialized]); // Re-run when initialization flag changes
 
   const loadCompanies = async () => {
     const response = await getCompanies();
