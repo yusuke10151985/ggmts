@@ -107,7 +107,24 @@ export async function getMOMList(): Promise<APIResponse<MOMListItem[]>> {
  * Loads a specific MOM for editing
  */
 export async function loadMOM(momId: string, revision: number): Promise<APIResponse<MOM>> {
-  return apiGet<MOM>(`/api/mom/${momId}-${revision}`);
+  const response = await apiGet<MOM>(`/api/mom/${momId}-${revision}`);
+  
+  if (response.success && response.data) {
+    console.log('[API Service] Loaded MOM:', {
+      momId: response.data.momId,
+      revision: response.data.revision,
+      title: response.data.title,
+      hasGoal: !!response.data.goal,
+      hasDate: !!response.data.date,
+      hasCompanies: response.data.companies?.length > 0,
+      hasAttendees: response.data.attendees?.length > 0,
+      hasMainTimeSlot: !!response.data.mainTimeSlot
+    });
+  } else {
+    console.error('[API Service] Failed to load MOM:', response.error);
+  }
+  
+  return response;
 }
 
 /**

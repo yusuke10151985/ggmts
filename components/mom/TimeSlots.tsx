@@ -119,7 +119,7 @@ export default function TimeSlots() {
 
   useEffect(() => {
     // Initialize main time slot if not set
-    if (!currentMOM?.mainTimeSlot) {
+    if (currentMOM && !currentMOM.mainTimeSlot) {
       const currentHour = getCurrentHourTime();
       const nextHour = `${(parseInt(currentHour.split(':')[0]) + 1).toString().padStart(2, '0')}:00`;
       dispatch({
@@ -142,7 +142,7 @@ export default function TimeSlots() {
       // For new MOMs, ensure Japan is shown by default and update times
       updateAllSubSlots(currentMOM.mainTimeSlot);
     }
-  }, [currentMOM?.mainTimeSlot?.timezone]);
+  }, [currentMOM?.momId, currentMOM?.revision]); // Re-run when MOM changes
 
   if (!currentMOM) return null;
 

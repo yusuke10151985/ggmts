@@ -142,48 +142,80 @@ export async function GET(
       }
       
       // Log the retrieved MOM data for debugging
-      console.log('Retrieved MOM data:', {
+      console.log('[MOM Detail API] Retrieved MOM data:', {
         momId: momData.momId,
         revision: momData.revision,
         title: momData.title,
         hasTitleTranslations: !!momData.titleTranslations,
         hasGoalTranslations: !!momData.goalTranslations,
+        hasGoal: !!momData.goal,
+        hasDate: !!momData.date,
+        hasMainTimeSlot: !!momData.mainTimeSlot,
         companiesCount: momData.companies?.length || 0,
         attendeesCount: momData.attendees?.length || 0,
         structureCount: momData.structure?.length || 0
       });
       
-      // **BACKWARD COMPATIBILITY**: Ensure titleTranslations and goalTranslations exist
+      // Debug: Log raw data structure
+      console.log('[MOM Detail API] Raw data keys:', Object.keys(momData));
+      
+      // **BACKWARD COMPATIBILITY**: Ensure all required fields exist
       // If old format data doesn't have translations, create them from existing fields
-      if (!momData.titleTranslations && momData.title) {
-        momData.titleTranslations = {
-          en: momData.title || '',
-          ja: '',
-          th: ''
+      if (!momData.titleTranslations) {
+        if (momData.title) {
+          momData.titleTranslations = {
+            en: momData.title,
+            ja: '',
+            th: ''
+          };
+        } else {
+          momData.titleTranslations = { en: '', ja: '', th: '' };
+        }
+      }
+      
+      if (!momData.goalTranslations) {
+        if (momData.goal) {
+          momData.goalTranslations = {
+            en: momData.goal,
+            ja: '',
+            th: ''
+          };
+        } else {
+          momData.goalTranslations = { en: '', ja: '', th: '' };
+        }
+      }
+      
+      // Ensure all required fields have default values
+      momData.title = momData.title || momData.titleTranslations?.en || '';
+      momData.goal = momData.goal || momData.goalTranslations?.en || '';
+      momData.date = momData.date || '';
+      momData.status = momData.status || 'Draft';
+      
+      // Ensure arrays exist
+      momData.companies = momData.companies || [];
+      momData.attendees = momData.attendees || [];
+      momData.structure = momData.structure || [];
+      momData.urls = momData.urls || [];
+      momData.meetingAttachments = momData.meetingAttachments || [];
+      
+      // Ensure time slot exists with default values
+      if (!momData.mainTimeSlot) {
+        momData.mainTimeSlot = {
+          country: 'Thailand',
+          timezone: 'Asia/Bangkok',
+          startTime: '09:00',
+          endTime: '10:00'
         };
       }
       
-      if (!momData.goalTranslations && momData.goal) {
-        momData.goalTranslations = {
-          en: momData.goal || '',
-          ja: '',
-          th: ''
-        };
-      }
-      
-      // Ensure companies and attendees arrays exist
-      if (!momData.companies) {
-        momData.companies = [];
-      }
-      
-      if (!momData.attendees) {
-        momData.attendees = [];
-      }
-      
-      // Ensure structure array exists
-      if (!momData.structure) {
-        momData.structure = [];
-      }
+      console.log('[MOM Detail API] After compatibility processing:', {
+        title: momData.title,
+        goal: momData.goal,
+        date: momData.date,
+        hasMainTimeSlot: !!momData.mainTimeSlot,
+        companiesCount: momData.companies.length,
+        attendeesCount: momData.attendees.length
+      });
       
       // **CRITICAL REQUIREMENT 2**: If no previous revision data is included,
       // try to load it for comparison

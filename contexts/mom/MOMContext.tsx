@@ -81,9 +81,22 @@ function momReducer(state: MOMState, action: MOMAction): MOMState {
     case 'SET_CURRENT_MOM':
       // **UNSAVED CHANGES**: Reset when loading a new MOM
       // Ensure hierarchical numbers exist when loading a MOM
+      if (action.payload) {
+        console.log('[MOMContext] Setting current MOM:', {
+          momId: action.payload.momId,
+          revision: action.payload.revision,
+          title: action.payload.title,
+          goal: action.payload.goal,
+          date: action.payload.date,
+          companiesCount: action.payload.companies?.length || 0,
+          attendeesCount: action.payload.attendees?.length || 0,
+          hasMainTimeSlot: !!action.payload.mainTimeSlot
+        });
+      }
+      
       const momWithNumbers = action.payload ? {
         ...action.payload,
-        structure: ensureHierarchicalNumbers(action.payload.structure)
+        structure: ensureHierarchicalNumbers(action.payload.structure || [])
       } : null;
       return { ...state, currentMOM: momWithNumbers, hasUnsavedChanges: false };
       
