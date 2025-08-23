@@ -7,6 +7,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  // Set no-cache headers
+  const headers = new Headers();
+  headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  headers.set('Pragma', 'no-cache');
+  headers.set('Expires', '0');
   try {
     const { id } = params;
     console.log('Requested MOM ID:', id);
@@ -359,18 +364,21 @@ export async function GET(
       }
       
       
-      return NextResponse.json({ success: true, data: momData });
+      return NextResponse.json(
+        { success: true, data: momData },
+        { headers }
+      );
     }
 
     return NextResponse.json(
       { success: false, error: 'MOM not found' },
-      { status: 404 }
+      { status: 404, headers }
     );
   } catch (error) {
     console.error('Error fetching MOM:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch MOM' },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }

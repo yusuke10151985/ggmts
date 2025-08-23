@@ -3,6 +3,7 @@
 import React from 'react';
 import { useMOM } from '@/contexts/mom/MOMContext';
 import { saveMOM, getSpreadsheetUrl, loadMOM, getMOMList } from '@/services/mom/api';
+import CacheClearButton from './CacheClearButton';
 import { validateRequiredFields, formatValidationErrors } from '@/lib/mom/validation-utils';
 import { 
   FileText, 
@@ -228,6 +229,9 @@ export default function Header({ onShowSpreadsheet, onShowTasks, onShowList }: H
 
         {/* Right side - Action buttons */}
         <div className="flex items-center gap-2">
+          {/* Cache Clear Button - for debugging */}
+          <CacheClearButton />
+          
           {currentMOM && (
             <>
               {/* Current MOM Info */}
