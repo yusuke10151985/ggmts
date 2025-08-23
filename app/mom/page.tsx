@@ -11,6 +11,8 @@ import { getMOMList, getAttendees, getCompanies } from '@/services/mom/api';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import DebugButton from '@/components/mom/DebugButton';
+import logger from '@/lib/mom/client-logger';
 
 export default function MOMPage() {
   const { state, dispatch } = useMOM();
@@ -19,6 +21,15 @@ export default function MOMPage() {
   const [showTasks, setShowTasks] = useState(false);
 
   useEffect(() => {
+    // Log page load
+    if (logger) {
+      logger.log('MOMPage', 'Page loaded', {
+        platform: navigator.platform,
+        userAgent: navigator.userAgent,
+        url: window.location.href
+      });
+    }
+    
     loadMOMList();
     loadAllAttendees();
     loadAllCompanies();
@@ -132,6 +143,7 @@ export default function MOMPage() {
           </div>
         </Card>
       </div>
+      <DebugButton />
     </div>
   );
 }

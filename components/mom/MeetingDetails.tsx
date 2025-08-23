@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useMOM } from '@/contexts/mom/MOMContext';
+import { useClientLogger } from '@/hooks/mom/useClientLogger';
 import { Translation } from '@/types/mom';
 import { compareMOMs, getRevisionColor } from '@/lib/mom/revision-utils';
 import { getWeekday } from '@/utils/mom/date-helpers';
@@ -13,11 +14,12 @@ export default function MeetingDetails() {
   const { state, dispatch } = useMOM();
   const { currentMOM } = state;
   const { isAnyLoading } = useLoadingState();
+  const logger = useClientLogger('MeetingDetails');
   
   // Debug logging
   React.useEffect(() => {
     if (currentMOM) {
-      console.log('[MeetingDetails] Current MOM data:', {
+      logger.log('Current MOM data:', {
         title: currentMOM.title,
         titleTranslations: currentMOM.titleTranslations,
         goal: currentMOM.goal,

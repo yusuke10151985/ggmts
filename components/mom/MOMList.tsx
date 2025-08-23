@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useMOM } from '@/contexts/mom/MOMContext';
 import { loadMOM, deleteMOM, getMOMList } from '@/services/mom/api';
+import { useClientLogger } from '@/hooks/mom/useClientLogger';
 import { MOMListItem, MOM } from '@/types/mom';
 import { 
   List, 
@@ -20,6 +21,7 @@ export default function MOMList() {
   const { state, dispatch } = useMOM();
   const { momList, loading, user } = state;
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const logger = useClientLogger('MOMList');
   
   // **GENERATE NEW MOM ID**: Create a unique MOM ID based on current date and time
   const generateNewMOMId = (): string => {
