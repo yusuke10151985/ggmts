@@ -7,7 +7,7 @@ import { getTodayDate, getDefaultTimeSlot } from '@/utils/mom/date-helpers';
 
 interface MOMUser {
   id: string;
-  email: string;
+  email: string | null;
   role: string;
 }
 

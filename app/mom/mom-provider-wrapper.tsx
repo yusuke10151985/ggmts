@@ -4,7 +4,7 @@ import { MOMProvider } from '@/contexts/mom/MOMContext';
 
 interface User {
   id: string;
-  email: string;
+  email: string | null;
   role: string;
 }
 

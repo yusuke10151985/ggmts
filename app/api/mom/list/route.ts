@@ -53,7 +53,7 @@ export async function GET(request: Request) {
         if (status.includes('Deleted')) return false;
         
         // **USER FILTERING**: Specialユーザーは自分のMOMのみ表示
-        if (currentUser?.role === 'special') {
+        if (currentUser?.role === 'special' && currentUser?.email) {
           const createdBy = row[6] || ''; // G列（インデックス6）
           return createdBy === currentUser.email;
         }
