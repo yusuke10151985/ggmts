@@ -78,11 +78,11 @@ export default function MeetingDetails() {
       {typeof window !== 'undefined' && navigator.platform.includes('Win') && (
         <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded">
           <p className="font-bold text-sm">Windows Debug Info:</p>
-          <p className="text-xs">Title: "{currentMOM.title}" (len: {currentMOM.title?.length || 0})</p>
-          <p className="text-xs">Goal: "{currentMOM.goal}" (len: {currentMOM.goal?.length || 0})</p>
-          <p className="text-xs">Date: "{currentMOM.date}" (len: {currentMOM.date?.length || 0})</p>
-          <p className="text-xs">Title Trans EN: "{currentMOM.titleTranslations?.en}" (len: {currentMOM.titleTranslations?.en?.length || 0})</p>
-          <p className="text-xs">Goal Trans EN: "{currentMOM.goalTranslations?.en}" (len: {currentMOM.goalTranslations?.en?.length || 0})</p>
+          <p className="text-xs">Title: &quot;{currentMOM.title}&quot; (len: {currentMOM.title?.length || 0})</p>
+          <p className="text-xs">Goal: &quot;{currentMOM.goal}&quot; (len: {currentMOM.goal?.length || 0})</p>
+          <p className="text-xs">Date: &quot;{currentMOM.date}&quot; (len: {currentMOM.date?.length || 0})</p>
+          <p className="text-xs">Title Trans EN: &quot;{currentMOM.titleTranslations?.en}&quot; (len: {currentMOM.titleTranslations?.en?.length || 0})</p>
+          <p className="text-xs">Goal Trans EN: &quot;{currentMOM.goalTranslations?.en}&quot; (len: {currentMOM.goalTranslations?.en?.length || 0})</p>
         </div>
       )}
       

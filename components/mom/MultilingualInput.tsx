@@ -269,7 +269,7 @@ export default function MultilingualInput({
             {/* Windows diagnostic: Show raw value in a separate element */}
             {isWindows && (
               <span className="text-xs text-red-500 ml-2">
-                [DEBUG: "{displayValue}" len={displayValue.length}]
+                [DEBUG: &quot;{displayValue}&quot; len={displayValue.length}]
               </span>
             )}
           </>
