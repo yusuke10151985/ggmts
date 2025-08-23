@@ -210,6 +210,19 @@ export default function MultilingualInput({
     // Ensure we always have a string value, even on Windows
     const displayValue = (localValue && localValue[lang]) ? String(localValue[lang]) : '';
     const placeholderText = placeholder?.[lang] || '';
+    
+    // Debug: log what we're trying to render
+    if (isWindows && lang === 'en' && label === 'Meeting Title') {
+      console.log('[RENDER DEBUG]', {
+        label,
+        lang,
+        localValue,
+        displayValue,
+        displayValueLength: displayValue.length,
+        isEditing,
+        placeholderText
+      });
+    }
 
     return (
       <div
@@ -249,9 +262,17 @@ export default function MultilingualInput({
             />
           )
         ) : (
-          <span className={`flex-1 ${!displayValue ? 'text-gray-400' : ''}`}>
-            {displayValue || placeholderText || ''}
-          </span>
+          <>
+            <span className={`flex-1 ${!displayValue ? 'text-gray-400' : ''}`} data-testid={`display-${lang}`}>
+              {displayValue || placeholderText || ''}
+            </span>
+            {/* Windows diagnostic: Show raw value in a separate element */}
+            {isWindows && (
+              <span className="text-xs text-red-500 ml-2">
+                [DEBUG: "{displayValue}" len={displayValue.length}]
+              </span>
+            )}
+          </>
         )}
       </div>
     );

@@ -74,7 +74,44 @@ export default function MeetingDetails() {
     <section className="bg-gray-50 p-6 rounded-lg border border-gray-200">
       <h2 className="mb-4">Meeting Details</h2>
       
+      {/* Windows Diagnostic Display */}
+      {typeof window !== 'undefined' && navigator.platform.includes('Win') && (
+        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded">
+          <p className="font-bold text-sm">Windows Debug Info:</p>
+          <p className="text-xs">Title: "{currentMOM.title}" (len: {currentMOM.title?.length || 0})</p>
+          <p className="text-xs">Goal: "{currentMOM.goal}" (len: {currentMOM.goal?.length || 0})</p>
+          <p className="text-xs">Date: "{currentMOM.date}" (len: {currentMOM.date?.length || 0})</p>
+          <p className="text-xs">Title Trans EN: "{currentMOM.titleTranslations?.en}" (len: {currentMOM.titleTranslations?.en?.length || 0})</p>
+          <p className="text-xs">Goal Trans EN: "{currentMOM.goalTranslations?.en}" (len: {currentMOM.goalTranslations?.en?.length || 0})</p>
+        </div>
+      )}
+      
       <div className="space-y-6">
+        {/* Direct Display Test for Windows */}
+        {typeof window !== 'undefined' && navigator.platform.includes('Win') && (
+          <div className="p-3 border-2 border-blue-500 rounded mb-4">
+            <p className="font-bold">Direct HTML Display Test:</p>
+            <div className="mt-2">
+              <label className="block font-semibold">Meeting Title (Direct):</label>
+              <input 
+                type="text" 
+                value={currentMOM.title || ''} 
+                readOnly 
+                className="w-full p-2 border rounded"
+              />
+            </div>
+            <div className="mt-2">
+              <label className="block font-semibold">Meeting Goal (Direct):</label>
+              <input 
+                type="text" 
+                value={currentMOM.goal || ''} 
+                readOnly 
+                className="w-full p-2 border rounded"
+              />
+            </div>
+          </div>
+        )}
+        
         {/* Meeting Title with Multilingual Support */}
         <MultilingualInput
           label="Meeting Title"
