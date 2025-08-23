@@ -33,6 +33,7 @@ export default function MOMPage() {
     loadMOMList();
     loadAllAttendees();
     loadAllCompanies();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadMOMList = async () => {

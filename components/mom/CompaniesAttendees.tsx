@@ -66,6 +66,7 @@ export default function CompaniesAttendees() {
 
   useEffect(() => {
     loadCompanies();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

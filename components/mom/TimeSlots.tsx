@@ -151,6 +151,7 @@ export default function TimeSlots() {
       // For new MOMs, ensure Japan is shown by default and update times
       updateAllSubSlots(currentMOM.mainTimeSlot);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentMOM?.momId, currentMOM?.revision]); // Re-run when MOM changes
 
   if (!currentMOM) return null;

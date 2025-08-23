@@ -10,7 +10,9 @@ export function useClientLogger(componentName: string) {
     logger.debug(componentName, `Component mounted`);
     
     return () => {
-      logger.debug(componentName, `Component unmounted`);
+      if (logger) {
+        logger.debug(componentName, `Component unmounted`);
+      }
     };
   }, [componentName]);
 

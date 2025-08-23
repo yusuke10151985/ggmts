@@ -30,6 +30,7 @@ export default function MeetingDetails() {
         meetingAttachments: currentMOM.meetingAttachments
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentMOM]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -219,6 +219,7 @@ export default function MOMList() {
     });
 
     return filtered;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [momList, searchTerm, filters]);
 
   const handleEdit = async (momId: string, revision: number) => {
