@@ -18,7 +18,7 @@ import {
 
 export default function MOMList() {
   const { state, dispatch } = useMOM();
-  const { momList, loading } = state;
+  const { momList, loading, user } = state;
   const [isRefreshing, setIsRefreshing] = useState(false);
   
   // **GENERATE NEW MOM ID**: Create a unique MOM ID based on current date and time
@@ -42,6 +42,7 @@ export default function MOMList() {
     title: '',
     date: '',
     status: 'all',
+    createdBy: 'all', // **USER FILTER**: Filter by creator (admin only)
   });
   
   // **REFRESH MOM LIST**: Function to reload latest data from spreadsheet with retry logic
@@ -182,6 +183,11 @@ export default function MOMList() {
     
     if (filters.status !== 'all') {
       filtered = filtered.filter(mom => mom.status === filters.status);
+    }
+    
+    // **USER FILTER**: Filter by creator (admin only)
+    if (filters.createdBy !== 'all' && user?.role === 'admin') {
+      filtered = filtered.filter(mom => mom.createdBy === filters.createdBy);
     }
 
     // Apply global search
@@ -391,6 +397,20 @@ export default function MOMList() {
             <option value="Draft">Draft</option>
             <option value="Officially Issued">Officially Issued</option>
           </select>
+          {/* Account Filter - Admin only */}
+          {user?.role === 'admin' && (
+            <select
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={filters.createdBy}
+              onChange={(e) => setFilters({...filters, createdBy: e.target.value})}
+            >
+              <option value="all">All Accounts</option>
+              {/* Get unique creators from momList */}
+              {Array.from(new Set(momList.map(m => m.createdBy).filter(Boolean))).map(email => (
+                <option key={email} value={email}>{email}</option>
+              ))}
+            </select>
+          )}
           <button
             className="px-3 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
             onClick={() => {
@@ -400,6 +420,7 @@ export default function MOMList() {
                 title: '',
                 date: '',
                 status: 'all',
+                createdBy: 'all',
               });
               setSearchTerm('');
             }}
@@ -430,6 +451,11 @@ export default function MOMList() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
+                {user?.role === 'admin' && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Created By
+                  </th>
+                )}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
@@ -485,6 +511,13 @@ export default function MOMList() {
                       {mom.status}
                     </span>
                   </td>
+                  {user?.role === 'admin' && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {mom.createdBy || '-'}
+                      </span>
+                    </td>
+                  )}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex gap-2">
                       <button

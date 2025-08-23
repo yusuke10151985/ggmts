@@ -7,7 +7,7 @@ export default async function MOMLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { authorized, error } = await checkAdminAccess();
+  const { authorized, error, user } = await checkAdminAccess();
   
   if (!authorized) {
     // Redirect to home page with error message
@@ -15,7 +15,7 @@ export default async function MOMLayout({
   }
 
   return (
-    <MOMProviderWrapper>
+    <MOMProviderWrapper user={user}>
       {children}
     </MOMProviderWrapper>
   );

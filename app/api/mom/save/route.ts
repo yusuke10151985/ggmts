@@ -3,12 +3,13 @@ import { getSheetData, appendSheetData, updateSheetData, isGoogleSheetsConfigure
 import { uploadToDrive, getDriveFileUrl } from '@/lib/mom/google-drive';
 import { Task, StructureItem } from '@/types/mom';
 import { splitDataIntoChunks, compressMOMData, getDataSize } from '@/lib/mom/data-compression';
-import { requireAdminAuth } from '@/lib/mom/auth-check';
+import { getMOMUser } from '@/lib/mom/auth-check';
 
 export async function POST(request: NextRequest) {
-  // Check admin authorization
-  const authError = await requireAdminAuth();
-  if (authError) return authError;
+  // Check authorization and get user info
+  const userResult = await getMOMUser();
+  if (userResult.error) return userResult.error;
+  const currentUser = userResult.user;
   
   try {
     const body = await request.json();
@@ -111,14 +112,15 @@ export async function POST(request: NextRequest) {
       mom.date,
       status,
       timestamp,
+      currentUser?.email || '', // createdBy field
     ];
 
     if (existingIndex >= 0) {
-      // Update existing row
-      await updateSheetData(`Sheet1!A${existingIndex + 2}:F${existingIndex + 2}`, [rowData]);
+      // Update existing row (including createdBy field)
+      await updateSheetData(`Sheet1!A${existingIndex + 2}:G${existingIndex + 2}`, [rowData]);
     } else {
-      // Append new row
-      await appendSheetData('Sheet1!A2:F', [rowData]);
+      // Append new row (including createdBy field)
+      await appendSheetData('Sheet1!A2:G', [rowData]);
     }
 
     // Get existing detail rows for comparison and storage
@@ -405,7 +407,9 @@ export async function POST(request: NextRequest) {
       previousRevisionData: previousRevisionData,
       baseRevision: previousRevisionData ? previousRevisionData.revision : 0,
       // **VERCEL BLOB**: Include uploaded files (already contains URLs)
-      uploadedFiles: mom.uploadedFiles || []
+      uploadedFiles: mom.uploadedFiles || [],
+      // **USER TRACKING**: Save the user who created/updated this MOM
+      createdBy: currentUser?.email || ''
     };
     
     // **DATA COMPRESSION**: Compress MOM data before saving

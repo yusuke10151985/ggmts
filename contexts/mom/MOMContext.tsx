@@ -5,6 +5,12 @@ import { MOM, MOMListItem, Company, Attendee, StructureItem, MOMAction, ViewMode
 import { renumberStructure, addAndRenumber, removeAndRenumber, updateAndRenumber, ensureHierarchicalNumbers } from '@/lib/mom/renumber-structure';
 import { getTodayDate, getDefaultTimeSlot } from '@/utils/mom/date-helpers';
 
+interface MOMUser {
+  id: string;
+  email: string;
+  role: string;
+}
+
 interface MOMState {
   momList: MOMListItem[];
   currentMOM: MOM | null;
@@ -16,6 +22,7 @@ interface MOMState {
   saving: boolean; // **SAVING STATE**: Track when saving to prevent other operations
   uploading: boolean; // **UPLOADING STATE**: Track when uploading files
   viewMode: ViewMode; // **VIEW MODE**: Track current view mode (normal/matrix)
+  user: MOMUser | null; // **USER INFO**: Current user information
 }
 
 const initialState: MOMState = {
@@ -29,6 +36,7 @@ const initialState: MOMState = {
   saving: false,
   uploading: false,
   viewMode: 'normal', // **VIEW MODE**: Default to normal view
+  user: null, // **USER INFO**: Initialize as null
 };
 
 const MOMContext = createContext<{
@@ -187,8 +195,8 @@ function momReducer(state: MOMState, action: MOMAction): MOMState {
   }
 }
 
-export function MOMProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(momReducer, initialState);
+export function MOMProvider({ children, user }: { children: ReactNode; user?: MOMUser | null }) {
+  const [state, dispatch] = useReducer(momReducer, { ...initialState, user: user || null });
 
   return (
     <MOMContext.Provider value={{ state, dispatch }}>

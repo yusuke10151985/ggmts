@@ -11,21 +11,31 @@ export async function checkAdminAccess() {
   if (!session?.user?.email) {
     return { 
       authorized: false, 
-      error: 'You must be logged in to access this feature' 
+      error: 'You must be logged in to access this feature',
+      user: null 
     };
   }
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    select: { role: true }
+    select: { id: true, email: true, role: true }
   });
 
-  if (!user || user.role !== 'admin') {
+  // AdminとSpecialユーザーのみアクセス可能
+  if (!user || (user.role !== 'admin' && user.role !== 'special')) {
     return { 
       authorized: false, 
-      error: 'You must have admin privileges to access MoM Manager' 
+      error: 'You must have admin or special privileges to access MoM Manager',
+      user: null 
     };
   }
 
-  return { authorized: true };
+  return { 
+    authorized: true,
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role
+    }
+  };
 }

@@ -130,6 +130,7 @@ export interface MOM {
   baseRevision?: number; // Track the base revision for this MOM
   meetingAttachments?: Attachment[]; // **MEETING ATTACHMENTS**: Files attached to the meeting
   uploadedFiles?: FileMetadata[]; // **VERCEL BLOB**: Files uploaded via Vercel Blob
+  createdBy?: string; // **USER TRACKING**: Email of the user who created this MOM
 }
 
 export interface MOMListItem {
@@ -139,6 +140,7 @@ export interface MOMListItem {
   titleTranslations?: Translation;
   date: string;
   status: string;
+  createdBy?: string; // **USER TRACKING**: Email of the user who created this MOM
 }
 
 // **TASK MANAGEMENT**: Interface for Actions as Tasks
