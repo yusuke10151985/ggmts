@@ -113,7 +113,7 @@ export default function MeetingDetails() {
             <input
               type="date"
               className={`form-control ${differences?.dateChanged ? `border-2 ${dateColorClass}` : ''}`}
-              value={currentMOM.date}
+              value={currentMOM.date || ''}
               onChange={handleDateChange}
               disabled={isAnyLoading}
             />

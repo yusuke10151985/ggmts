@@ -20,6 +20,13 @@ interface MultilingualInputProps {
   disabled?: boolean;
 }
 
+// Force re-render on Windows to handle state update delays
+const useForceUpdate = () => {
+  const [, setTick] = useState(0);
+  const update = () => setTick(tick => tick + 1);
+  return update;
+};
+
 export default function MultilingualInput({
   label,
   required = false,
@@ -36,15 +43,45 @@ export default function MultilingualInput({
   disabled = false
 }: MultilingualInputProps) {
   const [editingLang, setEditingLang] = useState<'en' | 'ja' | 'th' | null>(null);
-  const [localValue, setLocalValue] = useState<TranslationSet>(value || { en: '', ja: '', th: '' });
+  // Initialize with proper default to avoid Windows state issues
+  const [localValue, setLocalValue] = useState<TranslationSet>(() => {
+    const initial = value || { en: '', ja: '', th: '' };
+    return {
+      en: initial.en || '',
+      ja: initial.ja || '',
+      th: initial.th || ''
+    };
+  });
   const [isTranslating, setIsTranslating] = useState(false);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const forceUpdate = useForceUpdate();
+  const isWindows = typeof window !== 'undefined' && navigator.platform.includes('Win');
 
   useEffect(() => {
-    const newValue = value || { en: '', ja: '', th: '' };
+    // Ensure we have valid values for all languages
+    const newValue = {
+      en: value?.en || '',
+      ja: value?.ja || '',
+      th: value?.th || ''
+    };
     setLocalValue(newValue);
-    console.log(`[MultilingualInput - ${label}] Value updated:`, newValue);
-  }, [value, label]);
+    
+    // Force re-render on Windows to handle potential rendering delays
+    if (isWindows) {
+      setTimeout(() => {
+        forceUpdate();
+      }, 10);
+    }
+    
+    console.log(`[MultilingualInput - ${label}] Value updated:`, {
+      value: newValue,
+      rawValue: value,
+      hasEn: !!value?.en,
+      hasJa: !!value?.ja,
+      hasTh: !!value?.th,
+      isWindows
+    });
+  }, [value, label, isWindows, forceUpdate]);
 
   useEffect(() => {
     if (editingLang && inputRef.current) {
@@ -170,8 +207,9 @@ export default function MultilingualInput({
 
   const renderLanguageRow = (lang: 'en' | 'ja' | 'th', langLabel: string) => {
     const isEditing = editingLang === lang;
-    const displayValue = localValue[lang] || '';
-    const placeholderText = '';
+    // Ensure we always have a string value, even on Windows
+    const displayValue = (localValue && localValue[lang]) ? String(localValue[lang]) : '';
+    const placeholderText = placeholder?.[lang] || '';
 
     return (
       <div
@@ -212,7 +250,7 @@ export default function MultilingualInput({
           )
         ) : (
           <span className={`flex-1 ${!displayValue ? 'text-gray-400' : ''}`}>
-            {displayValue}
+            {displayValue || placeholderText || ''}
           </span>
         )}
       </div>
