@@ -9,7 +9,12 @@
     "lint": "next lint",
     "setup": "node setup-env.js",
     "debug": "node debug-env.js",
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node prisma/seed.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@google-analytics/data": "^5.2.0",
@@ -51,6 +56,7 @@
     "tailwind-merge": "^2.5.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "@types/node": "^22.14.0",
     "@types/nodemailer": "^6.4.17",
     "@types/pdfmake": "^0.2.11",
