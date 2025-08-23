@@ -82,15 +82,20 @@ function momReducer(state: MOMState, action: MOMAction): MOMState {
       // **UNSAVED CHANGES**: Reset when loading a new MOM
       // Ensure hierarchical numbers exist when loading a MOM
       if (action.payload) {
-        console.log('[MOMContext] Setting current MOM:', {
+        console.log('[MOMContext] Setting current MOM - DETAILED:', {
           momId: action.payload.momId,
           revision: action.payload.revision,
-          title: action.payload.title,
-          goal: action.payload.goal,
-          date: action.payload.date,
+          title: `"${action.payload.title || ''}"`,
+          titleLength: action.payload.title?.length || 0,
+          titleTranslations: action.payload.titleTranslations,
+          goal: `"${action.payload.goal || ''}"`,
+          goalLength: action.payload.goal?.length || 0,
+          goalTranslations: action.payload.goalTranslations,
+          date: `"${action.payload.date || ''}"`,
+          mainTimeSlot: action.payload.mainTimeSlot,
           companiesCount: action.payload.companies?.length || 0,
           attendeesCount: action.payload.attendees?.length || 0,
-          hasMainTimeSlot: !!action.payload.mainTimeSlot
+          structureCount: action.payload.structure?.length || 0
         });
       }
       

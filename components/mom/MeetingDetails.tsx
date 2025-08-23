@@ -18,21 +18,23 @@ export default function MeetingDetails() {
   // Temporarily disabled for Windows compatibility
   // const logger = useClientLogger('MeetingDetails');
   
-  // Debug logging - disabled to prevent Windows issues
-  // React.useEffect(() => {
-  //   if (currentMOM) {
-  //     console.log('[MeetingDetails] Current MOM data:', {
-  //       title: currentMOM.title,
-  //       titleTranslations: currentMOM.titleTranslations,
-  //       goal: currentMOM.goal,
-  //       goalTranslations: currentMOM.goalTranslations,
-  //       date: currentMOM.date,
-  //       mainTimeSlot: currentMOM.mainTimeSlot,
-  //       urls: currentMOM.urls,
-  //       meetingAttachments: currentMOM.meetingAttachments
-  //     });
-  //   }
-  // }, [currentMOM]);
+  // Debug logging - Re-enabled with detailed values
+  React.useEffect(() => {
+    if (currentMOM) {
+      console.log('[MeetingDetails] Current MOM data - DETAILED:', {
+        title: `"${currentMOM.title || ''}"`,
+        titleLength: currentMOM.title?.length || 0,
+        titleTranslations: currentMOM.titleTranslations,
+        goal: `"${currentMOM.goal || ''}"`,
+        goalLength: currentMOM.goal?.length || 0,
+        goalTranslations: currentMOM.goalTranslations,
+        date: `"${currentMOM.date || ''}"`,
+        mainTimeSlot: currentMOM.mainTimeSlot,
+        urls: currentMOM.urls,
+        meetingAttachments: currentMOM.meetingAttachments
+      });
+    }
+  }, [currentMOM]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch({ type: 'UPDATE_MOM_FIELD', field: 'date', value: e.target.value });

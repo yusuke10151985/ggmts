@@ -141,23 +141,24 @@ export async function GET(
         }
       }
       
-      // Log the retrieved MOM data for debugging
-      console.log('[MOM Detail API] Retrieved MOM data:', {
+      // Log the retrieved MOM data for debugging with actual values
+      console.log('[MOM Detail API] Retrieved MOM data - DETAILED:', {
         momId: momData.momId,
         revision: momData.revision,
-        title: momData.title,
-        hasTitleTranslations: !!momData.titleTranslations,
-        hasGoalTranslations: !!momData.goalTranslations,
-        hasGoal: !!momData.goal,
-        hasDate: !!momData.date,
-        hasMainTimeSlot: !!momData.mainTimeSlot,
+        title: `"${momData.title || ''}"`,
+        titleLength: momData.title?.length || 0,
+        titleTranslations: JSON.stringify(momData.titleTranslations || {}),
+        goal: `"${momData.goal || ''}"`,
+        goalLength: momData.goal?.length || 0,
+        goalTranslations: JSON.stringify(momData.goalTranslations || {}),
+        date: `"${momData.date || ''}"`,
+        mainTimeSlot: JSON.stringify(momData.mainTimeSlot || {}),
         companiesCount: momData.companies?.length || 0,
+        companiesData: JSON.stringify(momData.companies?.slice(0, 2) || []),
         attendeesCount: momData.attendees?.length || 0,
-        structureCount: momData.structure?.length || 0
+        structureCount: momData.structure?.length || 0,
+        allKeys: Object.keys(momData).join(', ')
       });
-      
-      // Debug: Log raw data structure
-      console.log('[MOM Detail API] Raw data keys:', Object.keys(momData));
       
       // **BACKWARD COMPATIBILITY**: Ensure all required fields exist
       // If old format data doesn't have translations, create them from existing fields
@@ -208,13 +209,18 @@ export async function GET(
         };
       }
       
-      console.log('[MOM Detail API] After compatibility processing:', {
-        title: momData.title,
-        goal: momData.goal,
-        date: momData.date,
-        hasMainTimeSlot: !!momData.mainTimeSlot,
+      console.log('[MOM Detail API] After compatibility processing - FINAL VALUES:', {
+        title: `"${momData.title}"`,
+        titleTranslations: JSON.stringify(momData.titleTranslations),
+        goal: `"${momData.goal}"`,
+        goalTranslations: JSON.stringify(momData.goalTranslations),
+        date: `"${momData.date}"`,
+        mainTimeSlot: JSON.stringify(momData.mainTimeSlot),
         companiesCount: momData.companies.length,
-        attendeesCount: momData.attendees.length
+        companies: JSON.stringify(momData.companies?.slice(0, 2) || []),
+        attendeesCount: momData.attendees.length,
+        urls: JSON.stringify(momData.urls || []),
+        meetingAttachments: JSON.stringify(momData.meetingAttachments || [])
       });
       
       // **CRITICAL REQUIREMENT 2**: If no previous revision data is included,

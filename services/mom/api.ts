@@ -110,15 +110,20 @@ export async function loadMOM(momId: string, revision: number): Promise<APIRespo
   const response = await apiGet<MOM>(`/api/mom/${momId}-${revision}`);
   
   if (response.success && response.data) {
-    console.log('[API Service] Loaded MOM:', {
+    console.log('[API Service] Loaded MOM - DETAILED CLIENT SIDE:', {
       momId: response.data.momId,
       revision: response.data.revision,
-      title: response.data.title,
-      hasGoal: !!response.data.goal,
-      hasDate: !!response.data.date,
-      hasCompanies: response.data.companies?.length > 0,
-      hasAttendees: response.data.attendees?.length > 0,
-      hasMainTimeSlot: !!response.data.mainTimeSlot
+      title: `"${response.data.title || ''}"`,
+      titleLength: response.data.title?.length || 0,
+      titleTranslations: response.data.titleTranslations,
+      goal: `"${response.data.goal || ''}"`,
+      goalLength: response.data.goal?.length || 0,
+      goalTranslations: response.data.goalTranslations,
+      date: `"${response.data.date || ''}"`,
+      mainTimeSlot: response.data.mainTimeSlot,
+      companies: response.data.companies?.slice(0, 2),
+      attendees: response.data.attendees?.slice(0, 2),
+      structure: response.data.structure?.slice(0, 2)
     });
   } else {
     console.error('[API Service] Failed to load MOM:', response.error);
