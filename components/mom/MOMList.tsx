@@ -89,7 +89,7 @@ export default function MOMList() {
         
         dispatch({ type: 'SET_MOM_LIST', payload: filteredData });
         // **デバッグ用**: リフレッシュ成功をコンソールに出力
-        console.log('MOM List refreshed successfully:', filteredData.length, 'items', `(retry: ${retryCount})`);
+        console.log('[MOMList] Refreshed successfully:', filteredData.length, 'items', `(retry: ${retryCount})`);
       } else {
         if (retryCount < MAX_RETRIES) {
           console.log(`API error, retrying... (${retryCount + 1}/${MAX_RETRIES})`);

@@ -27,12 +27,26 @@ export function getGoogleSheetsClient() {
 
 // Helper function to get sheet data
 export async function getSheetData(range: string) {
-  const sheets = getGoogleSheetsClient();
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: process.env.GOOGLE_SHEET_ID,
-    range,
-  });
-  return response.data.values || [];
+  try {
+    console.log('[Google Sheets] Getting data from range:', range);
+    const sheets = getGoogleSheetsClient();
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEET_ID,
+      range,
+    });
+    const data = response.data.values || [];
+    console.log('[Google Sheets] Retrieved', data.length, 'rows from', range);
+    return data;
+  } catch (error) {
+    console.error('[Google Sheets] Error reading sheet data:', error);
+    console.error('[Google Sheets] Error details:', {
+      range,
+      spreadsheetId: process.env.GOOGLE_SHEET_ID?.substring(0, 10) + '...',
+      hasAuth: !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL && !!process.env.GOOGLE_PRIVATE_KEY,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error'
+    });
+    throw error;
+  }
 }
 
 // Helper function to update sheet data

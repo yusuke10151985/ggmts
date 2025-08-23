@@ -14,9 +14,18 @@ export async function requireAdminAuth() {
 }
 
 export async function getMOMUser() {
+  console.log('[Auth Check] Getting session...');
   const session = await getServerSession(authOptions);
   
+  console.log('[Auth Check] Session info:', {
+    hasSession: !!session,
+    hasUser: !!session?.user,
+    hasEmail: !!session?.user?.email,
+    email: session?.user?.email ? session.user.email.substring(0, 5) + '...' : 'none'
+  });
+  
   if (!session?.user?.email) {
+    console.log('[Auth Check] No authenticated session found');
     return {
       error: NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -30,9 +39,16 @@ export async function getMOMUser() {
     where: { email: session.user.email },
     select: { id: true, email: true, role: true }
   });
+  
+  console.log('[Auth Check] Database user:', {
+    found: !!user,
+    role: user?.role || 'none',
+    id: user?.id || 'none'
+  });
 
   // AdminとSpecialユーザーのみアクセス可能
   if (!user || (user.role !== 'admin' && user.role !== 'special')) {
+    console.log('[Auth Check] Access denied - insufficient privileges');
     return {
       error: NextResponse.json(
         { success: false, error: 'Admin or Special privileges required' },
@@ -42,6 +58,7 @@ export async function getMOMUser() {
     };
   }
 
+  console.log('[Auth Check] Access granted for user:', user.email);
   return { 
     error: null,
     user: {

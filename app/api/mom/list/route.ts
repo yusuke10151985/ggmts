@@ -3,14 +3,24 @@ import { getSheetData, isGoogleSheetsConfigured } from '@/lib/mom/google-sheets'
 import { getMOMUser } from '@/lib/mom/auth-check';
 
 export async function GET(request: Request) {
+  console.log('[MOM List API] Request received');
+  
   // Check authorization and get user info
   const userResult = await getMOMUser();
+  console.log('[MOM List API] User result:', {
+    hasError: !!userResult.error,
+    userId: userResult.user?.id,
+    userEmail: userResult.user?.email,
+    userRole: userResult.user?.role
+  });
+  
   if (userResult.error) return userResult.error;
   const currentUser = userResult.user;
   
   try {
     // Check if Google Sheets is configured
     if (!isGoogleSheetsConfigured()) {
+      console.log('[MOM List API] Google Sheets not configured, returning mock data');
       // Return mock data for demo
       return NextResponse.json({
         success: true,
@@ -39,10 +49,13 @@ export async function GET(request: Request) {
     }
 
     // Get MOM list from Sheet1 (Status is in column E, CreatedBy in column G)
+    console.log('[MOM List API] Fetching data from Google Sheets');
     const rows = await getSheetData('Sheet1!A2:G');
+    console.log('[MOM List API] Sheet1 rows count:', rows?.length || 0);
     
     // Get detailed data from Sheet2 for translations
     const detailRows = await getSheetData('Sheet2!A:B');
+    console.log('[MOM List API] Sheet2 rows count:', detailRows?.length || 0);
     
     // **DELETE BY STATUS FILTERING & USER FILTERING**: 
     // Filter out deleted MOMs and apply user-based filtering
@@ -93,6 +106,12 @@ export async function GET(request: Request) {
         };
       });
 
+    console.log('[MOM List API] Returning MOM list:', {
+      totalCount: momList.length,
+      userRole: currentUser?.role,
+      userEmail: currentUser?.email
+    });
+    
     const response = NextResponse.json({ success: true, data: momList });
     
     // Set cache headers to prevent caching
@@ -102,9 +121,13 @@ export async function GET(request: Request) {
     
     return response;
   } catch (error) {
-    console.error('Error fetching MOM list:', error);
+    console.error('[MOM List API] Error fetching MOM list:', error);
+    console.error('[MOM List API] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch MOM list' },
+      { success: false, error: 'Failed to fetch MOM list', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
