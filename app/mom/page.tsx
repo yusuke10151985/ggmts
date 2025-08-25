@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useMOM } from '@/contexts/mom/MOMContext';
+import GlobalHeader from '@/components/GlobalHeader';
 import Header from '@/components/mom/Header';
 import MOMList from '@/components/mom/MOMList';
 import MOMEditor from '@/components/mom/MOMEditor';
 import SpreadsheetViewer from '@/components/mom/SpreadsheetViewer';
 import TaskList from '@/components/mom/TaskList';
 import { getMOMList, getAttendees, getCompanies } from '@/services/mom/api';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 // Temporarily disabled for Windows compatibility
@@ -66,31 +66,33 @@ export default function MOMPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Fixed Global Header */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <GlobalHeader />
+      </div>
+      
+      {/* Main Content with padding to account for fixed header */}
       <div className="container mx-auto px-4 py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 text-transparent bg-clip-text">
-            MoM Manager
-          </h1>
-          <ThemeToggle />
-        </div>
-        
         <Card className="shadow-lg">
-          <Header 
-            onShowSpreadsheet={() => {
-              setShowSpreadsheet(true);
-              setShowTasks(false);
-            }}
-            onShowTasks={() => {
-              setShowTasks(true);
-              setShowSpreadsheet(false);
-            }}
-            onShowList={() => {
-              dispatch({ type: 'SET_CURRENT_MOM', payload: null });
-              setShowSpreadsheet(false);
-              setShowTasks(false);
-              loadMOMList();
-            }}
-          />
+          {/* MOM Specific Header */}
+          <div className="border-b">
+            <Header 
+              onShowSpreadsheet={() => {
+                setShowSpreadsheet(true);
+                setShowTasks(false);
+              }}
+              onShowTasks={() => {
+                setShowTasks(true);
+                setShowSpreadsheet(false);
+              }}
+              onShowList={() => {
+                dispatch({ type: 'SET_CURRENT_MOM', payload: null });
+                setShowSpreadsheet(false);
+                setShowTasks(false);
+                loadMOMList();
+              }}
+            />
+          </div>
           
           <div className="p-6">
             {loading && state.momList.length === 0 && (

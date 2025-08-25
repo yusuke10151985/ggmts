@@ -186,7 +186,7 @@ export default function Header({ onShowSpreadsheet, onShowTasks, onShowList }: H
   };
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 p-4 border-b border-gray-200 dark:border-gray-700">
+    <div className="p-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         {/* Left side - Navigation buttons */}
         <div className="flex flex-wrap items-center gap-2">
