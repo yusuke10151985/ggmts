@@ -113,14 +113,15 @@ export async function POST(request: NextRequest) {
       status,
       timestamp,
       currentUser?.email || '', // createdBy field
+      mom.visibility || 'shared', // visibility field
     ];
 
     if (existingIndex >= 0) {
-      // Update existing row (including createdBy field)
-      await updateSheetData(`Sheet1!A${existingIndex + 2}:G${existingIndex + 2}`, [rowData]);
+      // Update existing row (including createdBy and visibility fields)
+      await updateSheetData(`Sheet1!A${existingIndex + 2}:H${existingIndex + 2}`, [rowData]);
     } else {
-      // Append new row (including createdBy field)
-      await appendSheetData('Sheet1!A2:G', [rowData]);
+      // Append new row (including createdBy and visibility fields)
+      await appendSheetData('Sheet1!A2:H', [rowData]);
     }
 
     // Get existing detail rows for comparison and storage
@@ -409,7 +410,9 @@ export async function POST(request: NextRequest) {
       // **VERCEL BLOB**: Include uploaded files (already contains URLs)
       uploadedFiles: mom.uploadedFiles || [],
       // **USER TRACKING**: Save the user who created/updated this MOM
-      createdBy: currentUser?.email || ''
+      createdBy: currentUser?.email || '',
+      // **VISIBILITY**: Save visibility setting
+      visibility: mom.visibility || 'shared'
     };
     
     // **DATA COMPRESSION**: Compress MOM data before saving

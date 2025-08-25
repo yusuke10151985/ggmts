@@ -205,6 +205,7 @@ function momReducer(state: MOMState, action: MOMAction): MOMState {
           structure: [],
           status: 'Draft',
           meetingAttachments: [], // **MEETING ATTACHMENTS**: Initialize empty array
+          visibility: 'shared', // **VISIBILITY**: Default to shared for new MOMs
         },
       };
       

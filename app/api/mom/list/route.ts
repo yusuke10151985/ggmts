@@ -48,9 +48,9 @@ export async function GET(request: Request) {
       await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
     }
 
-    // Get MOM list from Sheet1 (Status is in column E, CreatedBy in column G)
+    // Get MOM list from Sheet1 (Status is in column E, CreatedBy in column G, Visibility in column H)
     console.log('[MOM List API] Fetching data from Google Sheets');
-    const rows = await getSheetData('Sheet1!A2:G');
+    const rows = await getSheetData('Sheet1!A2:H');
     console.log('[MOM List API] Sheet1 rows count:', rows?.length || 0);
     
     // Get detailed data from Sheet2 for translations
@@ -65,14 +65,26 @@ export async function GET(request: Request) {
         const status = row[4] || 'Draft';
         if (status.includes('Deleted')) return false;
         
-        // **USER FILTERING**: Specialユーザーは自分のMOMのみ表示
-        if (currentUser?.role === 'special' && currentUser?.email) {
-          const createdBy = row[6] || ''; // G列（インデックス6）
-          return createdBy === currentUser.email;
-        }
+        // **VISIBILITY FILTERING**: 
+        const createdBy = row[6] || ''; // G列（インデックス6）
+        const visibility = row[7] || 'shared'; // H列（インデックス7）, default to shared
         
         // Adminユーザーは全て表示
-        return true;
+        if (currentUser?.role === 'admin') {
+          return true;
+        }
+        
+        // Shared MOMs are visible to everyone
+        if (visibility === 'shared') {
+          return true;
+        }
+        
+        // Private MOMs are only visible to creator
+        if (visibility === 'private' && currentUser?.email === createdBy) {
+          return true;
+        }
+        
+        return false;
       })
       .map((row: any[]) => {
         const momId = row[0] || '';
@@ -103,6 +115,7 @@ export async function GET(request: Request) {
           status: row[4] || 'Draft',
           timestamp: row[5] || '',
           createdBy: row[6] || '', // Include createdBy field
+          visibility: row[7] || 'shared', // Include visibility field
         };
       });
 

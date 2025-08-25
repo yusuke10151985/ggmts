@@ -53,6 +53,27 @@ export default function MOMEditor() {
               {currentMOM.momId === 'New MOM' ? 'New' : currentMOM.status}
             </span>
           </div>
+          
+          {/* Visibility Toggle */}
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-gray-700">Visibility:</span>
+            <button
+              onClick={() => {
+                const newVisibility = currentMOM.visibility === 'shared' ? 'private' : 'shared';
+                dispatch({ type: 'UPDATE_MOM_FIELD', field: 'visibility', value: newVisibility });
+              }}
+              className={`px-3 py-1 rounded font-semibold transition-colors ${
+                currentMOM.visibility === 'shared'
+                  ? 'bg-green-500 hover:bg-green-600 text-white'
+                  : 'bg-gray-500 hover:bg-gray-600 text-white'
+              }`}
+              title={currentMOM.visibility === 'shared' 
+                ? 'Click to make private (only you and admins can see)' 
+                : 'Click to share with everyone'}
+            >
+              {currentMOM.visibility === 'shared' ? '🌐 Shared' : '🔒 Private'}
+            </button>
+          </div>
         </div>
       </div>
 

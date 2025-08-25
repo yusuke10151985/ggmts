@@ -465,6 +465,9 @@ export default function MOMList() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Visibility
+                </th>
                 {user?.role === 'admin' && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Created By
@@ -523,6 +526,15 @@ export default function MOMList() {
                         : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                     }`}>
                       {mom.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      mom.visibility === 'shared' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                    }`}>
+                      {mom.visibility === 'shared' ? '🌐 Shared' : '🔒 Private'}
                     </span>
                   </td>
                   {user?.role === 'admin' && (

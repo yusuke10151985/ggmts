@@ -131,6 +131,7 @@ export interface MOM {
   meetingAttachments?: Attachment[]; // **MEETING ATTACHMENTS**: Files attached to the meeting
   uploadedFiles?: FileMetadata[]; // **VERCEL BLOB**: Files uploaded via Vercel Blob
   createdBy?: string; // **USER TRACKING**: Email of the user who created this MOM
+  visibility?: 'private' | 'shared'; // **VISIBILITY**: Private (only creator + admin) or Shared (everyone can view/edit)
 }
 
 export interface MOMListItem {
@@ -141,6 +142,7 @@ export interface MOMListItem {
   date: string;
   status: string;
   createdBy?: string; // **USER TRACKING**: Email of the user who created this MOM
+  visibility?: 'private' | 'shared'; // **VISIBILITY**: Private or Shared status
 }
 
 // **TASK MANAGEMENT**: Interface for Actions as Tasks
