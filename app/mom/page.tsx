@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useMOM } from '@/contexts/mom/MOMContext';
-import GlobalHeader from '@/components/GlobalHeader';
 import Header from '@/components/mom/Header';
 import MOMList from '@/components/mom/MOMList';
 import MOMEditor from '@/components/mom/MOMEditor';
@@ -65,18 +64,11 @@ export default function MOMPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Fixed Global Header */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <GlobalHeader />
-      </div>
-      
-      {/* Main Content with padding to account for fixed header */}
-      <div className="container mx-auto px-4 py-6">
-        <Card className="shadow-lg">
-          {/* MOM Specific Header */}
-          <div className="border-b">
-            <Header 
+    <div className="container mx-auto px-4 py-6">
+      <Card className="shadow-lg">
+        {/* MOM Specific Header */}
+        <div className="border-b">
+          <Header 
               onShowSpreadsheet={() => {
                 setShowSpreadsheet(true);
                 setShowTasks(false);
@@ -144,9 +136,8 @@ export default function MOMPage() {
                 )}
               </>
             )}
-          </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
       {/* Temporarily disabled for Windows compatibility */}
       {/* <DebugButton /> */}
     </div>
