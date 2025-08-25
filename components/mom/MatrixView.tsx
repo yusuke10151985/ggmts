@@ -10,6 +10,8 @@ import ViewModeToggle from './ViewModeToggle';
 import MatrixResponsibleSelector from './MatrixResponsibleSelector';
 import HierarchicalNumber from './HierarchicalNumber';
 import MultilingualCell from './MultilingualCell';
+import MatrixMultilingualDisplay from './MatrixMultilingualDisplay';
+import '@/styles/matrix-view.css';
 
 export default function MatrixView() {
   const { state, dispatch } = useMOM();
@@ -244,34 +246,23 @@ export default function MatrixView() {
       
       return (
         <div
-          className={`px-2 py-1 cursor-pointer hover:bg-gray-50 ${
+          className={`matrix-cell-content ${
             isSelected ? 'ring-2 ring-blue-500' : ''
-          } ${!isEditableCell ? 'text-gray-400' : ''}`}
-          onClick={() => {
-            if (isEditableCell) {
-              setSelectedCell({ rowId: row.id, field });
-              startEdit(row.id, field, content);
-            }
-          }}
+          } ${!isEditableCell ? 'opacity-50' : ''}`}
           onKeyDown={(e) => handleKeyboardNavigation(e, row.id, field)}
           tabIndex={isEditableCell ? 0 : -1}
         >
           {isEditableCell ? (
-            <div className="text-xs">
-              {translations.en || translations.ja || translations.th ? (
-                <>
-                  <span className="font-semibold">EN:</span> {translations.en || '-'} 
-                  <span className="mx-1">|</span>
-                  <span className="font-semibold">JA:</span> {translations.ja || '-'}
-                  <span className="mx-1">|</span>
-                  <span className="font-semibold">TH:</span> {translations.th || '-'}
-                </>
-              ) : (
-                <span className="text-gray-400 italic">Click to edit</span>
-              )}
-            </div>
+            <MatrixMultilingualDisplay
+              translations={translations}
+              onEdit={() => {
+                setSelectedCell({ rowId: row.id, field });
+                startEdit(row.id, field, content);
+              }}
+              isEmpty={!content}
+            />
           ) : (
-            <span className="text-gray-400">-</span>
+            <span className="matrix-cell-empty">-</span>
           )}
         </div>
       );
@@ -338,14 +329,21 @@ export default function MatrixView() {
         content = row.dueDate;
         break;
       case 'status':
-        content = row.status;
-        className = row.status === 'open' ? 'font-bold text-red-600' : 'text-green-600';
-        break;
+        if (row.level === 4 && row.status) {
+          return (
+            <div className="flex justify-center">
+              <span className={row.status === 'open' ? 'matrix-status-open' : 'matrix-status-closed'}>
+                {row.status === 'open' ? '● Open' : '✓ Closed'}
+              </span>
+            </div>
+          );
+        }
+        return <span className="matrix-cell-empty">-</span>;
     }
 
     return (
       <div
-        className={`px-2 py-1 cursor-pointer hover:bg-gray-50 ${className} ${
+        className={`matrix-cell-editable ${className} ${
           isSelected ? 'ring-2 ring-blue-500' : ''
         }`}
         onClick={(e) => {
@@ -366,7 +364,7 @@ export default function MatrixView() {
         onKeyDown={(e) => handleKeyboardNavigation(e, row.id, field)}
         tabIndex={field !== 'rowNumber' ? 0 : -1}
       >
-        {content || <span className="text-gray-400">-</span>}
+        {content || <span className="matrix-cell-empty">-</span>}
       </div>
     );
   };
@@ -425,34 +423,34 @@ export default function MatrixView() {
           <tbody>
             {matrixData.map((row, index) => (
               <React.Fragment key={row.id}>
-                <tr className={`border-b hover:bg-gray-50 ${row.level === 1 ? 'bg-blue-50' : row.level === 2 ? 'bg-green-50' : row.level === 3 ? 'bg-yellow-50' : row.level === 4 ? 'bg-purple-50' : ''}`}>
-                  <td className="px-4 py-2">{renderCell(row, 'rowNumber')}</td>
+                <tr className={`matrix-row-level-${row.level} border-b`}>
+                  <td className="matrix-cell">{renderCell(row, 'rowNumber')}</td>
                   {/* Main Title Column */}
-                  <td className="px-4 py-2">
+                  <td className="matrix-cell">
                     {renderCell(row, 'mainTitle')}
                   </td>
                   {/* Sub Title Column */}
-                  <td className="px-4 py-2">
+                  <td className="matrix-cell">
                     {renderCell(row, 'subTitle')}
                   </td>
                   {/* Sub Sub Title Column */}
-                  <td className="px-4 py-2">
+                  <td className="matrix-cell">
                     {renderCell(row, 'subSubTitle')}
                   </td>
                   {/* Action Column */}
-                  <td className="px-4 py-2">
+                  <td className="matrix-cell">
                     {renderCell(row, 'action')}
                   </td>
-                  <td className="px-4 py-2">
-                    {row.level === 4 ? renderCell(row, 'responsible') : <span className="text-gray-400">-</span>}
+                  <td className="matrix-cell">
+                    {row.level === 4 ? renderCell(row, 'responsible') : <span className="matrix-cell-empty">-</span>}
                   </td>
-                  <td className="px-4 py-2">
-                    {row.level === 4 ? renderCell(row, 'dueDate') : <span className="text-gray-400">-</span>}
+                  <td className="matrix-cell">
+                    {row.level === 4 ? renderCell(row, 'dueDate') : <span className="matrix-cell-empty">-</span>}
                   </td>
-                  <td className="px-4 py-2">
-                    {row.level === 4 ? renderCell(row, 'status') : <span className="text-gray-400">-</span>}
+                  <td className="matrix-cell">
+                    {row.level === 4 ? renderCell(row, 'status') : <span className="matrix-cell-empty">-</span>}
                   </td>
-                  <td className="px-4 py-2 text-center">
+                  <td className="matrix-cell text-center">
                     <button
                       onClick={() => setShowAttachments(showAttachments === row.id ? null : row.id)}
                       className="text-blue-600 hover:text-blue-800"
@@ -460,8 +458,8 @@ export default function MatrixView() {
                       {(row.urls.length + row.attachments.length) || 0} files
                     </button>
                   </td>
-                  <td className="px-4 py-2 text-center">
-                    <div className="flex justify-center gap-1 items-center">
+                  <td className="matrix-cell text-center">
+                    <div className="matrix-action-buttons">
                       {/* Main Title row - can add Sub Title */}
                       {row.level === 1 && (
                         <>

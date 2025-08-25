@@ -1,103 +1,229 @@
-/* Matrix View Table Styles */
+/* Matrix View Styles */
 
-/* Ensure table container allows horizontal scroll */
+/* Table container */
 .matrix-table-container {
-  width: 100%;
   position: relative;
+  max-height: 80vh;
+  overflow: auto;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* Set minimum table width to ensure all columns are visible */
+/* Table base styles */
 .matrix-table {
-  min-width: 1800px; /* Increased to accommodate all columns properly */
-  table-layout: fixed;
-  border-collapse: collapse;
   width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 1200px;
 }
 
-/* Column width distribution with proper percentages */
+/* Sticky header */
+.matrix-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
+}
+
+.matrix-table thead th {
+  border-bottom: 2px solid #d1d5db;
+  font-weight: 600;
+  white-space: nowrap;
+  background: inherit;
+}
+
+/* Column widths */
 .matrix-table th:nth-child(1), /* No. */
 .matrix-table td:nth-child(1) {
-  width: 5%;
-  min-width: 60px;
+  width: 80px;
+  min-width: 80px;
+  text-align: center;
 }
 
 .matrix-table th:nth-child(2), /* Main Title */
 .matrix-table td:nth-child(2) {
-  width: 15%;
+  width: 20%;
   min-width: 200px;
 }
 
 .matrix-table th:nth-child(3), /* Sub Title */
 .matrix-table td:nth-child(3) {
-  width: 15%;
+  width: 20%;
   min-width: 200px;
 }
 
 .matrix-table th:nth-child(4), /* Sub Sub Title */
 .matrix-table td:nth-child(4) {
-  width: 15%;
+  width: 20%;
   min-width: 200px;
 }
 
 .matrix-table th:nth-child(5), /* Action */
 .matrix-table td:nth-child(5) {
-  width: 15%;
-  min-width: 200px;
+  width: 25%;
+  min-width: 250px;
 }
 
 .matrix-table th:nth-child(6), /* Responsible */
 .matrix-table td:nth-child(6) {
-  width: 12%;
+  width: 150px;
   min-width: 150px;
 }
 
 .matrix-table th:nth-child(7), /* Due Date */
 .matrix-table td:nth-child(7) {
-  width: 10%;
+  width: 120px;
   min-width: 120px;
 }
 
 .matrix-table th:nth-child(8), /* Status */
 .matrix-table td:nth-child(8) {
-  width: 8%;
+  width: 100px;
   min-width: 100px;
 }
 
 .matrix-table th:nth-child(9), /* Files */
 .matrix-table td:nth-child(9) {
-  width: 5%;
+  width: 80px;
   min-width: 80px;
 }
 
 .matrix-table th:nth-child(10), /* Actions */
 .matrix-table td:nth-child(10) {
-  width: 5%;
-  min-width: 100px;
+  width: 120px;
+  min-width: 120px;
 }
 
-/* Ensure text doesn't overflow */
-.matrix-table td {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: normal;
-  word-wrap: break-word;
+/* Row styling by level */
+.matrix-row-level-1 {
+  background-color: rgba(59, 130, 246, 0.05);
+  border-left: 4px solid #3b82f6;
+}
+
+.matrix-row-level-2 {
+  background-color: rgba(34, 197, 94, 0.05);
+  border-left: 4px solid #22c55e;
+}
+
+.matrix-row-level-3 {
+  background-color: rgba(250, 204, 21, 0.05);
+  border-left: 4px solid #facc15;
+}
+
+.matrix-row-level-4 {
+  background-color: rgba(168, 85, 247, 0.05);
+  border-left: 4px solid #a855f7;
+}
+
+/* Cell styling */
+.matrix-cell {
+  padding: 0.5rem;
+  border-right: 1px solid #e5e7eb;
+  vertical-align: top;
+  position: relative;
+}
+
+.matrix-cell:last-child {
+  border-right: none;
+}
+
+/* Hover effects */
+.matrix-table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Editable cell styling */
+.matrix-cell-editable {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.matrix-cell-editable:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.matrix-cell-editable:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+/* Empty cell styling */
+.matrix-cell-empty {
+  color: #9ca3af;
+  font-style: italic;
+  text-align: center;
+}
+
+/* Multilingual content */
+.matrix-lang-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.matrix-lang-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.matrix-lang-label {
+  font-weight: 600;
+  color: #4b5563;
+  min-width: 2rem;
+}
+
+.matrix-lang-value {
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Status badges */
+.matrix-status-open {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  background-color: #fef3c7;
+  color: #92400e;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.matrix-status-closed {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  background-color: #d1fae5;
+  color: #065f46;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Action buttons */
+.matrix-action-buttons {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.matrix-action-btn {
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.15s ease;
+}
+
+.matrix-action-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Responsive adjustments */
-@media (max-width: 1600px) {
+@media (max-width: 768px) {
   .matrix-table {
-    font-size: 0.875rem; /* 14px */
-  }
-  
-  .matrix-table th,
-  .matrix-table td {
-    padding: 0.5rem;
-  }
-}
-
-@media (max-width: 1400px) {
-  .matrix-table {
-    font-size: 0.75rem; /* 12px */
+    font-size: 0.875rem;
   }
   
   .matrix-table th,
@@ -106,28 +232,16 @@
   }
 }
 
-/* Ensure scrollbar is always visible on overflow container */
-.overflow-x-auto {
-  overflow-x: auto;
-  overflow-y: visible;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e0 #f7fafc;
-}
-
-.overflow-x-auto::-webkit-scrollbar {
-  height: 8px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-track {
-  background: #f7fafc;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
-  border-radius: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
+/* Print styles */
+@media print {
+  .matrix-table-container {
+    max-height: none;
+    overflow: visible;
+    box-shadow: none;
+  }
+  
+  .matrix-action-buttons,
+  .view-mode-toggle {
+    display: none;
+  }
 }
