@@ -56,6 +56,21 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Input and textarea caret color for better visibility */
+  input, textarea {
+    caret-color: hsl(var(--primary));
+  }
+  
+  /* Ensure text color is always visible */
+  input, textarea, select {
+    color: hsl(var(--foreground));
+  }
+  
+  /* Dark mode specific adjustments */
+  .dark input, .dark textarea, .dark select {
+    color: hsl(var(--foreground));
+  }
 }
 
 /* Custom styles for summarize mode */

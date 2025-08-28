@@ -1,145 +1,114 @@
 'use client';
 
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useMOM } from '@/contexts/mom/MOMContext';
-import Header from '@/components/mom/Header';
-import MOMList from '@/components/mom/MOMList';
-import MOMEditor from '@/components/mom/MOMEditor';
-import SpreadsheetViewer from '@/components/mom/SpreadsheetViewer';
-import TaskList from '@/components/mom/TaskList';
-import { getMOMList, getAttendees, getCompanies } from '@/services/mom/api';
+import { MOMProvider } from '@/contexts/mom/MOMContext';
+import MOMClientPage from './client-page';
 import { Card } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
-// Temporarily disabled for Windows compatibility
-// import DebugButton from '@/components/mom/DebugButton';
-// import logger from '@/lib/mom/client-logger';
+import { Button } from '@/components/ui/button';
+import { Loader2, Lock } from 'lucide-react';
 
 export default function MOMPage() {
-  const { state, dispatch } = useMOM();
-  const { currentMOM, loading, error } = state;
-  const [showSpreadsheet, setShowSpreadsheet] = useState(false);
-  const [showTasks, setShowTasks] = useState(false);
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Log page load - temporarily disabled
-    // if (logger) {
-    //   logger.log('MOMPage', 'Page loaded', {
-    //     platform: navigator.platform,
-    //     userAgent: navigator.userAgent,
-    //     url: window.location.href
-    //   });
-    // }
+    if (status === 'loading') return;
     
-    loadMOMList();
-    loadAllAttendees();
-    loadAllCompanies();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!session?.user) {
+      setAuthorized(false);
+      return;
+    }
 
-  const loadMOMList = async () => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    const response = await getMOMList();
-    
-    if (response.success && response.data) {
-      dispatch({ type: 'SET_MOM_LIST', payload: response.data });
+    // Check user role
+    const userRole = (session.user as any).role;
+    if (userRole === 'admin' || userRole === 'special') {
+      setAuthorized(true);
     } else {
-      dispatch({ type: 'SET_ERROR', payload: response.error || 'Failed to load MOM list' });
+      setAuthorized(false);
     }
-    
-    dispatch({ type: 'SET_LOADING', payload: false });
-  };
+  }, [session, status]);
 
-  const loadAllAttendees = async () => {
-    const response = await getAttendees();
-    if (response.success && response.data) {
-      dispatch({ type: 'SET_ATTENDEES', payload: response.data });
-    }
-  };
+  // Loading state
+  if (status === 'loading' || authorized === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <Card className="p-8">
+          <div className="flex flex-col items-center">
+            <Loader2 className="w-12 h-12 animate-spin text-purple-600 mb-4" />
+            <p className="text-lg text-gray-600">Loading MOM Manager...</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
-  const loadAllCompanies = async () => {
-    const response = await getCompanies();
-    if (response.success && response.data) {
-      dispatch({ type: 'SET_COMPANIES', payload: response.data });
-    }
+  // Not logged in
+  if (!session?.user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <Card className="p-8 max-w-md w-full">
+          <div className="text-center">
+            <Lock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <h2 className="text-2xl font-bold mb-2">Authentication Required</h2>
+            <p className="text-gray-600 mb-6">
+              You must be logged in to access MOM Manager
+            </p>
+            <Button 
+              onClick={() => router.push('/')}
+              className="w-full"
+            >
+              Go to Home Page
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Not authorized
+  if (!authorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <Card className="p-8 max-w-md w-full">
+          <div className="text-center">
+            <Lock className="w-16 h-16 mx-auto mb-4 text-red-400" />
+            <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
+            <p className="text-gray-600 mb-6">
+              You must have Admin or Special privileges to access MOM Manager
+            </p>
+            <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Current role: <span className="font-semibold">{(session.user as any).role || 'Free'}</span>
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Required: Admin or Special
+              </p>
+            </div>
+            <Button 
+              onClick={() => router.push('/')}
+              className="w-full"
+            >
+              Go to Home Page
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Authorized - render MOM Manager
+  const user = {
+    id: (session.user as any).id || '',
+    email: session.user.email || null,
+    role: (session.user as any).role
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <Card className="shadow-lg">
-        {/* MOM Specific Header */}
-        <div className="border-b">
-          <Header 
-              onShowSpreadsheet={() => {
-                setShowSpreadsheet(true);
-                setShowTasks(false);
-              }}
-              onShowTasks={() => {
-                setShowTasks(true);
-                setShowSpreadsheet(false);
-              }}
-              onShowList={() => {
-                dispatch({ type: 'SET_CURRENT_MOM', payload: null });
-                setShowSpreadsheet(false);
-                setShowTasks(false);
-                loadMOMList();
-              }}
-            />
-          </div>
-          
-          <div className="p-6">
-            {loading && state.momList.length === 0 && (
-              <div className="flex justify-center items-center h-64">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-              </div>
-            )}
-            
-            {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-4">
-                {error}
-              </div>
-            )}
-            
-            {!error && (
-              <>
-                {showSpreadsheet ? (
-                  <>
-                    <div className="mb-4">
-                      <button
-                        className="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                        onClick={() => setShowSpreadsheet(false)}
-                      >
-                        ← Back to {currentMOM ? 'Editor' : 'MOM List'}
-                      </button>
-                    </div>
-                    <SpreadsheetViewer />
-                  </>
-                ) : showTasks ? (
-                  <>
-                    <div className="mb-4">
-                      <button
-                        className="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                        onClick={() => setShowTasks(false)}
-                      >
-                        ← Back to {currentMOM ? 'Editor' : 'MOM List'}
-                      </button>
-                    </div>
-                    <TaskList />
-                  </>
-                ) : (
-                  <>
-                    {currentMOM ? (
-                      <MOMEditor />
-                    ) : (
-                      <MOMList />
-                    )}
-                  </>
-                )}
-              </>
-            )}
-        </div>
-      </Card>
-      {/* Temporarily disabled for Windows compatibility */}
-      {/* <DebugButton /> */}
-    </div>
+    <MOMProvider user={user}>
+      <MOMClientPage />
+    </MOMProvider>
   );
 }

@@ -104,7 +104,20 @@ class TranslationQueue {
           
           const result = await response.json();
           
-          if (result.success && result.data) {
+          // Handle the new response format
+          if (result.translations && Array.isArray(result.translations)) {
+            // Convert from array format to object format
+            const data: TranslationSet = {
+              en: result.translations.find((t: any) => t.lang === 'en')?.text || '',
+              ja: result.translations.find((t: any) => t.lang === 'ja')?.text || '',
+              th: result.translations.find((t: any) => t.lang === 'th')?.text || ''
+            };
+            return {
+              success: true,
+              data
+            };
+          } else if (result.success && result.data) {
+            // Handle old format if still exists
             return {
               success: true,
               data: result.data

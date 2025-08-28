@@ -11,6 +11,7 @@ import MatrixResponsibleSelector from './MatrixResponsibleSelector';
 import HierarchicalNumber from './HierarchicalNumber';
 import MultilingualCell from './MultilingualCell';
 import MatrixMultilingualDisplay from './MatrixMultilingualDisplay';
+import MatrixMultilingualEdit from './MatrixMultilingualEdit';
 import '@/styles/matrix-view.css';
 
 export default function MatrixView() {
@@ -73,6 +74,24 @@ export default function MatrixView() {
         ...updates,
         lastModifiedRevision: currentMOM?.revision
       },
+    });
+  };
+
+  const handleMultilingualEdit = (rowId: string, field: string, translations: { en: string; ja: string; th: string }) => {
+    const row = matrixData.find(r => r.id === rowId);
+    if (!row) return;
+
+    // Use the English translation as the title
+    const updates = {
+      title: translations.en || '',
+      translations,
+      lastModifiedRevision: currentMOM?.revision
+    };
+
+    dispatch({
+      type: 'UPDATE_STRUCTURE_ITEM',
+      id: row.structureItemId,
+      updates
     });
   };
 
@@ -229,16 +248,13 @@ export default function MatrixView() {
       
       if (isEditing) {
         return (
-          <input
-            type="text"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onBlur={commitEdit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') commitEdit();
-              if (e.key === 'Escape') cancelEdit();
+          <MatrixMultilingualEdit
+            initialValue={translations}
+            onSave={(newTranslations) => {
+              handleMultilingualEdit(row.id, field, newTranslations);
+              setEditingCell(null);
             }}
-            className="w-full px-2 py-1 border rounded"
+            onCancel={cancelEdit}
             autoFocus
           />
         );

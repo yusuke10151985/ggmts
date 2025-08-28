@@ -127,3 +127,52 @@ enum UserRole {
   premier
   block
 }
+
+model FactoryTerm {
+  id               String              @id @default(cuid())
+  japanese         String
+  japaneseReading  String
+  english          String
+  thai             String
+  thaiReading      String
+  category         FactoryCategory
+  description      String
+  safetyNotes      String?
+  imageUrl         String?
+  japaneseAudioUrl String?
+  englishAudioUrl  String?
+  thaiAudioUrl     String?
+  tags             String[]
+  viewCount        Int                 @default(0)
+  lastAccessedAt   DateTime            @default(now())
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  createdBy        String?
+  usageExamples    FactoryUsageExample[]
+  
+  @@index([category])
+  @@index([viewCount])
+  @@index([createdAt])
+}
+
+model FactoryUsageExample {
+  id         String      @id @default(cuid())
+  termId     String
+  japanese   String
+  english    String
+  thai       String
+  context    String?
+  createdAt  DateTime    @default(now())
+  term       FactoryTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+  
+  @@index([termId])
+}
+
+enum FactoryCategory {
+  Safety
+  Machinery
+  Quality
+  Tools
+  Materials
+  General
+}

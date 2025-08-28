@@ -7,6 +7,7 @@ import TimeSlots from '@/components/mom/TimeSlots';
 import CompaniesAttendees from '@/components/mom/CompaniesAttendees';
 import HierarchicalStructure from '@/components/mom/HierarchicalStructure';
 import MatrixView from '@/components/mom/MatrixView';
+import MatrixGroupedView from '@/components/mom/MatrixGroupedView';
 import ExportButtons from '@/components/mom/ExportButtons';
 import RevisionDifferences from '@/components/mom/RevisionDifferences';
 
@@ -90,7 +91,9 @@ export default function MOMEditor() {
       <CompaniesAttendees />
 
       {/* Structure View - Hierarchical or Matrix based on viewMode */}
-      {viewMode === 'normal' ? <HierarchicalStructure /> : <MatrixView />}
+      {viewMode === 'normal' && <HierarchicalStructure />}
+      {viewMode === 'matrix' && <MatrixView />}
+      {viewMode === 'matrix-grouped' && <MatrixGroupedView />}
 
       {/* Export Buttons */}
       <ExportButtons />

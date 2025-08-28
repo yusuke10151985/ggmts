@@ -2,7 +2,7 @@
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { History, ChevronDown, Languages, FileText, ShoppingCart } from 'lucide-react';
+import { History, ChevronDown, Languages, FileText, ShoppingCart, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
@@ -104,18 +104,41 @@ function HeaderContent() {
     <header className="sticky top-0 z-50 bg-card border-b w-full">
       <div className="flex justify-between items-center px-2 sm:px-4 py-2 border-t min-h-[60px] overflow-hidden">
         <div className="flex items-center min-w-0 flex-shrink">
-          <a href="/" className="flex items-center text-base sm:text-xl md:text-2xl font-bold text-black dark:text-white">
-            <Image src="/logo.png" alt="Logo" width={24} height={24} className="sm:w-9 sm:h-9 mr-1 sm:mr-2 rounded-full flex-shrink-0" />
-            <span className="hidden sm:inline">Multi Translator GGMTS</span>
-            <span className="sm:hidden">GGMTS</span>
+          <a href="/" className="flex items-center text-base sm:text-xl md:text-2xl font-bold text-black dark:text-white mr-2">
+            <Home className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />
+            <span className="hidden sm:inline">YSS Business Tools</span>
+            <span className="sm:hidden">YSS</span>
           </a>
+          {pathname.startsWith('/ggmts') && (
+            <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mx-2">/</span>
+          )}
+          {pathname.startsWith('/ggmts') && (
+            <span className="text-sm sm:text-base font-semibold text-blue-600 dark:text-blue-400">GGMTS</span>
+          )}
+          {pathname.startsWith('/mom') && (
+            <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mx-2">/</span>
+          )}
+          {pathname.startsWith('/mom') && (
+            <span className="text-sm sm:text-base font-semibold text-purple-600 dark:text-purple-400">MOM Manager</span>
+          )}
+          {pathname.startsWith('/swgr-rfq') && (
+            <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mx-2">/</span>
+          )}
+          {pathname.startsWith('/swgr-rfq') && (
+            <span className="text-sm sm:text-base font-semibold text-orange-600 dark:text-orange-400">SWGR RFQ</span>
+          )}
+          {pathname.startsWith('/factory-dictionary') && (
+            <span className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mx-2">/</span>
+          )}
+          {pathname.startsWith('/factory-dictionary') && (
+            <span className="text-sm sm:text-base font-semibold text-green-600 dark:text-green-400">Factory Dictionary</span>
+          )}
           <nav className="hidden md:flex gap-4 lg:gap-6 text-sm font-medium items-center ml-4 lg:ml-6">
             <a href="/about" className="hover:underline">About</a>
+            <a href="/privacy" className="hover:underline">Privacy Policy</a>
+            <a href="/terms" className="hover:underline">Terms</a>
             <a href="/contact" className="hover:underline">Contact</a>
             <a href="/release-notes" className="hover:underline whitespace-nowrap">Release Notes</a>
-            {session?.user && (session.user as any).role === 'admin' && (
-              <a href="/mom" className="hover:underline text-red-600 dark:text-red-400 font-semibold">MoM Manager</a>
-            )}
           </nav>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">

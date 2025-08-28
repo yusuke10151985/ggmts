@@ -22,42 +22,49 @@ export async function POST(request: NextRequest) {
     if (!text) {
       console.log('Empty text, returning empty translations');
       const response = {
-        success: true,
-        data: { en: '', ja: '', th: '' },
-        detectedLanguage: 'auto',
+        sourceLanguage: 'auto',
+        translations: [
+          { lang: 'en', text: '' },
+          { lang: 'ja', text: '' },
+          { lang: 'th', text: '' }
+        ]
       };
       
       translationMonitor.logRequest(Date.now() - startTime, true);
       return NextResponse.json(response);
     }
 
-    // Use the enhanced translation service
-    try {
-      const translations = await translationService.translate(text, sourceLang);
-      
-      // Detect source language if not provided
-      let detectedLang = sourceLang || 'auto';
-      if (detectedLang === 'auto') {
-        const isJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
-        const isEnglish = /^[A-Za-z0-9\s\-.,!?'"]+$/.test(text);
-        const isThai = /[\u0E00-\u0E7F]/.test(text);
-        detectedLang = isJapanese ? 'ja' : isEnglish ? 'en' : isThai ? 'th' : 'other';
-      }
-      
-      const response = {
-        success: true,
-        data: translations,
-        detectedLanguage: detectedLang,
-      };
-      
-      translationMonitor.logRequest(Date.now() - startTime, true);
-      return NextResponse.json(response);
-    } catch (translationError: any) {
-      console.error('Translation service error:', translationError);
-      translationMonitor.logRequest(Date.now() - startTime, false, translationError.message);
-      
-      // Fallback to original implementation if service fails
-    }
+    // Skip the translation service to avoid recursive loop
+    // The translation service calls this same endpoint, creating a loop
+    // try {
+    //   const translations = await translationService.translate(text, sourceLang);
+    //   
+    //   // Detect source language if not provided
+    //   let detectedLang = sourceLang || 'auto';
+    //   if (detectedLang === 'auto') {
+    //     const isJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(text);
+    //     const isEnglish = /^[A-Za-z0-9\s\-.,!?'"]+$/.test(text);
+    //     const isThai = /[\u0E00-\u0E7F]/.test(text);
+    //     detectedLang = isJapanese ? 'ja' : isEnglish ? 'en' : isThai ? 'th' : 'other';
+    //   }
+    //   
+    //   const response = {
+    //     sourceLanguage: detectedLang,
+    //     translations: [
+    //       { lang: 'en', text: translations.en || '' },
+    //       { lang: 'ja', text: translations.ja || '' },
+    //       { lang: 'th', text: translations.th || '' }
+    //     ]
+    //   };
+    //   
+    //   translationMonitor.logRequest(Date.now() - startTime, true);
+    //   return NextResponse.json(response);
+    // } catch (translationError: any) {
+    //   console.error('Translation service error:', translationError);
+    //   translationMonitor.logRequest(Date.now() - startTime, false, translationError.message);
+    //   
+    //   // Fallback to original implementation if service fails
+    // }
     
     // Check if Gemini API is configured
     console.log('GEMINI_API_KEY exists:', !!GEMINI_API_KEY);
@@ -102,9 +109,12 @@ export async function POST(request: NextRequest) {
       };
       
       return NextResponse.json({
-        success: true,
-        data: translations,
-        detectedLanguage: detectedLang,
+        sourceLanguage: detectedLang,
+        translations: [
+          { lang: 'en', text: translations.en || detectedLang === 'en' ? text : `${text} (EN)` },
+          { lang: 'ja', text: translations.ja || detectedLang === 'ja' ? text : `${text} (JA)` },
+          { lang: 'th', text: translations.th || detectedLang === 'th' ? text : `${text} (TH)` }
+        ]
       });
     }
 
@@ -301,14 +311,14 @@ Example 3 - Thai input "สวัสดี":
       const enTranslation = translations.en || (translations.detectedLang === 'en' ? text : '[Translation Error]');
       const thTranslation = translations.th || (translations.detectedLang === 'th' ? text : '[Translation Error]');
       
+      // Format response to match client expectations
       const finalResponse = {
-        success: true,
-        data: {
-          en: enTranslation,
-          ja: translations.ja || (translations.detectedLang === 'ja' ? text : '[Translation Error]'),
-          th: thTranslation,
-        },
-        detectedLanguage: translations.detectedLang || 'auto',
+        sourceLanguage: translations.detectedLang || 'auto',
+        translations: [
+          { lang: 'en', text: enTranslation },
+          { lang: 'ja', text: translations.ja || (translations.detectedLang === 'ja' ? text : '[Translation Error]') },
+          { lang: 'th', text: thTranslation }
+        ]
       };
       
       console.log('Final API response:', finalResponse);
@@ -328,13 +338,12 @@ Example 3 - Thai input "สวัสดี":
         
         // Return fallback response
         const fallbackResponse = {
-          success: true,
-          data: {
-            en: detectedLang === 'en' ? text : `[API Error] ${text}`,
-            ja: detectedLang === 'ja' ? text : `[API Error] ${text}`,
-            th: `[API Error] ${text}`,
-          },
-          detectedLanguage: detectedLang,
+          sourceLanguage: detectedLang,
+          translations: [
+            { lang: 'en', text: detectedLang === 'en' ? text : `[API Error] ${text}` },
+            { lang: 'ja', text: detectedLang === 'ja' ? text : `[API Error] ${text}` },
+            { lang: 'th', text: `[API Error] ${text}` }
+          ]
         };
         
         console.log('Returning fallback response:', fallbackResponse);

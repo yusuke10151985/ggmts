@@ -25,7 +25,7 @@ export interface Translation {
 // Alias for Translation to match the service files
 export type TranslationSet = Translation;
 
-export type ViewMode = 'normal' | 'matrix';
+export type ViewMode = 'normal' | 'matrix' | 'matrix-grouped';
 
 // Matrix Mode data structure
 export interface MatrixRow {
